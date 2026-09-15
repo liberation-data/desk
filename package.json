@@ -33,7 +33,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "example": "vite examples/basic",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "example:garage": "vite examples/garage"
   },
   "peerDependencies": {
     "react": "^19.0.0"

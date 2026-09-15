@@ -39,6 +39,28 @@ export function App() {
 `renderWindow` is called with a window's id. The desk never owns your content, and a window keeps its DOM
 when focus moves, so scroll positions, carets and iframes survive.
 
+## Dock
+
+```tsx
+import { Dock, dockItem, dockSeparator, dockStack } from '@liberation-data/desk/react'
+
+<Dock
+  entries={[
+    dockItem({ id: 'rides', label: 'Rides', icon: <RideIcon /> }),
+    dockItem({ id: 'service', label: 'Service', icon: <WrenchIcon />, badge: 2 }),
+    dockSeparator('stacks'),
+    dockStack({ id: 'plan', label: 'Plan', items: [routes, weather, calendar] }),
+  ]}
+/>
+```
+
+An item opens the window with its id (or `window`), and shows a dot while that window is open. A stack fans
+its items out above the dock and previews the first four icons. `onSelect` replaces opening a window.
+
+The dock is one tab stop: arrow keys move along it, Enter opens, Escape folds a stack away and returns focus
+to it. With `placement="overlay"` (the default) it floats over the bottom of its positioned parent; set
+`--desk-inset-bottom` so tiles stop above it.
+
 ## The core has no React in it
 
 `createDesk()` returns a plain object. Anything can drive it — a router, a tour, a keyboard shortcut, a
