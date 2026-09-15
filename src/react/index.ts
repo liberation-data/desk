@@ -4,5 +4,7 @@ export { useCanPerform, useCommand, usePerform, useShortcuts } from './commands.
 export type { UseCommandOptions } from './commands.js'
 export { Desktop } from './Desktop.js'
 export type { DesktopProps } from './Desktop.js'
+export { MenuBar, menuAction, menuCommand, menuHeader, menuSeparator, windowMenuItems } from './MenuBar.js'
+export type { Menu, MenuBarProps, MenuItem } from './MenuBar.js'
 export { Dock, dockItem, dockSeparator, dockStack } from './Dock.js'
 export type { DockEntry, DockItem, DockProps, DockStack } from './Dock.js'

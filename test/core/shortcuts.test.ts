@@ -32,6 +32,11 @@ describe('matchesShortcut', () => {
     expect(matchesShortcut(key('z', { metaKey: true }), undo, false)).toBe(false)
   })
 
+  it('falls back to the physical key when a modifier changes the character', () => {
+    // ⌥] on a Mac reports key '‘' but code 'BracketRight'.
+    expect(matchesShortcut({ ...key('‘', { altKey: true }), code: 'BracketRight' }, parseShortcut('alt+]'), true)).toBe(true)
+  })
+
   it('requires the exact modifiers, so redo is not undo', () => {
     expect(matchesShortcut(key('Z', { metaKey: true, shiftKey: true }), parseShortcut('mod+z'), true)).toBe(false)
     expect(matchesShortcut(key('Z', { metaKey: true, shiftKey: true }), parseShortcut('mod+shift+z'), true)).toBe(true)

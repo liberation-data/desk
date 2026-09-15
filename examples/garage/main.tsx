@@ -1,10 +1,25 @@
 import { StrictMode, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { createDesk, focusedId, syncWithLocation } from '../../src/core/index.js'
+import type { Root } from 'react-dom/client'
+import { createDesk, DeskCommands, focusedId, formatShortcut, syncWithLocation } from '../../src/core/index.js'
 import type { Desk } from '../../src/core/index.js'
-import { Desktop, DeskProvider, Dock, dockItem, dockSeparator, dockStack, useDesk, useDeskState } from '../../src/react/index.js'
-import type { DockEntry, DockItem } from '../../src/react/index.js'
+import {
+  Desktop,
+  DeskProvider,
+  Dock,
+  dockItem,
+  dockSeparator,
+  dockStack,
+  MenuBar,
+  menuAction,
+  menuCommand,
+  menuSeparator,
+  useCommand,
+  useDeskState,
+  windowMenuItems,
+} from '../../src/react/index.js'
+import type { DockEntry, DockItem, Menu } from '../../src/react/index.js'
 import '../../src/desk.css'
 import './garage.css'
 
@@ -63,10 +78,21 @@ const INITIAL_SERVICE: Step[] = [
 
 /* ── Windows ── */
 
+/** Commands this app defines. Menus name them; the windows that can do them answer. */
+const Commands = {
+  settings: 'garage.settings',
+  exportRides: 'garage.rides.export',
+  completeService: 'garage.service.complete',
+} as const
+
 function Rides() {
   const total = RIDES.reduce((sum, r) => sum + r.km, 0)
+  const [exported, setExported] = useState<string | null>(null)
+  // Only the Rides window can export rides, so the menu item is enabled only while it is the key window.
+  useCommand(Commands.exportRides, () => setExported(`Exported ${RIDES.length} rides to rides.csv (example — nothing was saved)`))
   return (
     <div className="pad">
+      {exported && <p className="notice" role="status">{exported}</p>}
       <div className="stats">
         <Stat label="This fortnight" value={`${total.toFixed(0)} km`} />
         <Stat label="Climbing" value={`${RIDES.reduce((s, r) => s + r.climb, 0).toLocaleString()} m`} />
@@ -116,6 +142,9 @@ function Parts() {
 
 function Service({ steps, setSteps }: { readonly steps: Step[]; readonly setSteps: (s: Step[]) => void }) {
   const set = (id: string, state: Step['state']) => setSteps(steps.map(s => (s.id === id ? { ...s, state } : s)))
+  useCommand(Commands.completeService, () => setSteps(steps.map(s => (s.state === 'todo' ? { ...s, state: 'done' } : s))), {
+    enabled: steps.some(s => s.state === 'todo'),
+  })
   const section = (label: string, state: Step['state']) => {
     const rows = steps.filter(s => s.state === state)
     if (!rows.length) return null
@@ -229,12 +258,27 @@ function Settings() {
   )
 }
 
+const SHORTCUTS: readonly { readonly keys: string; readonly does: string }[] = [
+  { keys: 'mod+comma', does: 'Settings' },
+  { keys: 'mod+e', does: 'Export rides, from the Rides window' },
+  { keys: 'alt+]', does: 'Next window' },
+  { keys: 'alt+[', does: 'Previous window' },
+  { keys: 'alt+w', does: 'Close window' },
+]
+
 function Shortcuts() {
   return (
     <div className="pad">
-      {[['Tab', 'Reach the dock'], ['← →', 'Move along the dock'], ['Enter', 'Open, or fan out a stack'], ['Esc', 'Fold a stack away']].map(([k, d]) => (
-        <div className="row" key={k}><kbd>{k}</kbd><div className="grow">{d}</div></div>
-      ))}
+      <section className="section"><h3>Commands</h3>
+        {SHORTCUTS.map(s => (
+          <div className="row" key={s.keys}><kbd>{formatShortcut(s.keys)}</kbd><div className="grow">{s.does}</div></div>
+        ))}
+      </section>
+      <section className="section"><h3>Menu bar and dock</h3>
+        {[['Tab', 'Reach the menu bar, then the dock'], ['← →', 'Move between menus, or along the dock'], ['↓ Enter', 'Open a menu, or fan out a stack'], ['Esc', 'Close a menu or fold a stack away']].map(([k, d]) => (
+          <div className="row" key={k}><kbd>{k}</kbd><div className="grow">{d}</div></div>
+        ))}
+      </section>
     </div>
   )
 }
@@ -289,6 +333,9 @@ function Garage({ desk }: { readonly desk: Desk }) {
     return { width: el?.clientWidth ?? innerWidth, height: el?.clientHeight ?? innerHeight }
   }, { isKnown }), [desk])
 
+  // Settings is the app's, not a window's, so it answers at the top of the chain.
+  useCommand(Commands.settings, () => desk.open('settings'), { at: 'app' })
+
   const entries: DockEntry[] = [
     dockItem(item('rides')),
     dockItem(item('service', due ? { badge: due } : {})),
@@ -323,7 +370,7 @@ function Garage({ desk }: { readonly desk: Desk }) {
   return (
     <DeskProvider desk={desk}>
       <div className="garage">
-        <TopBar due={due} />
+        <GarageMenuBar desk={desk} steps={steps} />
         <main className="screen">
           <Desktop
             title={id => (isKnown(id) ? SURFACES[id].title : id)}
@@ -337,19 +384,76 @@ function Garage({ desk }: { readonly desk: Desk }) {
   )
 }
 
-/** Placeholder until the toolkit's menu bar lands. */
-function TopBar({ due }: { readonly due: number }) {
-  const desk = useDesk()
+function GarageMenuBar({ desk, steps }: { readonly desk: Desk; readonly steps: readonly Step[] }) {
+  useDeskState() // re-render as windows change, so the status menu and badge stay current
+  const titleOf = (id: string) => (isKnown(id) ? SURFACES[id].title : id)
+  const todo = steps.filter(s => s.state === 'todo')
+
+  const menus: Menu[] = [
+    {
+      id: 'garage',
+      label: 'Garage',
+      items: [
+        menuAction('About Garage', () => desk.open('about')),
+        menuSeparator(),
+        menuCommand('Settings…', Commands.settings, { shortcut: 'mod+comma' }),
+      ],
+    },
+    {
+      id: 'ride',
+      label: 'Ride',
+      items: [
+        menuAction('Show rides', () => desk.open('rides')),
+        menuCommand('Export rides…', Commands.exportRides, { shortcut: 'mod+e' }),
+        menuSeparator(),
+        menuCommand('Mark all service done', Commands.completeService),
+      ],
+    },
+    {
+      id: 'window',
+      label: 'Window',
+      items: () => [
+        menuCommand('Float or tile', DeskCommands.toggleWindowMode),
+        menuCommand('Tile all', DeskCommands.tileAll),
+        menuSeparator(),
+        menuCommand('Next window', DeskCommands.nextWindow, { shortcut: 'alt+]' }),
+        menuCommand('Previous window', DeskCommands.previousWindow, { shortcut: 'alt+[' }),
+        menuCommand('Close window', DeskCommands.closeWindow, { shortcut: 'alt+w' }),
+        ...(desk.getState().windows.length ? [menuSeparator(), ...windowMenuItems(desk.getState(), desk.focus, titleOf)] : []),
+      ],
+    },
+    {
+      id: 'help',
+      label: 'Help',
+      items: [menuAction('Keyboard shortcuts', () => desk.open('shortcuts')), menuAction('About this sample', () => desk.open('about'))],
+    },
+  ]
+
+  const status: Menu[] = [
+    {
+      id: 'service',
+      label: todo.length ? `Service, ${todo.length} due` : 'Service, nothing due',
+      title: (
+        <>
+          <Icon name="wrench" />
+          {todo.length > 0 && <span className="pill">{todo.length}</span>}
+        </>
+      ),
+      items: [
+        ...(todo.length ? todo.map(s => menuAction(s.title, () => desk.open('service'), { detail: 'due' })) : [menuAction('Nothing due', () => {}, { disabled: true })]),
+        menuSeparator(),
+        menuAction('Open service', () => desk.open('service')),
+      ],
+    },
+  ]
+
   return (
-    <header className="topbar">
-      <b className="brand"><i />Garage</b>
-      <span className="spacer" />
-      <button type="button" className="topitem" onClick={() => desk.open('service')}>
-        Service {due > 0 && <span className="pill">{due}</span>}
-      </button>
-      <button type="button" className="topitem" onClick={desk.tileAll}>Tile all</button>
-      <span className="topitem muted">Sun 14 Sep</span>
-    </header>
+    <MenuBar
+      menus={menus}
+      status={status}
+      leading={<span className="brand"><i />Garage</span>}
+      trailing={<span>Sun 14 Sep</span>}
+    />
   )
 }
 
@@ -359,5 +463,9 @@ if (!location.hash) {
   desk.open('service')
 }
 
-const root = document.getElementById('root')
-if (root) createRoot(root).render(<StrictMode><Garage desk={desk} /></StrictMode>)
+// Hot reload re-runs this module; reuse the root rather than creating a second one on the same container.
+const container = document.getElementById('root') as (HTMLElement & { reactRoot?: Root }) | null
+if (container) {
+  container.reactRoot ??= createRoot(container)
+  container.reactRoot.render(<StrictMode><Garage desk={desk} /></StrictMode>)
+}

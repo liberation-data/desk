@@ -38,17 +38,29 @@ export const isApplePlatform = (): boolean =>
 
 interface KeyLike {
   readonly key: string
+  readonly code?: string
   readonly metaKey: boolean
   readonly ctrlKey: boolean
   readonly shiftKey: boolean
   readonly altKey: boolean
 }
 
+const CODES: Readonly<Record<string, string>> = {
+  BracketLeft: '[', BracketRight: ']', Backquote: '`', Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", Minus: '-', Equal: '=', Backslash: '\\', Space: ' ',
+}
+
+/** The unmodified key a physical key stands for: ⌥ on a Mac turns `]` into `‘`, but the code is still BracketRight. */
+const keyFromCode = (code: string | undefined) =>
+  !code ? undefined
+  : code.startsWith('Key') ? code.slice(3).toLowerCase()
+  : code.startsWith('Digit') ? code.slice(5)
+  : CODES[code]
+
 export function matchesShortcut(event: KeyLike, shortcut: Shortcut, apple = isApplePlatform()): boolean {
   const wantMeta = apple && shortcut.mod
   const wantCtrl = shortcut.ctrl || (!apple && shortcut.mod)
   return (
-    event.key.toLowerCase() === shortcut.key &&
+    (event.key.toLowerCase() === shortcut.key || keyFromCode(event.code) === shortcut.key) &&
     event.metaKey === wantMeta &&
     event.ctrlKey === wantCtrl &&
     event.shiftKey === shortcut.shift &&

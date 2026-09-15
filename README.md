@@ -61,6 +61,33 @@ The dock is one tab stop: arrow keys move along it, Enter opens, Escape folds a 
 to it. With `placement="overlay"` (the default) it floats over the bottom of its positioned parent; set
 `--desk-inset-bottom` so tiles stop above it.
 
+## Menu bar
+
+```tsx
+import { MenuBar, menuAction, menuCommand, menuSeparator, windowMenuItems } from '@liberation-data/desk/react'
+
+<MenuBar
+  leading={<AppMark />}
+  menus={[
+    { id: 'app', label: 'Garage', items: [menuAction('About Garage', showAbout), menuSeparator(),
+                                           menuCommand('Settings…', 'app.settings', { shortcut: 'mod+comma' })] },
+    { id: 'window', label: 'Window', items: () => [                // a function: re-read each time it opens
+        menuCommand('Tile all', DeskCommands.tileAll),
+        menuSeparator(),
+        ...windowMenuItems(desk.getState(), desk.focus, titleOf),
+    ] },
+  ]}
+  status={[{ id: 'service', label: 'Service, 2 due', title: <WrenchWithBadge />, items: dueItems }]}
+  trailing={<Clock />}
+/>
+```
+
+A `menuCommand` is enabled when something in the responder chain can perform it right now, and chooses the
+same responder a shortcut would: opening a menu never takes focus from the window you were working in. Menus
+own their shortcuts, as in AppKit — a command item's `shortcut` is shown and bound. Keyboard: Tab reaches
+the bar, arrow keys move between menus and items (skipping separators and disabled items), a letter jumps
+to an item, Enter chooses, Escape closes.
+
 ## Commands and the responder chain
 
 Some commands name no target — Copy, Close, Find. They go to whoever is responsible, the way AppKit's

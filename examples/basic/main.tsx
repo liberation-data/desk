@@ -1,5 +1,6 @@
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import type { Root } from 'react-dom/client'
 import { createDesk, focusedId, syncWithLocation } from '../../src/core/index.js'
 import type { Desk } from '../../src/core/index.js'
 import { Desktop, DeskProvider, useDesk, useDeskState } from '../../src/react/index.js'
@@ -108,9 +109,11 @@ if (!location.hash) {
   desk.open('notes')
 }
 
-const root = document.getElementById('root')
-if (root) {
-  createRoot(root).render(
+// Hot reload re-runs this module; reuse the root rather than creating a second one on the same container.
+const container = document.getElementById('root') as (HTMLElement & { reactRoot?: Root }) | null
+if (container) {
+  container.reactRoot ??= createRoot(container)
+  container.reactRoot.render(
     <StrictMode>
       <App desk={desk} />
     </StrictMode>,

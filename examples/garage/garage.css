@@ -59,18 +59,6 @@ textarea {
     var(--desk-ground);
 }
 
-/* ── Top bar (placeholder for the toolkit's menu bar) ── */
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 32px;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--desk-rule);
-  background: color-mix(in srgb, var(--desk-titlebar) 85%, transparent);
-  font-size: 12.5px;
-}
-
 .brand {
   display: flex;
   align-items: center;
@@ -84,21 +72,6 @@ textarea {
   background: linear-gradient(150deg, var(--desk-accent), #ffb347);
 }
 
-.topitem {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 9px;
-  border: 0;
-  border-radius: 6px;
-  background: none;
-  cursor: pointer;
-}
-
-button.topitem:hover {
-  background: color-mix(in srgb, var(--desk-ink) 10%, transparent);
-}
-
 .pill {
   padding: 0 6px;
   border-radius: 9px;
@@ -107,6 +80,15 @@ button.topitem:hover {
   font-size: 10.5px;
   font-weight: 700;
   line-height: 16px;
+}
+
+.notice {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent);
+  border-radius: 8px;
+  color: var(--ok);
+  font-size: 12.5px;
 }
 
 .spacer,
