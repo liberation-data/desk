@@ -1,0 +1,102 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--desk-ground);
+  color: var(--desk-ink);
+  font-family: var(--desk-font);
+  font-size: 14px;
+}
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app .desk-stage {
+  flex: 1;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--desk-rule);
+  background: var(--desk-titlebar);
+}
+
+.toolbar strong {
+  margin-right: 8px;
+}
+
+.toolbar button {
+  font: inherit;
+  color: inherit;
+  padding: 4px 10px;
+  border: 1px solid var(--desk-rule);
+  border-radius: 7px;
+  background: var(--desk-surface);
+  cursor: pointer;
+}
+
+.toolbar button[aria-pressed="true"] {
+  border-color: var(--desk-accent);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  place-self: center;
+  color: var(--desk-muted);
+}
+
+.pad {
+  padding: 14px;
+}
+
+.muted {
+  margin-top: 0;
+  color: var(--desk-muted);
+}
+
+.prose {
+  max-width: 60ch;
+  line-height: 1.55;
+}
+
+pre {
+  margin: 0;
+  font-size: 12px;
+}
+
+.notes {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 14px;
+  border: 0;
+  resize: none;
+  outline: none;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+}
+
+.clock {
+  margin: 0;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+}
