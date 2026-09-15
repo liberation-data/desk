@@ -1,8 +1,9 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
+import { addDeskCommands, STAGE_ATTRIBUTE, WINDOW_ATTRIBUTE, windowElement } from '../core/commands.js'
 import { focusedId } from '../core/desk.js'
 import type { DeskWindow, Frame, WindowId } from '../core/types.js'
-import { useDesk, useDeskState } from './context.js'
+import { useDesk, useDeskState, WindowContext } from './context.js'
 
 export interface DesktopProps {
   readonly renderWindow: (id: WindowId) => ReactNode
@@ -27,12 +28,26 @@ export function Desktop({ renderWindow, title, empty, className }: DesktopProps)
     desk.setStage(() => ({ width: stage.current?.clientWidth ?? 1024, height: stage.current?.clientHeight ?? 768 }))
   }, [desk])
 
+  useEffect(() => (stage.current ? addDeskCommands(stage.current, desk) : undefined), [desk])
+
   const tiled = state.windows.filter(w => w.mode === 'tiled').length
   const focused = focusedId(state)
+
+  // Keyboard focus follows the key window, so commands and typing reach the window the person just chose.
+  // Not on first render: loading a page should not pull focus away from wherever the browser put it.
+  const previousFocus = useRef<WindowId | null | undefined>(undefined)
+  useEffect(() => {
+    const before = previousFocus.current
+    previousFocus.current = focused
+    if (before === undefined || before === focused || !focused || !stage.current) return
+    const element = windowElement(stage.current, focused)
+    if (element instanceof HTMLElement && !element.contains(document.activeElement)) element.focus({ preventScroll: true })
+  }, [focused])
+
   const style = { '--desk-columns': columnsFor(tiled) } as CSSProperties
 
   return (
-    <div ref={stage} className={['desk-stage', className].filter(Boolean).join(' ')} style={style}>
+    <div ref={stage} className={['desk-stage', className].filter(Boolean).join(' ')} style={style} {...{ [STAGE_ATTRIBUTE]: '' }}>
       {state.windows.length === 0 && empty}
       {state.windows.map(window => (
         <WindowView
@@ -64,6 +79,8 @@ function WindowView({ window, depth, focused, title, children }: WindowViewProps
   // While dragging, the frame lives here and commits once on release, so a drag
   // re-renders one window rather than notifying every subscriber per pixel.
   const [live, setLive] = useState<Frame | null>(null)
+  const element = useRef<HTMLElement>(null)
+  const context = useMemo(() => ({ id: window.id, element }), [window.id])
   const titleId = `desk-title-${window.id}`
 
   const startGesture = (gesture: Gesture) => (event: ReactPointerEvent<HTMLElement>) => {
@@ -104,34 +121,39 @@ function WindowView({ window, depth, focused, title, children }: WindowViewProps
     : undefined
 
   return (
-    <section
-      className="desk-window"
-      data-mode={window.mode}
-      data-focused={focused || undefined}
-      data-dragging={live ? true : undefined}
-      aria-labelledby={titleId}
-      style={style}
-      onPointerDownCapture={() => {
-        if (!focused) desk.focus(window.id)
-      }}
-    >
-      <header className="desk-titlebar" onPointerDown={startGesture('move')}>
-        <div className="desk-controls">
-          <button type="button" className="desk-control" data-control="close" aria-label="Close" onClick={() => desk.close(window.id)} />
-          <button
-            type="button"
-            className="desk-control"
-            data-control="mode"
-            aria-label={window.mode === 'tiled' ? 'Float' : 'Tile'}
-            onClick={() => desk.toggleMode(window.id)}
-          />
-        </div>
-        <h2 id={titleId} className="desk-title">
-          {title}
-        </h2>
-      </header>
-      <div className="desk-body">{children}</div>
-      {window.mode === 'floating' && <div className="desk-grip" aria-hidden="true" onPointerDown={startGesture('resize')} />}
-    </section>
+    <WindowContext.Provider value={context}>
+      <section
+        ref={element}
+        tabIndex={-1}
+        {...{ [WINDOW_ATTRIBUTE]: window.id }}
+        className="desk-window"
+        data-mode={window.mode}
+        data-focused={focused || undefined}
+        data-dragging={live ? true : undefined}
+        aria-labelledby={titleId}
+        style={style}
+        onPointerDownCapture={() => {
+          if (!focused) desk.focus(window.id)
+        }}
+      >
+        <header className="desk-titlebar" onPointerDown={startGesture('move')}>
+          <div className="desk-controls">
+            <button type="button" className="desk-control" data-control="close" aria-label="Close" onClick={() => desk.close(window.id)} />
+            <button
+              type="button"
+              className="desk-control"
+              data-control="mode"
+              aria-label={window.mode === 'tiled' ? 'Float' : 'Tile'}
+              onClick={() => desk.toggleMode(window.id)}
+            />
+          </div>
+          <h2 id={titleId} className="desk-title">
+            {title}
+          </h2>
+        </header>
+        <div className="desk-body">{children}</div>
+        {window.mode === 'floating' && <div className="desk-grip" aria-hidden="true" onPointerDown={startGesture('resize')} />}
+      </section>
+    </WindowContext.Provider>
   )
 }

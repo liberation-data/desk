@@ -61,6 +61,30 @@ The dock is one tab stop: arrow keys move along it, Enter opens, Escape folds a 
 to it. With `placement="overlay"` (the default) it floats over the bottom of its positioned parent; set
 `--desk-inset-bottom` so tiles stop above it.
 
+## Commands and the responder chain
+
+Some commands name no target — Copy, Close, Find. They go to whoever is responsible, the way AppKit's
+responder chain works: the focused element, then its window, then the stage, then the app.
+
+```tsx
+function RideList() {
+  const [selection, setSelection] = useState<Ride[]>([])
+  // Inside a window this answers when that window is key.
+  useCommand('edit.copy', () => copyRides(selection), { enabled: selection.length > 0 })
+  …
+}
+
+const perform = usePerform()        // perform('edit.copy') → true if something handled it
+const canPerform = useCanPerform()  // what a menu asks before drawing the item enabled
+useShortcuts(KEYMAP)                // { 'mod+c': 'edit.copy', 'mod+shift+z': 'edit.redo' }
+```
+
+The chain is the DOM: commands travel as events that bubble from the focused element, so there is no second
+tree to keep in step. The first responder that implements a command decides — if it is disabled, the
+command stops there. `mod` means ⌘ on Apple devices and Ctrl elsewhere; a shortcut nothing handles leaves
+the browser's default alone. The desk answers `DeskCommands` (close, float or tile, tile all, next and
+previous window) at the stage, and any window can override them.
+
 ## The core has no React in it
 
 `createDesk()` returns a plain object. Anything can drive it — a router, a tour, a keyboard shortcut, a

@@ -1,5 +1,7 @@
-export { DeskProvider, useDesk, useDeskState } from './context.js'
+export { DeskProvider, useDesk, useDeskState, useWindowId } from './context.js'
 export type { DeskProviderProps } from './context.js'
+export { useCanPerform, useCommand, usePerform, useShortcuts } from './commands.js'
+export type { UseCommandOptions } from './commands.js'
 export { Desktop } from './Desktop.js'
 export type { DesktopProps } from './Desktop.js'
 export { Dock, dockItem, dockSeparator, dockStack } from './Dock.js'

@@ -87,6 +87,11 @@
   transition: border-color .15s var(--desk-ease), box-shadow .15s var(--desk-ease);
 }
 
+.desk-window:focus {
+  /* The key window is already marked by its border; a ring on the whole window would be noise. */
+  outline: none;
+}
+
 .desk-window[data-focused] {
   border-color: color-mix(in srgb, var(--desk-accent) 45%, var(--desk-rule));
 }
