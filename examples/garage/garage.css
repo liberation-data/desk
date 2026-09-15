@@ -289,28 +289,28 @@ td {
 
 .actions {
   display: flex;
-  gap: 6px;
-  margin-top: 8px;
+  gap: var(--desk-space-2);
+  margin-top: var(--desk-space-2);
 }
 
-.btn {
-  padding: 4px 11px;
-  border: 1px solid var(--desk-rule);
-  border-radius: 8px;
-  background: none;
-  font-size: 12.5px;
-  cursor: pointer;
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--desk-space-2);
+  margin-bottom: var(--desk-space-3);
 }
 
-.btn:hover {
-  border-color: var(--desk-accent);
+.toolbar .desk-button {
+  margin-left: auto;
 }
 
-.btn.primary {
-  border-color: var(--desk-accent);
-  background: var(--desk-accent);
-  color: #1a0f08;
-  font-weight: 600;
+.settings .desk-field + .desk-field {
+  margin-top: var(--desk-space-3);
+}
+
+.settings .section {
+  max-width: 420px;
 }
 
 .row {

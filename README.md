@@ -61,6 +61,23 @@ The dock is one tab stop: arrow keys move along it, Enter opens, Escape folds a 
 to it. With `placement="overlay"` (the default) it floats over the bottom of its positioned parent; set
 `--desk-inset-bottom` so tiles stop above it.
 
+## Controls
+
+```tsx
+import { Button, SegmentedControl, TextField, Toggle } from '@liberation-data/desk/react'
+
+<Button intent="default" onClick={save}>Save ride</Button>
+<SegmentedControl label="Filter by bike" options={BIKES} value={bike} onChange={setBike} />
+<Toggle checked={metric} onChange={setMetric} label="Kilometres and metres" description="Off shows miles" />
+<TextField label="Wheel size" value={wheel} onChange={e => setWheel(e.target.value)} error={wheelError} />
+```
+
+Each control carries its own behaviour and accessibility; the look comes only from tokens, and there are few
+style props on purpose. `intent="default"` marks the one action a view leads with. A segmented control is one
+tab stop whose arrow keys move the selection past disabled options. A toggle is a `switch` for settings that
+apply at once — a checkbox is for one that waits for Save. A text field always has a label (`labelHidden`
+keeps it for screen readers), and an `error` marks it invalid and replaces the help text.
+
 ## Menu bar
 
 ```tsx
@@ -148,7 +165,7 @@ selectors. Light and dark follow `prefers-color-scheme`, and `data-theme="light|
 npm install
 npm test            # vitest
 npm run typecheck
-npm run example     # the sample app in examples/basic
+npm run example     # the Garage sample in examples/garage
 npm run build       # dist/
 ```
 

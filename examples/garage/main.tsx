@@ -5,6 +5,7 @@ import type { Root } from 'react-dom/client'
 import { createDesk, DeskCommands, focusedId, formatShortcut, syncWithLocation } from '../../src/core/index.js'
 import type { Desk } from '../../src/core/index.js'
 import {
+  Button,
   Desktop,
   DeskProvider,
   Dock,
@@ -15,11 +16,14 @@ import {
   menuAction,
   menuCommand,
   menuSeparator,
+  SegmentedControl,
+  TextField,
+  Toggle,
   useCommand,
   useDeskState,
   windowMenuItems,
 } from '../../src/react/index.js'
-import type { DockEntry, DockItem, Menu } from '../../src/react/index.js'
+import type { DockEntry, DockItem, Menu, SegmentedOption } from '../../src/react/index.js'
 import '../../src/desk.css'
 import './garage.css'
 
@@ -85,18 +89,33 @@ const Commands = {
   completeService: 'garage.service.complete',
 } as const
 
+const BIKES: readonly SegmentedOption<'all' | 'Road' | 'Gravel' | 'MTB'>[] = [
+  { value: 'all', label: 'All' },
+  { value: 'Road', label: 'Road' },
+  { value: 'Gravel', label: 'Gravel' },
+  { value: 'MTB', label: 'MTB' },
+]
+
 function Rides() {
-  const total = RIDES.reduce((sum, r) => sum + r.km, 0)
+  const [bike, setBike] = useState<(typeof BIKES)[number]['value']>('all')
+  const rides = bike === 'all' ? RIDES : RIDES.filter(r => r.bike === bike)
+  const total = rides.reduce((sum, r) => sum + r.km, 0)
   const [exported, setExported] = useState<string | null>(null)
   // Only the Rides window can export rides, so the menu item is enabled only while it is the key window.
-  useCommand(Commands.exportRides, () => setExported(`Exported ${RIDES.length} rides to rides.csv (example — nothing was saved)`))
+  useCommand(Commands.exportRides, () => setExported(`Exported ${rides.length} rides to rides.csv (example — nothing was saved)`))
   return (
     <div className="pad">
       {exported && <p className="notice" role="status">{exported}</p>}
+      <div className="toolbar">
+        <SegmentedControl label="Filter rides by bike" options={BIKES} value={bike} onChange={setBike} size="small" />
+        <Button size="small" icon={<Icon name="log" />} onClick={() => setExported(`Exported ${rides.length} rides to rides.csv (example — nothing was saved)`)}>
+          Export
+        </Button>
+      </div>
       <div className="stats">
         <Stat label="This fortnight" value={`${total.toFixed(0)} km`} />
-        <Stat label="Climbing" value={`${RIDES.reduce((s, r) => s + r.climb, 0).toLocaleString()} m`} />
-        <Stat label="Rides" value={String(RIDES.length)} />
+        <Stat label="Climbing" value={`${rides.reduce((s, r) => s + r.climb, 0).toLocaleString()} m`} />
+        <Stat label="Rides" value={String(rides.length)} />
       </div>
       <div className="tablewrap">
         <table>
@@ -104,7 +123,7 @@ function Rides() {
             <tr><th>Date</th><th>Ride</th><th>Bike</th><th className="r">km</th><th className="r">Climb</th><th className="r">Time</th></tr>
           </thead>
           <tbody>
-            {RIDES.map(r => (
+            {rides.map(r => (
               <tr key={r.date}>
                 <td className="muted">{r.date}</td><td>{r.name}</td><td><span className="chip">{r.bike}</span></td>
                 <td className="r">{r.km.toFixed(1)}</td><td className="r">{r.climb.toLocaleString()} m</td><td className="r">{r.time}</td>
@@ -113,6 +132,7 @@ function Rides() {
           </tbody>
         </table>
       </div>
+      {rides.length === 0 && <p className="muted">No rides on that bike in this fortnight.</p>}
     </div>
   )
 }
@@ -156,9 +176,13 @@ function Service({ steps, setSteps }: { readonly steps: Step[]; readonly setStep
             <span className="tick" aria-hidden="true">{s.state === 'done' ? '✓' : ''}</span>
             <div className="grow"><b>{s.title}</b><p className="muted">{s.detail}</p>
               <div className="actions">
-                {s.state === 'todo' && <><button type="button" className="btn primary" onClick={() => set(s.id, 'done')}>Mark done</button>
-                  <button type="button" className="btn" onClick={() => set(s.id, 'skipped')}>Not going to</button></>}
-                {s.state === 'skipped' && <button type="button" className="btn" onClick={() => set(s.id, 'todo')}>Put it back</button>}
+                {s.state === 'todo' && (
+                  <>
+                    <Button intent="default" size="small" onClick={() => set(s.id, 'done')}>Mark done</Button>
+                    <Button size="small" onClick={() => set(s.id, 'skipped')}>Not going to</Button>
+                  </>
+                )}
+                {s.state === 'skipped' && <Button size="small" onClick={() => set(s.id, 'todo')}>Put it back</Button>}
               </div>
             </div>
           </div>
@@ -238,7 +262,7 @@ function Playlist() {
   return (
     <div className="pad">
       {[['Tempo', '42 min · 165 bpm'], ['Long and steady', '3 h 10 min'], ['Climb', '28 min · builds']].map(([n, d]) => (
-        <div className="row" key={n}><span className="rowicon"><Icon name="music" /></span><div className="grow"><b>{n}</b><span className="muted">{d}</span></div><button type="button" className="btn">Play</button></div>
+        <div className="row" key={n}><span className="rowicon"><Icon name="music" /></span><div className="grow"><b>{n}</b><span className="muted">{d}</span></div><Button size="small">Play</Button></div>
       ))}
     </div>
   )
@@ -250,10 +274,26 @@ function Notes() {
 }
 
 function Settings() {
+  const [metric, setMetric] = useState(true)
+  const [remind, setRemind] = useState(true)
+  const [name, setName] = useState('Jasper')
+  const [wheel, setWheel] = useState('622')
+  const wheelError = /^\d+$/.test(wheel) ? undefined : 'Enter a size in millimetres, like 622'
   return (
-    <div className="pad">
-      <section className="section"><h3>Units</h3><label className="check"><input type="checkbox" defaultChecked /> Kilometres and metres</label></section>
-      <section className="section"><h3>Service reminders</h3><label className="check"><input type="checkbox" defaultChecked /> Remind me at 90% wear</label></section>
+    <div className="pad settings">
+      <section className="section">
+        <h3>Units</h3>
+        <Toggle checked={metric} onChange={setMetric} label="Kilometres and metres" description="Off shows miles and feet" />
+      </section>
+      <section className="section">
+        <h3>Service reminders</h3>
+        <Toggle checked={remind} onChange={setRemind} label="Warn me before a part wears out" description="At 90% of its expected life" />
+      </section>
+      <section className="section">
+        <h3>Rider</h3>
+        <TextField label="Name" value={name} onChange={e => setName(e.target.value)} help="Shown on exported rides" />
+        <TextField label="Wheel size" value={wheel} onChange={e => setWheel(e.target.value)} inputMode="numeric" error={wheelError} />
+      </section>
     </div>
   )
 }
