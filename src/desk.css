@@ -463,7 +463,8 @@
   padding: 12px;
   border-radius: 18px;
   border: 1px solid var(--desk-rule);
-  background: var(--desk-dock-glass);
+  /* It carries labels, so it needs a surface behind them: glass alone let the window under it read through. */
+  background: var(--desk-surface);
   backdrop-filter: blur(30px) saturate(160%);
   -webkit-backdrop-filter: blur(30px) saturate(160%);
   box-shadow: var(--desk-shadow-floating);
@@ -2253,6 +2254,9 @@
 [data-desk-draggable] {
   cursor: grab;
   touch-action: none;
+  /* Pressing to drag should pick the thing up, not start selecting its text. */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 [data-desk-draggable]:active {
