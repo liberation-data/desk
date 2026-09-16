@@ -14,7 +14,8 @@ right from the last. A user can float any tile or tile any floating window; `til
 Nobody has to arrange anything, and nobody is stopped from arranging. Every window moves: drag a tile by its
 title bar and it lifts out into a floating window where it stood. Drag one against the left or right edge and
 it tiles there, with a preview of where it will land; tile it and float it again and it returns to where it
-last sat. Two tiles share a split you can drag, double-click to even up, or nudge with the arrow keys.
+last sat. Two tiles share a split you can drag, double-click to even up, or nudge with the arrow keys; double-clicking
+a title bar moves a window between its two sizes.
 
 ## Use it
 

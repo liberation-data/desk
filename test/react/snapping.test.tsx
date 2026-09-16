@@ -98,6 +98,34 @@ describe('dragging a floating window to an edge', () => {
   })
 })
 
+describe('double-clicking a title bar', () => {
+  it('puts a floating window back in the tiles, and takes it out again where it was', () => {
+    const desk = mount()
+    act(() => {
+      desk.open('a')
+      desk.open('b')
+      desk.open('c') // floats
+    })
+    const before = windowOf(desk, 'c')
+    act(() => fireEvent.doubleClick(titleBar('c')))
+    expect(windowOf(desk, 'c').mode).toBe('tiled')
+    act(() => fireEvent.doubleClick(titleBar('c')))
+    expect(windowOf(desk, 'c')).toEqual(before)
+  })
+
+  it('takes a tile out and puts it back', () => {
+    const desk = mount()
+    act(() => {
+      desk.open('a')
+      desk.open('b')
+    })
+    act(() => fireEvent.doubleClick(titleBar('a')))
+    expect(windowOf(desk, 'a').mode).toBe('floating')
+    act(() => fireEvent.doubleClick(titleBar('a')))
+    expect(windowOf(desk, 'a').mode).toBe('tiled')
+  })
+})
+
 describe('a window that floats again', () => {
   it('goes back where it last was', () => {
     // No React here: a mounted Desktop reports the stage it measures, and jsdom measures nothing.

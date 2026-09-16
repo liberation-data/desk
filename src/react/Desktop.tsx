@@ -92,8 +92,12 @@ export function Desktop({ renderWindow, title, actions, empty, layout = 'auto', 
     event.preventDefault()
     const handle = event.currentTarget
     handle.setPointerCapture?.(event.pointerId)
+    // From where it was grabbed, not from where the pointer happens to be: taking
+    // the raw position makes the split jump to meet the pointer on the first move.
+    const startX = event.clientX
+    const startSplit = split
     const onMove = (move: PointerEvent) => {
-      const fraction = (move.clientX - box.left) / box.width
+      const fraction = startSplit + (move.clientX - startX) / box.width
       setSplit(Math.min(1 - MIN_SPLIT, Math.max(MIN_SPLIT, fraction)))
     }
     const onUp = () => {
@@ -250,6 +254,12 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
   }
 
   const floating = window.mode === 'floating' && layout === 'desktop'
+  // Double-clicking a title bar moves between the two sizes a window has: the
+  // tile it shares with its neighbour, and the floating frame it last had.
+  const zoom = () => {
+    if (layout !== 'fullscreen') desk.toggleMode(window.id)
+  }
+
   const frame = floating ? (live ?? window.frame) : null
   const style: CSSProperties | undefined = frame
     ? { left: frame.x, top: frame.y, width: frame.width, height: frame.height, zIndex: 10 + depth }
@@ -273,7 +283,14 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
           if (!focused) desk.focus(window.id)
         }}
       >
-        <header className="desk-titlebar" onPointerDown={startGesture('move')} data-draggable={layout === 'desktop' || undefined}>
+          <header
+          className="desk-titlebar"
+          onPointerDown={startGesture('move')}
+          onDoubleClick={event => {
+            if (!(event.target as HTMLElement).closest('button')) zoom()
+          }}
+          data-draggable={layout === 'desktop' || undefined}
+        >
           <div className="desk-controls">
             <button type="button" className="desk-control" data-control="close" aria-label="Close" onClick={() => desk.close(window.id)} />
             {layout === 'desktop' && (

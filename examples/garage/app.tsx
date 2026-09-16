@@ -674,7 +674,7 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
 
   const checkKey = () => {
     setKeyState('checking')
-    setTimeout(() => setKeyState(key.trim().length >= 6 ? 'ok' : 'bad'), 900)
+    setTimeout(() => setKeyState(key.trim() ? 'ok' : 'bad'), 900)
   }
 
   const FINISHING = [
@@ -803,7 +803,8 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
       glyph: <Icon name="weather" />,
       title: 'Connect a weather service',
       description: 'So the garage can say which day suits the long ride. Everything else works without it.',
-      complete: keyState === 'ok',
+      // Anything typed is enough to move on; checking it is offered, not demanded.
+      complete: keyState === 'ok' || key.trim().length > 0,
       skip: { label: 'Set up later', onSkip: () => { setKeyState('skipped'); setIndex(5) } },
       body: (
         <div className="setup-form">
@@ -817,6 +818,7 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
             }}
             placeholder="wx-…"
             autoComplete="off"
+            help="Any key will do here: this is a sample."
           />
           <div className="detect">
             {keyState === 'checking' && <span className="small">Checking the key with the service…</span>}
