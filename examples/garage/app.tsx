@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { createDesk, DeskCommands, focusedId, formatShortcut, InputCommands, syncWithLocation } from '../../src/core/index.js'
+import {
+  createDesk,
+  DeskCommands,
+  focusedId,
+  formatShortcut,
+  InputCommands,
+  syncWithLocation,
+  windowType,
+} from '../../src/core/index.js'
 import type { Desk } from '../../src/core/index.js'
 import {
   Alert,
@@ -991,7 +999,9 @@ const SURFACES = {
 } as const satisfies Record<string, Surface>
 
 type Id = keyof typeof SURFACES
-const isKnown = (id: string): id is Id => id in SURFACES
+// `rides#2` is a second Rides window: the kind is what decides how it renders.
+const isKnown = (id: string): id is Id => windowType(id) in SURFACES
+const kindOf = (id: string) => windowType(id) as Id
 
 const item = (id: Id, extra: Partial<DockItem> = {}): DockItem => ({
   id,
@@ -1076,6 +1086,13 @@ function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupA
     ]
   }
 
+  // A second window of a kind says so: "Rides 2".
+  const titleFor = (id: string) => {
+    const [kind, instance] = id.split('#')
+    const title = SURFACES[kind as Id].title
+    return instance ? `${title} ${instance}` : title
+  }
+
   const body = (id: Id): ReactNode => {
     switch (id) {
       case 'rides': return <Rides />
@@ -1149,7 +1166,11 @@ function GarageMenuBar({
   readonly onSetupAgain: () => void
 }) {
   useDeskState() // re-render as windows change, so the status menu and badge stay current
-  const titleOf = (id: string) => (isKnown(id) ? SURFACES[id].title : id)
+  const titleOf = (id: string) => {
+    const [kind, instance] = id.split('#')
+    const title = isKnown(id) ? SURFACES[kind as Id].title : id
+    return instance ? `${title} ${instance}` : title
+  }
   const todo = steps.filter(s => s.state === 'todo')
 
   const menus: Menu[] = [
@@ -1189,6 +1210,11 @@ function GarageMenuBar({
       items: () => [
         menuCommand('Float or tile', DeskCommands.toggleWindowMode),
         menuCommand('Tile all', DeskCommands.tileAll),
+        menuSeparator(),
+        menuAction('New window of this kind', () => {
+          const key = focusedId(desk.getState())
+          if (key) desk.openInstance(windowType(key))
+        }, { disabled: !focusedId(desk.getState()) }),
         menuSeparator(),
         menuCommand('Next window', DeskCommands.nextWindow, { shortcut: 'alt+]' }),
         menuCommand('Previous window', DeskCommands.previousWindow, { shortcut: 'alt+[' }),

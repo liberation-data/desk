@@ -1,4 +1,15 @@
-export { createDesk, cascadeFrame, cascadeSlot, focusedId, isOpen, nextCascadeFrame, normalise, EMPTY } from './desk.js'
+export {
+  createDesk,
+  cascadeFrame,
+  cascadeSlot,
+  focusedId,
+  instancesOf,
+  isOpen,
+  nextCascadeFrame,
+  normalise,
+  windowType,
+  EMPTY,
+} from './desk.js'
 export type { Desk } from './desk.js'
 export {
   addCommandHandler,

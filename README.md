@@ -40,6 +40,9 @@ export function App() {
 }
 ```
 
+Two windows onto the same thing are the same kind with different ids: `desk.openInstance('query')` gives
+`query`, then `query#2`. `windowType(id)` says what to render; the whole id says which one it is.
+
 `renderWindow` is called with a window's id. The desk never owns your content, and a window keeps its DOM
 when focus moves, so scroll positions, carets and iframes survive.
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { cascadeFrame, createDesk, focusedId, normalise } from '../../src/core/index.js'
+import { cascadeFrame, createDesk, focusedId, instancesOf, normalise, windowType } from '../../src/core/index.js'
 import type { DeskState } from '../../src/core/index.js'
 
 const modes = (state: DeskState) => state.windows.map(w => `${w.id}:${w.mode}`)
@@ -39,6 +39,46 @@ describe('open', () => {
     desk.open('a')
     desk.open('b')
     expect(modes(desk.getState())).toEqual(['f:floating', 'a:tiled', 'b:tiled'])
+  })
+})
+
+describe('several windows of the same kind', () => {
+  it('numbers the second and after, keeping the first plain', () => {
+    const desk = createDesk()
+    expect(desk.openInstance('query')).toBe('query')
+    expect(desk.openInstance('query')).toBe('query#2')
+    expect(desk.openInstance('query')).toBe('query#3')
+    expect(desk.getState().windows.map(w => w.id)).toEqual(['query', 'query#2', 'query#3'])
+  })
+
+  it('says what kind each one is', () => {
+    expect(windowType('query#2')).toBe('query')
+    expect(windowType('query')).toBe('query')
+  })
+
+  it('finds every window of a kind', () => {
+    const desk = createDesk()
+    desk.openInstance('query')
+    desk.open('views')
+    desk.openInstance('query')
+    expect(instancesOf(desk.getState(), 'query').map(w => w.id)).toEqual(['query', 'query#2'])
+    expect(instancesOf(desk.getState(), 'views')).toHaveLength(1)
+  })
+
+  it('fills a gap left by one that was closed', () => {
+    const desk = createDesk()
+    desk.openInstance('query')
+    desk.openInstance('query')
+    desk.close('query')
+    expect(desk.openInstance('query')).toBe('query')
+  })
+
+  it('treats them as the separate windows they are', () => {
+    const desk = createDesk()
+    desk.openInstance('query')
+    const second = desk.openInstance('query')
+    desk.close(second)
+    expect(desk.getState().windows.map(w => w.id)).toEqual(['query'])
   })
 })
 

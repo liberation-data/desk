@@ -39,7 +39,8 @@ Rules that are easy to get wrong:
   bar overlays it. Set `--desk-inset-bottom` to the height of anything overlaying the bottom.
 - A window is an id; `renderWindow(id)` says what it looks like. Every open window renders, including ones
   offstage in the touch layout — that is what preserves their state.
-- Opening a window that is already open focuses it. There is never a second copy.
+- Opening a window that is already open focuses it. For a second window onto the same thing use
+  `openInstance`, and render by `windowType(id)`.
 
 ## Core: `@liberation-data/desk`
 
@@ -51,6 +52,7 @@ interface Desk {
   getState(): DeskState
   subscribe(listener: (state: DeskState) => void): () => void
   open(id: string, options?: { mode?: 'tiled' | 'floating'; frame?: Frame }): void
+  openInstance(type: string, options?): string    // 'query', then 'query#2' — returns the id it opened
   close(id: string): void
   closeAll(): void
   focus(id: string): void
@@ -70,6 +72,8 @@ type DeskWindow = { id: string; mode: 'tiled' } | { id: string; mode: 'floating'
 interface Frame { x: number; y: number; width: number; height: number }
 
 focusedId(state): string | null
+windowType(id): string                            // 'query#2' → 'query'; what to render
+instancesOf(state, type): DeskWindow[]            // every window of a kind
 isOpen(state, id): boolean
 normalise(state): DeskState
 cascadeFrame(slot, stage, options?): Frame

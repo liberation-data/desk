@@ -15,6 +15,8 @@ export interface Desk {
   subscribe(listener: (state: DeskState) => void): () => void
   /** Opens a window, or brings it to the front if it is already open. */
   open(id: WindowId, options?: OpenOptions): void
+  /** Opens another window of the same kind — `query#2` beside `query` — and returns its id. */
+  openInstance(type: string, options?: OpenOptions): WindowId
   close(id: WindowId): void
   closeAll(): void
   focus(id: WindowId): void
@@ -42,6 +44,16 @@ const DEFAULT_CASCADE: CascadeOptions = {
 const DEFAULT_STAGE: Size = { width: 1024, height: 768 }
 
 export const focusedId = (state: DeskState): WindowId | null => state.stack.at(-1) ?? null
+
+/**
+ * Two windows onto the same thing — a second query beside the first — are the
+ * same kind with different ids: `query`, then `query#2`. The part before the
+ * `#` says what to render; the whole id says which one this is.
+ */
+export const windowType = (id: WindowId): string => id.split('#')[0] ?? id
+
+export const instancesOf = (state: DeskState, type: string): readonly DeskWindow[] =>
+  state.windows.filter(w => windowType(w.id) === type)
 
 export const isOpen = (state: DeskState, id: WindowId): boolean => state.windows.some(w => w.id === id)
 
@@ -167,6 +179,14 @@ export function createDesk(options: DeskOptions = {}): Desk {
       const mode = opts.mode ?? (tiled < maxTiled ? 'tiled' : 'floating')
       const window: DeskWindow = mode === 'tiled' ? { id, mode } : { id, mode, frame: opts.frame ?? nextFrame(state) }
       commit({ windows: [...state.windows, window], stack: [...state.stack, id] })
+    },
+
+    openInstance(type, opts = {}) {
+      const taken = new Set(state.windows.map(w => w.id))
+      let id = type
+      for (let n = 2; taken.has(id); n++) id = `${type}#${n}`
+      this.open(id, opts)
+      return id
     },
 
     close(id) {

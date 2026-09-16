@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
-import { focusedId, isOpen } from '../core/desk.js'
+import { focusedId, instancesOf, windowType } from '../core/desk.js'
 import type { DeskState, WindowId } from '../core/types.js'
 import { useDesk, useDeskState } from './context.js'
 
@@ -45,10 +45,14 @@ export interface DockProps {
 
 const windowOf = (item: DockItem) => item.window ?? item.id
 
-const statusOf = (state: DeskState, items: readonly DockItem[]) => ({
-  running: items.some(i => isOpen(state, windowOf(i))),
-  focused: items.some(i => focusedId(state) === windowOf(i)),
-})
+const statusOf = (state: DeskState, items: readonly DockItem[]) => {
+  const key = focusedId(state)
+  return {
+    // Any window of this kind counts: a second query window is still Query, running.
+    running: items.some(i => instancesOf(state, windowOf(i)).length > 0),
+    focused: items.some(i => key !== null && windowType(key) === windowOf(i)),
+  }
+}
 
 /** Moves focus among the buttons in a container with arrow keys, Home and End. */
 function roveFocus(event: KeyboardEvent<HTMLElement>, keys: { next: string[]; previous: string[] }) {
