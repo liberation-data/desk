@@ -39,6 +39,16 @@ export function App() {
 `renderWindow` is called with a window's id. The desk never owns your content, and a window keeps its DOM
 when focus moves, so scroll positions, carets and iframes survive.
 
+## Touch: one window at a time
+
+`<Desktop layout="auto">` (the default) reads the device. A touch screen that cannot hover gets
+`fullscreen`: the key window fills the stage, the dock stays as the way to switch, and there is no tiling or
+floating. Windows you are not looking at stay mounted — their drafts, scroll positions and carets survive —
+and are simply offstage and `inert`. A tablet with a trackpad reports a fine pointer, so it gets the
+desktop. Pass `layout="desktop"` or `layout="fullscreen"` to decide for yourself.
+
+Links work the same everywhere: a link opens the same windows, shown one at a time on touch.
+
 ## Dock
 
 ```tsx

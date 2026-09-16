@@ -56,6 +56,28 @@ export function cascadeFrame(floatingCount: number, stage: Size, options: Cascad
   }
 }
 
+/** Which cascade step a frame sits on, or -1 once it has been dragged off one. */
+export function cascadeSlot(frame: Frame, stage: Size, options: CascadeOptions = DEFAULT_CASCADE): number {
+  for (let slot = 0; slot < options.wrap; slot++) {
+    const candidate = cascadeFrame(slot, stage, options)
+    if (candidate.x === frame.x && candidate.y === frame.y) return slot
+  }
+  return -1
+}
+
+/**
+ * The next free step of the cascade. Counting floating windows is not enough: a
+ * window closed from the middle frees its step, and the count wraps — either way
+ * a new window would open exactly on top of one already there, hiding it.
+ */
+export function nextCascadeFrame(windows: readonly DeskWindow[], stage: Size, options: CascadeOptions = DEFAULT_CASCADE): Frame {
+  const taken = new Set(
+    windows.flatMap(w => (w.mode === 'floating' ? [cascadeSlot(w.frame, stage, options)] : [])),
+  )
+  for (let slot = 0; slot < options.wrap; slot++) if (!taken.has(slot)) return cascadeFrame(slot, stage, options)
+  return cascadeFrame(taken.size % options.wrap, stage, options)
+}
+
 /** Drops duplicate ids and makes the stack agree with the windows. */
 export function normalise(state: DeskState): DeskState {
   const windows = state.windows.filter((w, i, all) => all.findIndex(o => o.id === w.id) === i)
@@ -81,7 +103,7 @@ export function createDesk(options: DeskOptions = {}): Desk {
   const toFront = (s: DeskState, id: WindowId): DeskState =>
     s.stack.at(-1) === id ? s : { ...s, stack: [...s.stack.filter(x => x !== id), id] }
 
-  const nextFrame = (s: DeskState) => cascadeFrame(s.windows.filter(w => w.mode === 'floating').length, stage(), cascade)
+  const nextFrame = (s: DeskState) => nextCascadeFrame(s.windows, stage(), cascade)
 
   const replace = (s: DeskState, window: DeskWindow): DeskState => ({
     ...s,

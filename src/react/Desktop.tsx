@@ -1,16 +1,42 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 import { addDeskCommands, STAGE_ATTRIBUTE, WINDOW_ATTRIBUTE, windowElement } from '../core/commands.js'
 import { focusedId } from '../core/desk.js'
 import type { DeskWindow, Frame, WindowId } from '../core/types.js'
 import { useDesk, useDeskState, WindowContext } from './context.js'
 
+export type DeskLayout = 'desktop' | 'fullscreen'
+
 export interface DesktopProps {
   readonly renderWindow: (id: WindowId) => ReactNode
   readonly title: (id: WindowId) => ReactNode
   /** Shown when no window is open. */
   readonly empty?: ReactNode
+  /**
+   * `auto` (the default) reads the device: a touch screen gets `fullscreen`, one
+   * window at a time; anything with a pointer gets the tiling `desktop`.
+   */
+  readonly layout?: DeskLayout | 'auto'
   readonly className?: string
+}
+
+/** Touch-first: a coarse pointer that cannot hover. A tablet with a trackpad reports otherwise. */
+const TOUCH = '(pointer: coarse) and (hover: none)'
+
+function useMediaQuery(query: string): boolean {
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const list = globalThis.matchMedia?.(query)
+      list?.addEventListener('change', onChange)
+      return () => list?.removeEventListener('change', onChange)
+    },
+    [query],
+  )
+  return useSyncExternalStore(
+    subscribe,
+    () => globalThis.matchMedia?.(query).matches ?? false,
+    () => false,
+  )
 }
 
 const MIN_WIDTH = 240
@@ -19,10 +45,12 @@ const MIN_HEIGHT = 160
 /** One column, then two side by side, then the smallest square grid that fits. */
 const columnsFor = (tiled: number) => (tiled <= 2 ? Math.max(1, tiled) : Math.ceil(Math.sqrt(tiled)))
 
-export function Desktop({ renderWindow, title, empty, className }: DesktopProps) {
+export function Desktop({ renderWindow, title, empty, layout = 'auto', className }: DesktopProps) {
   const desk = useDesk()
   const state = useDeskState()
   const stage = useRef<HTMLDivElement>(null)
+  const touch = useMediaQuery(TOUCH)
+  const mode: DeskLayout = layout === 'auto' ? (touch ? 'fullscreen' : 'desktop') : layout
 
   useLayoutEffect(() => {
     desk.setStage(() => ({ width: stage.current?.clientWidth ?? 1024, height: stage.current?.clientHeight ?? 768 }))
@@ -44,17 +72,26 @@ export function Desktop({ renderWindow, title, empty, className }: DesktopProps)
     if (element instanceof HTMLElement && !element.contains(document.activeElement)) element.focus({ preventScroll: true })
   }, [focused])
 
-  const style = { '--desk-columns': columnsFor(tiled) } as CSSProperties
+  const style = { '--desk-columns': mode === 'fullscreen' ? 1 : columnsFor(tiled) } as CSSProperties
 
   return (
-    <div ref={stage} className={['desk-stage', className].filter(Boolean).join(' ')} style={style} {...{ [STAGE_ATTRIBUTE]: '' }}>
+    <div
+      ref={stage}
+      className={['desk-stage', className].filter(Boolean).join(' ')}
+      data-layout={mode}
+      style={style}
+      {...{ [STAGE_ATTRIBUTE]: '' }}
+    >
       {state.windows.length === 0 && empty}
       {state.windows.map(window => (
         <WindowView
           key={window.id}
           window={window}
+          layout={mode}
           depth={state.stack.indexOf(window.id)}
           focused={window.id === focused}
+          // One window at a time: the rest stay mounted, keeping their state, and simply wait offstage.
+          hidden={mode === 'fullscreen' && window.id !== focused}
           title={title(window.id)}
         >
           {renderWindow(window.id)}
@@ -66,6 +103,8 @@ export function Desktop({ renderWindow, title, empty, className }: DesktopProps)
 
 interface WindowViewProps {
   readonly window: DeskWindow
+  readonly layout: DeskLayout
+  readonly hidden?: boolean
   readonly depth: number
   readonly focused: boolean
   readonly title: ReactNode
@@ -74,7 +113,7 @@ interface WindowViewProps {
 
 type Gesture = 'move' | 'resize'
 
-function WindowView({ window, depth, focused, title, children }: WindowViewProps) {
+function WindowView({ window, layout, hidden, depth, focused, title, children }: WindowViewProps) {
   const desk = useDesk()
   // While dragging, the frame lives here and commits once on release, so a drag
   // re-renders one window rather than notifying every subscriber per pixel.
@@ -84,7 +123,7 @@ function WindowView({ window, depth, focused, title, children }: WindowViewProps
   const titleId = `desk-title-${window.id}`
 
   const startGesture = (gesture: Gesture) => (event: ReactPointerEvent<HTMLElement>) => {
-    if (window.mode !== 'floating' || event.button !== 0) return
+    if (!floating || event.button !== 0) return
     if (gesture === 'move' && (event.target as HTMLElement).closest('button')) return
     event.preventDefault()
     const origin = window.frame
@@ -115,7 +154,8 @@ function WindowView({ window, depth, focused, title, children }: WindowViewProps
     handle.addEventListener('pointercancel', onUp)
   }
 
-  const frame = window.mode === 'floating' ? (live ?? window.frame) : null
+  const floating = window.mode === 'floating' && layout === 'desktop'
+  const frame = floating ? (live ?? window.frame) : null
   const style: CSSProperties | undefined = frame
     ? { left: frame.x, top: frame.y, width: frame.width, height: frame.height, zIndex: 10 + depth }
     : undefined
@@ -127,7 +167,9 @@ function WindowView({ window, depth, focused, title, children }: WindowViewProps
         tabIndex={-1}
         {...{ [WINDOW_ATTRIBUTE]: window.id }}
         className="desk-window"
-        data-mode={window.mode}
+        data-mode={layout === 'fullscreen' ? 'fullscreen' : window.mode}
+        data-hidden={hidden || undefined}
+        inert={hidden || undefined}
         data-focused={focused || undefined}
         data-dragging={live ? true : undefined}
         aria-labelledby={titleId}
@@ -139,20 +181,22 @@ function WindowView({ window, depth, focused, title, children }: WindowViewProps
         <header className="desk-titlebar" onPointerDown={startGesture('move')}>
           <div className="desk-controls">
             <button type="button" className="desk-control" data-control="close" aria-label="Close" onClick={() => desk.close(window.id)} />
-            <button
-              type="button"
-              className="desk-control"
-              data-control="mode"
-              aria-label={window.mode === 'tiled' ? 'Float' : 'Tile'}
-              onClick={() => desk.toggleMode(window.id)}
-            />
+            {layout === 'desktop' && (
+              <button
+                type="button"
+                className="desk-control"
+                data-control="mode"
+                aria-label={window.mode === 'tiled' ? 'Float' : 'Tile'}
+                onClick={() => desk.toggleMode(window.id)}
+              />
+            )}
           </div>
           <h2 id={titleId} className="desk-title">
             {title}
           </h2>
         </header>
         <div className="desk-body">{children}</div>
-        {window.mode === 'floating' && <div className="desk-grip" aria-hidden="true" onPointerDown={startGesture('resize')} />}
+        {floating && <div className="desk-grip" aria-hidden="true" onPointerDown={startGesture('resize')} />}
       </section>
     </WindowContext.Provider>
   )

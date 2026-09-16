@@ -125,6 +125,16 @@
   border-color: color-mix(in srgb, var(--desk-accent) 45%, var(--desk-rule));
 }
 
+.desk-window[data-hidden] {
+  display: none;
+}
+
+/* One window at a time: it fills the stage, and the float control is not offered. */
+.desk-stage[data-layout="fullscreen"] .desk-window {
+  position: static;
+  grid-area: 1 / 1;
+}
+
 .desk-window[data-mode="floating"] {
   position: absolute;
   box-shadow: var(--desk-shadow-floating);

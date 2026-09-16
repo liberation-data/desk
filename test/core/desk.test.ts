@@ -159,6 +159,46 @@ describe('cascadeFrame', () => {
   })
 })
 
+describe('the cascade never hides a window under another', () => {
+  const stage = () => ({ width: 1400, height: 900 })
+  const frames = (d: ReturnType<typeof createDesk>) =>
+    d.getState().windows.flatMap(w => (w.mode === 'floating' ? [`${w.frame.x},${w.frame.y}`] : []))
+
+  it('gives every floating window its own step', () => {
+    const desk = createDesk({ stage })
+    ;['a', 'b', 'c', 'd', 'e'].forEach(id => desk.open(id))
+    expect(new Set(frames(desk)).size).toBe(frames(desk).length)
+  })
+
+  it('reuses a step only once the window on it has gone', () => {
+    const desk = createDesk({ stage })
+    ;['a', 'b', 'c', 'd', 'e'].forEach(id => desk.open(id))
+    const freed = frames(desk)[0]
+    desk.close('c')
+    desk.open('f')
+    expect(frames(desk)).toContain(freed)
+    expect(new Set(frames(desk)).size).toBe(frames(desk).length)
+  })
+
+  it('keeps them apart past the wrap', () => {
+    const desk = createDesk({ stage })
+    ;['a', 'b', ...Array.from({ length: 6 }, (_, i) => `f${i}`)].forEach(id => desk.open(id))
+    expect(new Set(frames(desk)).size).toBe(frames(desk).length)
+  })
+
+  it('does not land on a window that was dragged onto a step', () => {
+    const desk = createDesk({ stage })
+    ;['a', 'b', 'c'].forEach(id => desk.open(id))
+    const first = desk.getState().windows[2]
+    if (first?.mode !== 'floating') throw new Error('expected a floating window')
+    desk.float('d')
+    desk.open('d')
+    desk.float('d', { ...first.frame })
+    desk.open('e')
+    expect(frames(desk).filter(f => f === `${first.frame.x},${first.frame.y}`)).toHaveLength(2)
+  })
+})
+
 describe('restore', () => {
   it('drops duplicates and repairs the stack', () => {
     const repaired = normalise({
