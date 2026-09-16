@@ -673,9 +673,9 @@
   padding: 5px;
   border-radius: 10px;
   border: 1px solid var(--desk-rule);
-  background: color-mix(in srgb, var(--desk-surface) 88%, transparent);
-  backdrop-filter: blur(30px) saturate(160%);
-  -webkit-backdrop-filter: blur(30px) saturate(160%);
+  /* Opaque, like every other popup. A menu sits inside the menu bar's own backdrop blur, and a nested
+     backdrop-filter does not blur what is behind the bar, so a translucent menu let window text read through. */
+  background: var(--desk-surface);
   box-shadow: var(--desk-shadow-floating);
   animation: desk-menu-in .12s var(--desk-ease);
 }
