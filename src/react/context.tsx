@@ -1,10 +1,15 @@
 import { createContext, useContext, useState, useSyncExternalStore } from 'react'
 import type { ReactNode, RefObject } from 'react'
+import { createBus } from '../core/events.js'
+import type { Bus } from '../core/events.js'
 import { createDesk } from '../core/desk.js'
 import type { Desk } from '../core/desk.js'
 import type { DeskOptions, DeskState, WindowId } from '../core/types.js'
 
 const DeskContext = createContext<Desk | null>(null)
+
+/** Every desk comes with a bus; <BusProvider> only matters when one has to be shared or supplied. */
+export const BusContext = createContext<Bus | null>(null)
 
 export interface DeskProviderProps {
   /** An existing desk, e.g. one a tour runner or router also drives. */
@@ -16,7 +21,12 @@ export interface DeskProviderProps {
 
 export function DeskProvider({ desk, options, children }: DeskProviderProps) {
   const [value] = useState(() => desk ?? createDesk(options))
-  return <DeskContext.Provider value={value}>{children}</DeskContext.Provider>
+  const [bus] = useState(createBus)
+  return (
+    <DeskContext.Provider value={value}>
+      <BusContext.Provider value={bus}>{children}</BusContext.Provider>
+    </DeskContext.Provider>
+  )
 }
 
 export function useDesk(): Desk {

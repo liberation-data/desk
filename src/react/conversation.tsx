@@ -120,11 +120,9 @@ export function Thread({ messages, me = 'me', typing, onRetry, empty, label = 'C
         )}
       </div>
       {missed > 0 && (
-        <div className="desk-thread-jump">
-          <Button size="small" onClick={() => toBottom('smooth')}>
-            {missed === 1 ? '1 new message' : `${missed} new messages`} ↓
-          </Button>
-        </div>
+        <Button className="desk-thread-jump" size="small" onClick={() => toBottom('smooth')}>
+          {missed === 1 ? '1 new message' : `${missed} new messages`} ↓
+        </Button>
       )}
     </div>
   )

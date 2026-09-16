@@ -1,0 +1,315 @@
+# @liberation-data/desk
+
+A desktop for the web, in React: windows that tile first and float when asked, with a dock, a menu bar,
+commands routed to whoever is responsible, and the controls to fill the windows. Apache-2.0.
+
+This file is the whole public surface in one place, for a coding agent. Prose for people:
+`docs/guide.md`. How it should look and behave: `HIG.md`.
+
+## Install and entry points
+
+```
+npm install @liberation-data/desk        # peer: react ^19
+```
+
+```ts
+import { createDesk }                    from '@liberation-data/desk'        // no DOM, no React
+import { Desktop, DeskProvider }         from '@liberation-data/desk/react'  // components and hooks
+import '@liberation-data/desk/desk.css'                                      // tokens and styles
+```
+
+## The shape of an app
+
+```tsx
+const desk = createDesk()
+
+<DeskProvider desk={desk}>
+  <ToastProvider>               {/* only if you use toasts */}
+      <MenuBar menus={…} status={…} />
+      <div className="screen">  {/* position: relative; the stage fills it */}
+        <Desktop title={id => TITLES[id]} renderWindow={id => SURFACES[id]} empty={…} />
+        <InputBar onSubmit={…} />
+        <Dock entries={…} />
+        <SearchPalette open={…} onOpenChange={…} search={…} />
+      </div>
+  </ToastProvider>
+</DeskProvider>
+```
+
+Rules that are easy to get wrong:
+- `.desk-stage` fills its parent: give the parent a height, and `position: relative` if the dock or input
+  bar overlays it. Set `--desk-inset-bottom` to the height of anything overlaying the bottom.
+- A window is an id; `renderWindow(id)` says what it looks like. Every open window renders, including ones
+  offstage in the touch layout — that is what preserves their state.
+- Opening a window that is already open focuses it. There is never a second copy.
+
+## Core: `@liberation-data/desk`
+
+```ts
+createDesk(options?: DeskOptions): Desk
+interface DeskOptions { maxTiled?: number; cascade?: Partial<CascadeOptions>; stage?: () => Size; initial?: DeskState }
+
+interface Desk {
+  getState(): DeskState
+  subscribe(listener: (state: DeskState) => void): () => void
+  open(id: string, options?: { mode?: 'tiled' | 'floating'; frame?: Frame }): void
+  close(id: string): void
+  closeAll(): void
+  focus(id: string): void
+  float(id: string, frame?: Frame): void          // no frame: last place it sat, else the next cascade step
+  tile(id: string, options?: { at?: 'start' | 'end' }): void
+  toggleMode(id: string): void
+  tileAll(): void
+  restore(state: DeskState): void                 // e.g. from a URL; normalised, not trusted
+  setStage(stage: () => Size): void
+}
+
+interface DeskState {
+  windows: readonly DeskWindow[]   // the order they were opened = the order tiles lay out
+  stack: readonly string[]         // back to front; the last one is key
+}
+type DeskWindow = { id: string; mode: 'tiled' } | { id: string; mode: 'floating'; frame: Frame }
+interface Frame { x: number; y: number; width: number; height: number }
+
+focusedId(state): string | null
+isOpen(state, id): boolean
+normalise(state): DeskState
+cascadeFrame(slot, stage, options?): Frame
+cascadeSlot(frame, stage, options?): number
+nextCascadeFrame(windows, stage, options?): Frame
+EMPTY: DeskState
+```
+
+Default arrangement: 2 tiles, then floating. State is immutable; every mutator returns void and notifies
+subscribers only when something actually changed.
+
+### URL and history
+
+```ts
+syncWithLocation(desk, stage: () => Size, options?: LocationOptions, env?: LocationEnv): () => void
+serialize(state, options?): URLSearchParams        // #w=rides,map~&f=map   (`~` = floating)
+parse(params, stage, options?): DeskState
+interface LocationOptions { key?: 'w'; focusKey?: 'f'; isKnown?: (id: string) => boolean }
+```
+
+Opening or closing pushes history (Back closes); focus and mode changes replace it. Frames are never in the
+URL. Other hash parameters are left alone. A URL naming no windows adopts whatever the app opened.
+
+### Commands (the responder chain)
+
+```ts
+perform(desk, command: string, args?, options?: ChainOptions): boolean      // true if something handled it
+canPerform(desk, command: string, options?: ChainOptions): boolean          // what a menu asks
+addCommandHandler(element: EventTarget, command, handler, { enabled? }): () => void
+addDeskCommands(stage: EventTarget, desk): () => void
+chainStart(desk, options?): EventTarget
+windowElement(doc, id): Element | null
+DeskCommands = { closeWindow, toggleWindowMode, tileAll, nextWindow, previousWindow }
+WINDOW_ATTRIBUTE = 'data-desk-window'; STAGE_ATTRIBUTE = 'data-desk-stage'
+```
+
+The chain is the DOM: focused element → its window → stage → document. The first responder that implements
+a command decides; if it is disabled the command stops there (AppKit's rule). Events are `desk:perform` and
+`desk:can-perform`, bubbling and composed.
+
+### Shortcuts
+
+```ts
+bindShortcuts(desk, keymap: Record<string, string>, { target?, apple? }): () => void
+parseShortcut('mod+shift+z'): Shortcut
+matchesShortcut(event, shortcut, apple?): boolean
+formatShortcut('mod+comma', apple?): string        // '⌘,' or 'Ctrl+,'
+isApplePlatform(): boolean
+isInstalledApp(): boolean                          // gate ⌘W / ⌘` on this; never take ⌘T or ⌘N
+```
+
+`mod` is ⌘ on Apple, Ctrl elsewhere. Matching also falls back to the physical key, so ⌥] works on a Mac. A
+shortcut nothing handles leaves the browser's default alone. Bare keys are ignored while typing in a field.
+
+### Events between windows
+
+```ts
+createBus(): Bus
+interface Bus {
+  publish<T>(topic: string, payload: T, options?: { from?: string | null }): DeskEvent<T>
+  subscribe<T>(topic: string, handler: (e: DeskEvent<T>) => void, options?: { replay?: boolean }): () => void
+  last<T>(topic: string): DeskEvent<T> | undefined
+}
+interface DeskEvent<T> { topic: string; payload: T; from: string | null; at: number }
+topicMatches(pattern, topic): boolean              // 'ride.*' and '*' are the only wildcards
+InputCommands = { submit: 'desk.input.submit', describe: 'desk.input.describe' }
+```
+
+## React: `@liberation-data/desk/react`
+
+### Shell
+
+```tsx
+<DeskProvider desk={desk}>                          // or options={…} to make one
+useDesk(): Desk
+useDeskState(): DeskState
+useWindowId(): string | null                        // inside a window's content
+
+<Desktop
+  renderWindow={(id) => ReactNode}
+  title={(id) => ReactNode}
+  empty?={ReactNode}
+  layout?={'auto' | 'desktop' | 'fullscreen'}       // auto: touch screens get one window at a time
+  className?={string}
+/>
+```
+
+### Dock
+
+```tsx
+<Dock entries={DockEntry[]} label?="Dock" placement?={'overlay' | 'inline'} />
+dockItem({ id, label, icon, window?, description?, badge?, onSelect?, disabled? })
+dockStack({ id, label, items: DockItem[], icon? })
+dockSeparator(id)
+```
+
+An item opens `window ?? id` and shows a dot while that window is open, accent when it is key. A stack fans
+out above the dock. One tab stop; arrow keys along it; Escape folds a stack away.
+
+### Menu bar
+
+```tsx
+<MenuBar menus={Menu[]} status?={Menu[]} leading?={ReactNode} trailing?={ReactNode} shortcuts?={true} />
+interface Menu { id: string; label: string; title?: ReactNode; items: MenuItem[] | (() => MenuItem[]) }
+menuCommand(label, command, { shortcut?, checked?, detail?, args? })
+menuAction(label, onSelect, { disabled?, shortcut?, checked?, detail? })
+menuSeparator(); menuHeader(label)
+windowMenuItems(state, focus, title): MenuItem[]
+```
+
+Command items are enabled via `canPerform` as the menu opens, and menus bind their own shortcuts. Opening a
+menu does not take focus from the key window, so a chosen command reaches the same responder a shortcut
+would. `items` as a function is re-read on every open.
+
+### Commands and input
+
+```tsx
+useCommand<Args>(command, handler, { enabled?: boolean | (() => boolean), at?: 'window' | 'app' | RefObject })
+usePerform(): (command, args?) => boolean
+useCanPerform(): (command) => boolean
+useShortcuts(keymap, { target?, apple? })
+
+useWindowInput(handler: (text: string) => void, { placeholder?, target?, disabled? })
+<InputBar onSubmit={(text) => void} fallbackPlaceholder? fallbackTarget? label? />
+```
+
+`useCommand` defaults to the window it is rendered in, and to the app outside one.
+
+### Events
+
+```tsx
+<BusProvider bus?={Bus}>                              // optional: a desk already carries a bus
+useBus(): Bus
+usePublish(): <T>(topic, payload) => DeskEvent<T>     // stamped with the window it came from
+useDeskEvent<T>(topic, handler, { replay? })          // replay: deliver the last event immediately
+```
+
+### Search
+
+```tsx
+<SearchPalette open onOpenChange search={(q) => SearchResult[] | Promise<SearchResult[]>}
+               placeholder? label? hint? empty?={(q) => ReactNode} shortcut?={'mod+k' | null} />
+interface SearchResult { id; title; subtitle?; group?; icon?; kind?; onSelect(): void }
+windowResults(desk, title, group?): SearchResult[]
+SearchCommand = 'desk.search'                          // a menu item can open it
+```
+
+### Controls
+
+```tsx
+<Button intent?={'normal'|'default'|'quiet'|'destructive'} size?={'regular'|'small'} icon? … />
+<SegmentedControl options={{value,label,icon?,disabled?}[]} value onChange label size? disabled? />
+<Toggle checked onChange label? description? disabled? aria-label? />        // applies at once
+<Checkbox checked indeterminate? onChange label? description? disabled? />   // waits for Save
+<Slider value onChange label min? max? step? disabled? format?={(v) => string} />
+<TextField label labelHidden? help? error? … />                             // error marks it invalid
+<PopUpButton value={T|null} onChange options={{value,label,description?,icon?,disabled?}[]}
+             label labelHidden? placeholder? disabled? size? />
+```
+
+### Lists
+
+```tsx
+<Table rows columns rowId={(row) => string} label
+       selected? onSelect? onActivate? sort? onSortChange? empty? />
+interface Column<Row> { key; header; render?; align?; numeric?; sortable?; width? }
+interface Sort { key: string; direction: 'ascending' | 'descending' }
+
+<Sidebar sections={{ id, label?, items: { id, label, icon?, badge?, disabled? }[] }[]}
+         value onChange label footer? />
+```
+
+Table: one tab stop, arrow keys move the selection, Enter or double click activates, `aria-sort` on
+sortable headings. It renders what it is given — no paging, no fetching.
+
+### Overlays
+
+```tsx
+<Popover open onOpenChange label trigger={(props) => <Button {...props} />} placement? align? />
+<Sheet open onDismiss title description? actions? />        // renders inside its own window
+<Alert open title message? confirmLabel onConfirm onCancel cancelLabel? destructive? />
+<ToastProvider>; useToast(): { show(toast): string; dismiss(id): void }
+toast.show({ message, tone?: 'neutral'|'ok'|'bad', action?: { label, onSelect }, duration?: 6000 })
+```
+
+All share one layer stack: Escape dismisses the topmost. Popover, Sheet and Alert trap focus and return it.
+A toast pauses while the pointer or focus is on it.
+
+### Conversation
+
+```tsx
+<Thread messages={Message[]} me?="me" typing? onRetry? empty? label? />
+interface Message { id; from; authorName?; body: ReactNode; at?: Date | string; state?: 'sending'|'sent'|'failed' }
+<Composer value onChange onSubmit placeholder? label? disabled? busy? onStop? accessory? maxRows? />
+```
+
+No transport of its own. The thread follows new messages only while the reader is at the end. The composer
+sends on Enter, keeps Shift+Enter for a new line, and never sends mid-composition in an input method.
+
+### Teaching and first run
+
+```tsx
+<TourBar tour={{ id, name, steps }} onFinish? onStop? />
+interface TourStep { window?: string; point?: string; caption: ReactNode; yourTurn?: boolean }
+
+<Wizard steps={WizardStep[]} index onIndexChange onFinish label? />
+interface WizardStep { id; name; title; description?; body?; glyph?; complete?; continueLabel?;
+                       skip?: { label, onSkip }; working?; onEnter? }
+```
+
+A tour step opens its window and points at `point` (a `data-tour` name or a selector). A wizard step offers
+Continue only when `complete`, and `working` steps offer no Back.
+
+## Styling
+
+Every value reads a `--desk-*` token; redefine tokens, never override selectors. Colour roles: `--desk-ground`,
+`--desk-surface`, `--desk-titlebar`, `--desk-ink`, `--desk-muted`, `--desk-rule`, `--desk-accent`,
+`--desk-ok|warn|bad`, `--desk-on-accent`. Spacing `--desk-space-1..7` = 4, 8, 12, 16, 24, 32, 48 px. Also
+`--desk-radius`, `--desk-control-height`, `--desk-control-radius`, `--desk-font`, `--desk-font-mono`,
+`--desk-ease`, `--desk-dock-size`, `--desk-dock-glass`, `--desk-inset-bottom`.
+
+Light and dark follow `prefers-color-scheme`; `data-theme="light" | "dark"` on the root wins.
+
+## Testing
+
+```ts
+const desk = createDesk({ stage: () => ({ width: 1000, height: 700 }) })   // jsdom measures nothing
+render(<DeskProvider desk={desk}>…</DeskProvider>)
+```
+
+Query a window by `[data-desk-window="id"]`: on a touch layout an offstage window is `inert`, so it is not
+in the accessibility tree.
+
+## Facts an agent should not guess
+
+- React 19 is a peer dependency; the core entry point imports no React and touches no DOM except through
+  the command helpers.
+- `desk.tile()` is not limited by `maxTiled`: the person asked for it.
+- Focus follows the key window when it changes, but never on first render.
+- A `DeskProvider` already carries an event bus; `BusProvider` is only for supplying or sharing one.
+- The package is ESM only, with `"sideEffects": ["**/*.css"]`.

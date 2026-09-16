@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { Desk } from '../core/desk.js'
@@ -72,7 +72,8 @@ export function SearchPalette({
   useLayer(id, open, () => onOpenChange(false))
   useFocusTrap(panel, open)
   useCommand(SearchCommand, () => onOpenChange(true), { at: 'app' })
-  useShortcuts(shortcut ? { [shortcut]: SearchCommand } : {})
+  // Memoised: bindShortcuts re-registers whenever the keymap object changes identity.
+  useShortcuts(useMemo(() => (shortcut ? { [shortcut]: SearchCommand } : {}), [shortcut]))
 
   useEffect(() => {
     if (!open) setQuery('')

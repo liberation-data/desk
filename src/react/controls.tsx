@@ -9,7 +9,7 @@ import type { ButtonHTMLAttributes, InputHTMLAttributes, KeyboardEvent, ReactNod
 
 export type ButtonIntent = 'normal' | 'default' | 'quiet' | 'destructive'
 
-export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** `default` is the one action a view leads with, and the one Return performs. One per view. */
   readonly intent?: ButtonIntent
   readonly size?: 'regular' | 'small'
@@ -18,11 +18,19 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { intent = 'normal', size = 'regular', icon, children, type = 'button', ...rest },
+  { intent = 'normal', size = 'regular', icon, children, type = 'button', className, ...rest },
   ref,
 ) {
   return (
-    <button ref={ref} type={type} className="desk-button" data-intent={intent} data-size={size} data-icon-only={!children || undefined} {...rest}>
+    <button
+      ref={ref}
+      type={type}
+      className={['desk-button', className].filter(Boolean).join(' ')}
+      data-intent={intent}
+      data-size={size}
+      data-icon-only={!children || undefined}
+      {...rest}
+    >
       {icon && <span className="desk-button-icon" aria-hidden="true">{icon}</span>}
       {children}
     </button>

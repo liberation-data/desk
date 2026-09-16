@@ -15,6 +15,7 @@
   "files": [
     "dist",
     "src",
+    "llms.txt",
     "NOTICE"
   ],
   "exports": {

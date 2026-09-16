@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { perform } from '../core/commands.js'
 import { createBus, InputCommands } from '../core/events.js'
@@ -6,10 +6,9 @@ import type { Bus, DeskEvent, EventHandler, InputDescription, SubscribeOptions }
 import type { WindowId } from '../core/types.js'
 import { useCommand } from './commands.js'
 import { Composer } from './conversation.js'
-import { useDesk, useDeskState, useWindowId } from './context.js'
+import { BusContext, useDesk, useDeskState, useWindowId } from './context.js'
 
-const BusContext = createContext<Bus | null>(null)
-
+/** Supplies a bus of your own, or shares one across several desks. A desk already has one. */
 export function BusProvider({ bus, children }: { readonly bus?: Bus; readonly children: ReactNode }) {
   const [value] = useState(() => bus ?? createBus())
   return <BusContext.Provider value={value}>{children}</BusContext.Provider>
@@ -17,7 +16,7 @@ export function BusProvider({ bus, children }: { readonly bus?: Bus; readonly ch
 
 export function useBus(): Bus {
   const bus = useContext(BusContext)
-  if (!bus) throw new Error('useBus must be used inside a <BusProvider>')
+  if (!bus) throw new Error('useBus must be used inside a <DeskProvider> or <BusProvider>')
   return bus
 }
 

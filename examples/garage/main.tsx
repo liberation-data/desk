@@ -6,7 +6,6 @@ import { createDesk, DeskCommands, focusedId, formatShortcut, syncWithLocation }
 import type { Desk } from '../../src/core/index.js'
 import {
   Alert,
-  BusProvider,
   Button,
   Checkbox,
   Composer,
@@ -828,7 +827,6 @@ function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupA
 
   return (
     <DeskProvider desk={desk}>
-      <BusProvider>
       <ToastProvider>
       <div className="garage">
         <GarageMenuBar desk={desk} steps={steps} touring={touring} onTour={() => setTouring(true)} onSetupAgain={onSetupAgain} />
@@ -862,7 +860,6 @@ function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupA
         </main>
       </div>
       </ToastProvider>
-      </BusProvider>
     </DeskProvider>
   )
 }

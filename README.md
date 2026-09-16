@@ -169,7 +169,8 @@ publish('ride.selected', ride)
 useDeskEvent<Ride>('ride.selected', event => show(event.payload), { replay: true })
 ```
 
-Topics are dotted names; a subscriber can take a branch with `ride.*` or everything with `*`. `replay`
+Topics are dotted names; a subscriber can take a branch with `ride.*` or everything with `*`. A desk
+carries its own bus, so this needs no extra provider. `replay`
 delivers the last event on the topic straight away — the window that the event concerns is often opened by
 that very event, and would otherwise miss it by a frame.
 
@@ -318,6 +319,12 @@ replace the entry. Other hash parameters are left alone.
 
 Every value in `desk.css` reads a `--desk-*` custom property. Redefine the tokens; don't override the
 selectors. Light and dark follow `prefers-color-scheme`, and `data-theme="light|dark"` on the root wins.
+
+## Docs
+
+- [docs/guide.md](docs/guide.md) — building an app with it, and what catches people out
+- [llms.txt](llms.txt) — the whole public surface in one file, for a coding agent
+- [HIG.md](HIG.md) — how an app built with it should look and behave
 
 ## Develop
 
