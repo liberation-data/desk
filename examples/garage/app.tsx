@@ -1250,7 +1250,7 @@ function GarageMenuBar({
       label: 'Window',
       items: () => [
         menuCommand('Float or tile', DeskCommands.toggleWindowMode),
-        menuCommand('Tile all', DeskCommands.tileAll),
+        menuCommand('Arrange', DeskCommands.arrange),
         menuSeparator(),
         menuAction('New window of this kind', () => {
           const key = focusedId(desk.getState())

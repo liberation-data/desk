@@ -1,8 +1,9 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
-import { addDeskCommands, STAGE_ATTRIBUTE, WINDOW_ATTRIBUTE, windowElement } from '../core/commands.js'
+import { addCommandHandler, addDeskCommands, DeskCommands, STAGE_ATTRIBUTE, WINDOW_ATTRIBUTE, windowElement } from '../core/commands.js'
 import { focusedId } from '../core/desk.js'
 import type { DeskWindow, Frame, WindowId } from '../core/types.js'
+import { arrangement } from './arrange.js'
 import { useDesk, useDeskState, WindowContext } from './context.js'
 import { WindowBoundary } from './windowBoundary.js'
 import type { WindowFailed, WindowLoading } from './windowBoundary.js'
@@ -93,6 +94,45 @@ export function Desktop({ renderWindow, title, actions, empty, loading, failed, 
   }, [desk])
 
   useEffect(() => (stage.current ? addDeskCommands(stage.current, desk) : undefined), [desk])
+
+  // Arrange lays every window out once. Two windows go back to a split that can be dragged;
+  // more are placed as windows, free to be moved again straight away.
+  useEffect(() => {
+    const element = stage.current
+    if (!element || mode !== 'desktop') return undefined
+    return addCommandHandler(
+      element,
+      DeskCommands.arrange,
+      () => {
+        const { windows, stack } = desk.getState()
+        if (windows.length <= 2) {
+          setSplit(0.5)
+          desk.tileAll()
+          return
+        }
+        const area = arrangementArea(element)
+        const frames = arrangement(
+          windows.map(w => w.id),
+          stack.at(-1) ?? null,
+          stack.at(-2) ?? null,
+          area,
+          { minWidth: MIN_WIDTH, minHeight: MIN_HEIGHT },
+        )
+        desk.placeAll(frames)
+        // Windows that cascade come in front of the half they cascade over; the focused window stays in front of all.
+        const [focused, previous] = [stack.at(-1), stack.at(-2)]
+        if (previous) desk.focus(previous)
+        windows.forEach(w => w.id !== focused && w.id !== previous && desk.focus(w.id))
+        if (focused) desk.focus(focused)
+      },
+      {
+        enabled: () => {
+          const { windows } = desk.getState()
+          return windows.some(w => w.mode === 'floating') || windows.length > 2
+        },
+      },
+    )
+  }, [desk, mode])
 
   // Arranged windows are placed once, not held in place. The first time a person moves or
   // resizes one, every tile becomes an independent window exactly where it sits, so the

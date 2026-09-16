@@ -58,7 +58,7 @@ Three things follow from this:
 The first window fills the stage, the second splits it, and later ones float above the tiles. That
 arrangement is placed once, not held: when someone moves or resizes an arranged window, every window
 becomes independent where it sits and nothing reflows — as on a Mac. Drag a window to an edge to give it that
-half, double-click a title bar to zoom it, or use Tile all to arrange everything again. Nobody has to arrange
+half, double-click a title bar to zoom it, or use Arrange to lay everything out again. Nobody has to arrange
 anything, and nobody is stopped from arranging.
 
 On a touch screen the desk shows **one window at a time**; the others stay mounted, so their state survives.

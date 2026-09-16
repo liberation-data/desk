@@ -15,7 +15,8 @@ That arrangement is **placed once, not held**. The moment someone moves or resiz
 windows, every window becomes independent exactly where it sits, and only the one being touched moves —
 nothing reflows to fill the space. Dragging a window against the left or right edge gives it that half of the
 desk; double-clicking its title bar (or the green control) zooms it to fill the desk and back. Once windows
-have been placed by hand, new ones open floating. **Window → Tile all** arranges everything again.
+have been placed by hand, new ones open floating. **Window → Arrange** lays everything out again: two windows
+split, three go one tall and two stacked, four make a grid.
 
 While the default arrangement stands, two tiles share a split you can drag, double-click to even up, or nudge
 with the arrow keys.
@@ -305,7 +306,7 @@ import { MenuBar, menuAction, menuCommand, menuSeparator, windowMenuItems } from
     { id: 'app', label: 'Garage', items: [menuAction('About Garage', showAbout), menuSeparator(),
                                            menuCommand('Settings…', 'app.settings', { shortcut: 'mod+comma' })] },
     { id: 'window', label: 'Window', items: () => [                // a function: re-read each time it opens
-        menuCommand('Tile all', DeskCommands.tileAll),
+        menuCommand('Arrange', DeskCommands.arrange),
         menuSeparator(),
         ...windowMenuItems(desk.getState(), desk.focus, titleOf),
     ] },

@@ -118,6 +118,8 @@ export const DeskCommands = {
   closeWindow: 'desk.window.close',
   toggleWindowMode: 'desk.window.toggle-mode',
   tileAll: 'desk.window.tile-all',
+  /** Answered by a mounted Desktop, which knows the space windows are laid out in. */
+  arrange: 'desk.window.arrange',
   nextWindow: 'desk.window.next',
   previousWindow: 'desk.window.previous',
 } as const

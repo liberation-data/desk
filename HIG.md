@@ -164,8 +164,13 @@ Nobody has to arrange windows, and nobody is stopped from arranging them.
    it will land. Double-clicking a title bar, or pressing the green control, zooms the window to fill the
    desk and back.
 7. Once windows have been placed by hand, a new window opens floating rather than tiling in behind them.
-   **Tile all** hands the layout back to the desk.
-8. Tiles keep the order they were opened in. Focusing a window never reshuffles anything.
+   **Arrange** hands the layout back to the desk.
+8. **Arrange** lays windows out by how many are open, never by where they sit, so it always gives the same
+   result: one fills the desk, two split it, three go one tall and two stacked, four make a 2 × 2 grid, and
+   more make a grid while every cell stays usable. Past that, the focused window and the one used before it
+   share the desk and the rest cascade over the second half. The focused window takes the first place. Two
+   windows go back to a split that can be dragged; any more are placed once and can be moved straight away.
+9. Tiles keep the order they were opened in. Focusing a window never reshuffles anything.
 
 **A window that is floated again goes back where it last was**, not to the next step of the cascade, unless
 that place no longer lands on this screen.
