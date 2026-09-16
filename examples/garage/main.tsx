@@ -24,6 +24,7 @@ import {
   InputBar,
   SearchCommand,
   SearchPalette,
+  TourBar,
   Sheet,
   Thread,
   TextField,
@@ -37,7 +38,7 @@ import {
   useDeskState,
   windowMenuItems,
 } from '../../src/react/index.js'
-import type { DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption } from '../../src/react/index.js'
+import type { DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption, Tour } from '../../src/react/index.js'
 import '../../src/desk.css'
 import './garage.css'
 
@@ -140,7 +141,7 @@ function Rides() {
 
   return (
     <div className="pad">
-      <div className="toolbar">
+      <div className="toolbar" data-tour="rides-filter">
         <SegmentedControl label="Filter rides by bike" options={BIKES} value={bike} onChange={setBike} size="small" />
         <Popover
           open={filters}
@@ -221,7 +222,7 @@ function Parts() {
         const ratio = p.used / p.life
         const tone = ratio >= 0.9 ? 'bad' : ratio >= 0.75 ? 'warn' : 'ok'
         return (
-          <div className="wear" key={p.part}>
+          <div className="wear" key={p.part} data-tour={p.part === 'Chain' ? 'part-chain' : undefined}>
             <div className="wear-head"><b>{p.part}</b><span className="muted">{p.bike}</span>
               <span className="r muted">{p.used.toLocaleString()} / {p.life.toLocaleString()} {p.unit ?? 'km'}</span></div>
             <div className="meter" data-tone={tone}><i style={{ width: `${Math.min(100, ratio * 100)}%` }} /></div>
@@ -253,7 +254,7 @@ function Service({ steps, setSteps }: { readonly steps: Step[]; readonly setStep
       <section className="section">
         <h3>{label} <span className="muted">{rows.length}</span></h3>
         {rows.map(s => (
-          <div className="step" data-state={s.state} key={s.id}>
+          <div className="step" data-state={s.state} key={s.id} data-tour={s.id === 'chain' ? 'service-chain' : undefined}>
             <span className="tick" aria-hidden="true">{s.state === 'done' ? '✓' : ''}</span>
             <div className="grow"><b>{s.title}</b><p className="muted">{s.detail}</p>
               <div className="actions">
@@ -499,6 +500,17 @@ function Chat({ pending, onPending }: { readonly pending: string | null; readonl
   )
 }
 
+const TOUR: Tour = {
+  id: 'first-look',
+  name: 'What needs doing',
+  steps: [
+    { window: 'service', point: 'service-chain', caption: 'Service lists what the bikes need. The road chain is first.' },
+    { window: 'parts', point: 'part-chain', caption: 'Wear is counted from the rides each bike has done since the part was fitted.' },
+    { window: 'rides', point: 'rides-filter', caption: 'Rides can be filtered by bike, so you can see what wore that chain out.' },
+    { window: 'chat', caption: 'Ask the mechanic which job to do first.', yourTurn: true },
+  ],
+}
+
 /* ── Shell ── */
 
 interface Surface { readonly title: string; readonly icon: keyof typeof PATHS; readonly description: string }
@@ -534,6 +546,7 @@ function Garage({ desk }: { readonly desk: Desk }) {
   const [steps, setSteps] = useState(INITIAL_SERVICE)
   const [pending, setPending] = useState<string | null>(null)
   const [searching, setSearching] = useState(false)
+  const [touring, setTouring] = useState(false)
   const due = steps.filter(s => s.state === 'todo').length
 
   useEffect(() => syncWithLocation(desk, () => {
@@ -628,13 +641,15 @@ function Garage({ desk }: { readonly desk: Desk }) {
       <BusProvider>
       <ToastProvider>
       <div className="garage">
-        <GarageMenuBar desk={desk} steps={steps} />
+        <GarageMenuBar desk={desk} steps={steps} touring={touring} onTour={() => setTouring(true)} />
         <main className="screen">
           <Desktop
             title={id => (isKnown(id) ? SURFACES[id].title : id)}
             renderWindow={id => (isKnown(id) ? body(id) : null)}
             empty={<div className="empty"><h2>Nothing open</h2><p>Pick something from the dock.</p></div>}
           />
+          <div className="bottomstack">
+          {touring && <TourBar tour={TOUR} onFinish={() => setTouring(false)} onStop={() => setTouring(false)} />}
           <InputBar
             onSubmit={text => {
               // Nobody in front took it, so it becomes a question for the mechanic.
@@ -644,6 +659,7 @@ function Garage({ desk }: { readonly desk: Desk }) {
             fallbackPlaceholder="Ask the mechanic…"
             fallbackTarget="Chat"
           />
+          </div>
           <Dock entries={entries} label="Garage dock" />
           <SearchPalette
             open={searching}
@@ -661,7 +677,17 @@ function Garage({ desk }: { readonly desk: Desk }) {
   )
 }
 
-function GarageMenuBar({ desk, steps }: { readonly desk: Desk; readonly steps: readonly Step[] }) {
+function GarageMenuBar({
+  desk,
+  steps,
+  touring,
+  onTour,
+}: {
+  readonly desk: Desk
+  readonly steps: readonly Step[]
+  readonly touring: boolean
+  readonly onTour: () => void
+}) {
   useDeskState() // re-render as windows change, so the status menu and badge stay current
   const titleOf = (id: string) => (isKnown(id) ? SURFACES[id].title : id)
   const todo = steps.filter(s => s.state === 'todo')
@@ -703,7 +729,11 @@ function GarageMenuBar({ desk, steps }: { readonly desk: Desk; readonly steps: r
     {
       id: 'help',
       label: 'Help',
-      items: [menuAction('Keyboard shortcuts', () => desk.open('shortcuts')), menuAction('About this sample', () => desk.open('about'))],
+      items: [
+        menuAction('Take the tour', onTour, { disabled: touring }),
+        menuAction('Keyboard shortcuts', () => desk.open('shortcuts')),
+        menuAction('About this sample', () => desk.open('about')),
+      ],
     },
   ]
 

@@ -1521,3 +1521,106 @@
     animation: none;
   }
 }
+
+/* ── Tour ── */
+
+.desk-tour {
+  box-sizing: border-box;
+  width: min(620px, 100%);
+  padding: var(--desk-space-3);
+  border: 1px solid color-mix(in srgb, var(--desk-accent) 45%, var(--desk-rule));
+  border-radius: 14px;
+  background: var(--desk-dock-glass);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  box-shadow: var(--desk-shadow-floating), 0 0 30px color-mix(in srgb, var(--desk-accent) 20%, transparent);
+  font-family: var(--desk-font);
+  color: var(--desk-ink);
+}
+
+.desk-tour-head {
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-2);
+  font-size: 13px;
+}
+
+.desk-tour-count {
+  color: var(--desk-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.desk-tour-head .desk-button {
+  margin-left: auto;
+}
+
+.desk-tour-progress {
+  height: 3px;
+  margin: var(--desk-space-2) 0;
+  border-radius: 2px;
+  background: var(--desk-rule);
+  overflow: hidden;
+}
+
+.desk-tour-progress i {
+  display: block;
+  height: 100%;
+  background: var(--desk-accent);
+  transition: width .3s var(--desk-ease);
+}
+
+.desk-tour-caption {
+  margin: 0 0 var(--desk-space-2);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.desk-tour-turn {
+  margin-right: var(--desk-space-1);
+  color: var(--desk-warn);
+  font-weight: 700;
+}
+
+.desk-tour-turn::after {
+  content: " ·";
+}
+
+.desk-tour-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-2);
+}
+
+.desk-tour-spacer {
+  flex: 1;
+}
+
+/* What the tour is pointing at. */
+[data-desk-tour-pointed] {
+  position: relative;
+  z-index: 3;
+  outline: 2px solid var(--desk-accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+  animation: desk-tour-pulse 1.6s var(--desk-ease) 2;
+}
+
+@keyframes desk-tour-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--desk-accent) 0%, transparent);
+  }
+  40% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--desk-accent) 45%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-tour-progress i {
+    transition: none;
+  }
+
+  [data-desk-tour-pointed] {
+    animation: none;
+  }
+}

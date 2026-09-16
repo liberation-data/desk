@@ -90,6 +90,26 @@ tab stop whose arrow keys move the selection past disabled options. A toggle is 
 apply at once — a checkbox is for one that waits for Save. A text field always has a label (`labelHidden`
 keeps it for screen readers), and an `error` marks it invalid and replaces the help text.
 
+## Tours
+
+```tsx
+const TOUR: Tour = {
+  id: 'first-look',
+  name: 'What needs doing',
+  steps: [
+    { window: 'service', point: 'service-chain', caption: 'Service lists what the bikes need.' },
+    { window: 'chat', caption: 'Ask which job to do first.', yourTurn: true },
+  ],
+}
+
+{touring && <TourBar tour={TOUR} onFinish={done} onStop={done} />}
+```
+
+A tour drives the desk: each step opens the window it is about and points at the control it is talking
+about (`point` is a `data-tour` name or any selector), so the person watches the real app rather than
+reading about it. A `yourTurn` step hands over and waits, offering Done and Skip. The bar holds no content:
+the steps are the app's.
+
 ## Search
 
 ```tsx
