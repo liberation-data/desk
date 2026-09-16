@@ -1985,3 +1985,175 @@
   padding: var(--desk-space-2);
   border-top: 1px solid var(--desk-rule);
 }
+
+/* ── Wizard ── */
+
+.desk-wizard {
+  box-sizing: border-box;
+  width: min(640px, 100%);
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--desk-rule);
+  border-radius: 20px;
+  background: var(--desk-surface);
+  box-shadow: var(--desk-shadow-floating);
+  font-family: var(--desk-font);
+  color: var(--desk-ink);
+  overflow: hidden;
+}
+
+.desk-wizard-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--desk-space-2);
+  padding: var(--desk-space-7) var(--desk-space-6) var(--desk-space-5);
+  text-align: center;
+  animation: desk-wizard-in .32s var(--desk-ease);
+}
+
+.desk-wizard-content[data-direction="back"] {
+  animation-name: desk-wizard-back;
+}
+
+@keyframes desk-wizard-in {
+  from {
+    opacity: 0;
+    transform: translateX(22px);
+  }
+}
+
+@keyframes desk-wizard-back {
+  from {
+    opacity: 0;
+    transform: translateX(-22px);
+  }
+}
+
+.desk-wizard-glyph {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin-bottom: var(--desk-space-2);
+  border: 1px solid var(--desk-rule);
+  border-radius: 16px;
+  color: var(--desk-accent);
+}
+
+.desk-wizard-glyph svg {
+  width: 28px;
+  height: 28px;
+}
+
+.desk-wizard-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  text-wrap: balance;
+}
+
+.desk-wizard-title:focus {
+  outline: none;
+}
+
+.desk-wizard-description {
+  margin: 0 0 var(--desk-space-4);
+  max-width: 46ch;
+  color: var(--desk-muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* Whatever the step puts in the pane lines up left, even though the pane is centred. */
+.desk-wizard-content > *:not(.desk-wizard-glyph):not(.desk-wizard-title):not(.desk-wizard-description) {
+  width: 100%;
+  max-width: 420px;
+  text-align: left;
+}
+
+.desk-wizard-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-3);
+  padding: var(--desk-space-3) var(--desk-space-4);
+  border-top: 1px solid var(--desk-rule);
+  background: var(--desk-titlebar);
+}
+
+.desk-wizard-steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.desk-wizard-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--desk-ink) 20%, transparent);
+  transition: width .25s var(--desk-ease), background .25s var(--desk-ease);
+}
+
+.desk-wizard-dot[data-state="done"] {
+  background: var(--desk-muted);
+}
+
+.desk-wizard-dot[data-state="now"] {
+  width: 22px;
+  border-radius: 4px;
+  background: var(--desk-accent);
+}
+
+.desk-wizard-dot-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.desk-wizard-step-name {
+  font-size: 11.5px;
+  color: var(--desk-muted);
+}
+
+.desk-wizard-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-2);
+}
+
+@media (max-width: 560px) {
+  .desk-wizard {
+    min-height: 0;
+  }
+
+  .desk-wizard-content {
+    padding: var(--desk-space-5) var(--desk-space-4) var(--desk-space-4);
+  }
+
+  .desk-wizard-step-name {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-wizard-content {
+    animation: none;
+  }
+
+  .desk-wizard-dot {
+    transition: none;
+  }
+}

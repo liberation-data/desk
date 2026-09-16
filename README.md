@@ -90,6 +90,25 @@ tab stop whose arrow keys move the selection past disabled options. A toggle is 
 apply at once — a checkbox is for one that waits for Save. A text field always has a label (`labelHidden`
 keeps it for screen readers), and an `error` marks it invalid and replaces the help text.
 
+## Setup assistant
+
+```tsx
+const steps: WizardStep[] = [
+  { id: 'welcome', name: 'Welcome', title: 'Welcome to the garage', continueLabel: 'Get started' },
+  { id: 'rider', name: 'Rider', title: 'Who is riding?', complete: name.length > 1, body: <TextField … /> },
+  { id: 'weather', name: 'Weather', title: 'Connect a weather service',
+    skip: { label: 'Set up later', onSkip: skipWeather }, complete: checked },
+  { id: 'finishing', name: 'Finishing', title: 'Setting up', working: true, complete: done, onEnter: install },
+]
+
+<Wizard steps={steps} index={index} onIndexChange={setIndex} onFinish={start} />
+```
+
+One pane, one question at a time, Back and Continue where the eye already is. `complete` gates Continue, so
+a step cannot be passed until it is answered; `skip` is the quiet way past a step that can wait; `working`
+is a step with nothing to do but wait, which offers no Back. Focus moves to each step's heading as it
+arrives, so it is announced — and only when the step changes, so a field in the pane keeps what is typed.
+
 ## Tours
 
 ```tsx

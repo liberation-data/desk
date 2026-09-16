@@ -44,8 +44,9 @@ import {
   useWindowInput,
   windowMenuItems,
   windowResults,
+  Wizard,
 } from '../../src/react/index.js'
-import type { Column, DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption, Sort, Tour } from '../../src/react/index.js'
+import type { Column, DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption, Sort, Tour, WizardStep } from '../../src/react/index.js'
 import '../../src/desk.css'
 import './garage.css'
 
@@ -574,6 +575,132 @@ const TOUR: Tour = {
   ],
 }
 
+/*
+ * First run. The appliance is set up once, in one pane, with the same controls
+ * the rest of the app uses — no separate design for the first five minutes.
+ */
+function Setup({ onDone }: { readonly onDone: (rider: string) => void }) {
+  const [index, setIndex] = useState(0)
+  const [rider, setRider] = useState('')
+  const [units, setUnits] = useState<'metric' | 'imperial'>('metric')
+  const [key, setKey] = useState('')
+  const [keyState, setKeyState] = useState<'idle' | 'checking' | 'ok' | 'skipped'>('idle')
+  const [done, setDone] = useState(0)
+
+  const JOBS = ['Save your name', 'Store the weather key', 'Read the bikes', 'Count the wear']
+
+  const check = () => {
+    setKeyState('checking')
+    setTimeout(() => setKeyState('ok'), 900)
+  }
+
+  const steps: WizardStep[] = [
+    {
+      id: 'welcome',
+      name: 'Welcome',
+      glyph: <Icon name="bike" />,
+      title: 'Welcome to the garage',
+      description: 'A log of your rides, your bikes and what they need next. Setting up takes a minute, and nothing here leaves this machine.',
+      continueLabel: 'Get started',
+    },
+    {
+      id: 'rider',
+      name: 'Rider',
+      glyph: <Icon name="ride" />,
+      title: 'Who is riding?',
+      description: 'Used on exported rides, and to tell your rides apart from anyone else you ride with.',
+      complete: rider.trim().length > 1,
+      body: (
+        <>
+          <TextField label="Your name" value={rider} onChange={e => setRider(e.target.value)} placeholder="Jasper Blues" />
+          <div style={{ marginTop: 'var(--desk-space-3)' }}>
+            <PopUpButton
+              label="Distance"
+              options={[
+                { value: 'metric', label: 'Kilometres and metres' },
+                { value: 'imperial', label: 'Miles and feet' },
+              ]}
+              value={units}
+              onChange={setUnits}
+            />
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 'weather',
+      name: 'Weather',
+      glyph: <Icon name="weather" />,
+      title: 'Connect a weather service',
+      description: 'So the garage can tell you which day suits the long ride. Everything else works without it.',
+      complete: keyState === 'ok',
+      skip: { label: 'Set up later', onSkip: () => { setKeyState('skipped'); setIndex(3) } },
+      continueLabel: keyState === 'checking' ? 'Checking…' : keyState === 'ok' ? 'Continue' : 'Connect',
+      body: (
+        <>
+          <TextField
+            label="Service key"
+            value={key}
+            onChange={e => {
+              setKey(e.target.value)
+              setKeyState('idle')
+            }}
+            type="password"
+            placeholder="wx-…"
+            help={keyState === 'ok' ? 'Connected. This stays on this machine.' : 'Paste the key from your weather account.'}
+          />
+          {keyState !== 'ok' && (
+            <div className="actions">
+              <Button intent="default" disabled={key.trim().length < 4 || keyState === 'checking'} onClick={check}>
+                {keyState === 'checking' ? 'Checking…' : 'Check the key'}
+              </Button>
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'finishing',
+      name: 'Finishing',
+      glyph: <Icon name="gear" />,
+      title: done >= JOBS.length ? 'All set' : 'Setting up your garage',
+      description: 'Nothing you have entered is sent anywhere.',
+      working: true,
+      complete: done >= JOBS.length,
+      onEnter: () => {
+        setDone(0)
+        JOBS.forEach((_, i) => setTimeout(() => setDone(i + 1), 500 * (i + 1)))
+      },
+      body: (
+        <ul className="joblist">
+          {JOBS.map((job, i) => (
+            <li key={job} data-state={i < done ? 'done' : i === done ? 'now' : 'waiting'}>
+              <span aria-hidden="true">{i < done ? '✓' : i === done ? '…' : '○'}</span>
+              {job}
+              {job.includes('weather') && keyState === 'skipped' && <span className="small"> — skipped</span>}
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    {
+      id: 'ready',
+      name: 'Ready',
+      glyph: <Icon name="wrench" />,
+      title: `Ready to ride${rider.trim() ? `, ${rider.trim().split(' ')[0]}` : ''}`,
+      description: 'Start where it suits: the dock holds everything, and ⌘K searches the lot.',
+      continueLabel: 'Open the garage',
+    },
+  ]
+
+  return (
+    <div className="setup">
+      <Wizard steps={steps} index={index} onIndexChange={setIndex} onFinish={() => onDone(rider.trim())} label="Garage setup" />
+      <p className="setup-note">A sample flow. Nothing is saved, and no key is sent anywhere.</p>
+    </div>
+  )
+}
+
 /* ── Shell ── */
 
 interface Surface { readonly title: string; readonly icon: keyof typeof PATHS; readonly description: string }
@@ -605,7 +732,7 @@ const item = (id: Id, extra: Partial<DockItem> = {}): DockItem => ({
   ...extra,
 })
 
-function Garage({ desk }: { readonly desk: Desk }) {
+function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupAgain: () => void }) {
   const [steps, setSteps] = useState(INITIAL_SERVICE)
   const [pending, setPending] = useState<string | null>(null)
   const [searching, setSearching] = useState(false)
@@ -704,7 +831,7 @@ function Garage({ desk }: { readonly desk: Desk }) {
       <BusProvider>
       <ToastProvider>
       <div className="garage">
-        <GarageMenuBar desk={desk} steps={steps} touring={touring} onTour={() => setTouring(true)} />
+        <GarageMenuBar desk={desk} steps={steps} touring={touring} onTour={() => setTouring(true)} onSetupAgain={onSetupAgain} />
         <main className="screen">
           <Desktop
             title={id => (isKnown(id) ? SURFACES[id].title : id)}
@@ -745,11 +872,13 @@ function GarageMenuBar({
   steps,
   touring,
   onTour,
+  onSetupAgain,
 }: {
   readonly desk: Desk
   readonly steps: readonly Step[]
   readonly touring: boolean
   readonly onTour: () => void
+  readonly onSetupAgain: () => void
 }) {
   useDeskState() // re-render as windows change, so the status menu and badge stay current
   const titleOf = (id: string) => (isKnown(id) ? SURFACES[id].title : id)
@@ -763,6 +892,8 @@ function GarageMenuBar({
         menuAction('About Garage', () => desk.open('about')),
         menuSeparator(),
         menuCommand('Search…', SearchCommand, { shortcut: 'mod+k' }),
+        menuSeparator(),
+        menuAction('Run setup again…', onSetupAgain),
         menuCommand('Settings…', Commands.settings, { shortcut: 'mod+comma' }),
       ],
     },
@@ -834,9 +965,16 @@ if (!location.hash) {
   desk.open('service')
 }
 
+function App() {
+  // The sample starts at first run unless a link already names windows to open.
+  const [setup, setSetup] = useState(!location.hash)
+  if (setup) return <Setup onDone={() => setSetup(false)} />
+  return <Garage desk={desk} onSetupAgain={() => setSetup(true)} />
+}
+
 // Hot reload re-runs this module; reuse the root rather than creating a second one on the same container.
 const container = document.getElementById('root') as (HTMLElement & { reactRoot?: Root }) | null
 if (container) {
   container.reactRoot ??= createRoot(container)
-  container.reactRoot.render(<StrictMode><Garage desk={desk} /></StrictMode>)
+  container.reactRoot.render(<StrictMode><App /></StrictMode>)
 }
