@@ -158,12 +158,14 @@ Nobody has to arrange windows, and nobody is stopped from arranging them.
 4. **An arrangement is placed once, not held.** When a person moves or resizes one arranged window, every
    window becomes independent where it sits and only the one they touched changes. Nothing reflows into the
    space — the way arranged windows behave on a Mac.
-5. Dragging a window against the left or right edge gives it that half of the desk, with a preview of where
+5. A window resizes from its left, right and bottom edges and its bottom-right corner. There is no top
+   edge: the title bar is there, and dragging it moves the window.
+6. Dragging a window against the left or right edge gives it that half of the desk, with a preview of where
    it will land. Double-clicking a title bar, or pressing the green control, zooms the window to fill the
    desk and back.
-6. Once windows have been placed by hand, a new window opens floating rather than tiling in behind them.
+7. Once windows have been placed by hand, a new window opens floating rather than tiling in behind them.
    **Tile all** hands the layout back to the desk.
-7. Tiles keep the order they were opened in. Focusing a window never reshuffles anything.
+8. Tiles keep the order they were opened in. Focusing a window never reshuffles anything.
 
 **A window that is floated again goes back where it last was**, not to the next step of the cascade, unless
 that place no longer lands on this screen.

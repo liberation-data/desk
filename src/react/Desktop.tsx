@@ -234,7 +234,27 @@ interface WindowViewProps {
   readonly children: ReactNode
 }
 
-type Gesture = 'move' | 'resize'
+/** Moving by the title bar, or resizing from the corner or from the left, right or bottom edge. */
+type Gesture = 'move' | 'resize' | 'left' | 'right' | 'bottom'
+
+/** The frame a gesture makes of `origin` after the pointer has travelled dx, dy. */
+function reshape(gesture: Gesture, origin: Frame, dx: number, dy: number): Frame {
+  switch (gesture) {
+    case 'move':
+      return { ...origin, x: origin.x + dx, y: Math.max(0, origin.y + dy) }
+    case 'resize':
+      return { ...origin, width: Math.max(MIN_WIDTH, origin.width + dx), height: Math.max(MIN_HEIGHT, origin.height + dy) }
+    case 'right':
+      return { ...origin, width: Math.max(MIN_WIDTH, origin.width + dx) }
+    case 'bottom':
+      return { ...origin, height: Math.max(MIN_HEIGHT, origin.height + dy) }
+    case 'left': {
+      // The right edge stays put, however far the left one is pulled.
+      const shift = Math.min(dx, origin.width - MIN_WIDTH)
+      return { ...origin, x: origin.x + shift, width: origin.width - shift }
+    }
+  }
+}
 
 function WindowView({ window, layout, hidden, depth, focused, title, actions, letGo, children }: WindowViewProps) {
   const desk = useDesk()
@@ -286,10 +306,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, le
         pulledOut = true
         letGo()
       }
-      latest =
-        gesture === 'move'
-          ? { ...origin, x: origin.x + dx, y: Math.max(0, origin.y + dy) }
-          : { ...origin, width: Math.max(MIN_WIDTH, origin.width + dx), height: Math.max(MIN_HEIGHT, origin.height + dy) }
+      latest = reshape(gesture, origin, dx, dy)
       setLive(latest)
       snap = snapAt(move.clientX)
       if (stage) {
@@ -379,7 +396,15 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, le
           {actions && <div className="desk-window-actions">{actions}</div>}
         </header>
         <div className="desk-body">{children}</div>
-        {layout === 'desktop' && <div className="desk-grip" aria-hidden="true" onPointerDown={startGesture('resize')} />}
+        {layout === 'desktop' && (
+          <>
+            {/* No top edge: the title bar is there, and it moves the window. */}
+            <div className="desk-edge" data-edge="left" aria-hidden="true" onPointerDown={startGesture('left')} />
+            <div className="desk-edge" data-edge="right" aria-hidden="true" onPointerDown={startGesture('right')} />
+            <div className="desk-edge" data-edge="bottom" aria-hidden="true" onPointerDown={startGesture('bottom')} />
+            <div className="desk-grip" aria-hidden="true" onPointerDown={startGesture('resize')} />
+          </>
+        )}
       </section>
     </WindowContext.Provider>
   )

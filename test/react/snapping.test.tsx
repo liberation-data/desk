@@ -171,6 +171,57 @@ describe('resizing an arranged window', () => {
   })
 })
 
+describe('resizing from an edge', () => {
+  const pull = (id: string, edge: string, from: { x: number; y: number }, to: { x: number; y: number }) => {
+    const handle = document.querySelector<HTMLElement>(`[data-desk-window="${id}"] [data-edge="${edge}"]`) as HTMLElement
+    fireEvent.pointerDown(handle, { button: 0, clientX: from.x, clientY: from.y, pointerId: 1 })
+    act(() => {
+      handle.dispatchEvent(new PointerEvent('pointermove', { clientX: to.x, clientY: to.y, bubbles: true }))
+    })
+    act(() => {
+      handle.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+    })
+  }
+  const pair = () => {
+    const desk = mount()
+    act(() => {
+      desk.open('a')
+      desk.open('b')
+    })
+    return desk
+  }
+
+  it('widens from the right edge, and only widens', () => {
+    const desk = pair()
+    pull('a', 'right', { x: 494, y: 300 }, { x: 394, y: 360 })
+    expect(frameOf(desk, 'a')).toEqual({ x: 0, y: 0, width: 394, height: 700 })
+    expect(frameOf(desk, 'b')).toEqual(drawn.b)
+  })
+
+  it('widens from the left edge, keeping the right edge where it was', () => {
+    const desk = pair()
+    pull('b', 'left', { x: 506, y: 300 }, { x: 606, y: 250 })
+    expect(frameOf(desk, 'b')).toEqual({ x: 606, y: 0, width: 394, height: 700 })
+  })
+
+  it('stops the left edge at the smallest a window can be', () => {
+    const desk = pair()
+    pull('b', 'left', { x: 506, y: 300 }, { x: 990, y: 300 })
+    expect(frameOf(desk, 'b')).toMatchObject({ x: 1000 - 240, width: 240 })
+  })
+
+  it('grows taller from the bottom edge, and only taller', () => {
+    const desk = pair()
+    pull('a', 'bottom', { x: 200, y: 700 }, { x: 260, y: 500 })
+    expect(frameOf(desk, 'a')).toEqual({ x: 0, y: 0, width: 494, height: 500 })
+  })
+
+  it('has no top edge, where the title bar is', () => {
+    pair()
+    expect(document.querySelector('[data-edge="top"]')).toBeNull()
+  })
+})
+
 describe('zooming', () => {
   it('fills the desk from a double-click on the title bar, and goes back', () => {
     const desk = mount()
