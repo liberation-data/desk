@@ -225,6 +225,28 @@
   touch-action: none;
 }
 
+/* Where a dragged window would land if it were dropped now. */
+.desk-stage[data-snap]::after {
+  content: "";
+  position: absolute;
+  top: var(--desk-padding);
+  bottom: calc(var(--desk-padding) + var(--desk-inset-bottom));
+  width: calc(50% - var(--desk-padding) - var(--desk-gap) / 2);
+  border: 2px solid var(--desk-accent);
+  border-radius: var(--desk-radius);
+  background: color-mix(in srgb, var(--desk-accent) 14%, transparent);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.desk-stage[data-snap="start"]::after {
+  left: var(--desk-padding);
+}
+
+.desk-stage[data-snap="end"]::after {
+  right: var(--desk-padding);
+}
+
 /* ── Dock ── */
 
 .desk-dock {

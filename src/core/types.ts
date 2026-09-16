@@ -43,6 +43,11 @@ export interface DeskOptions {
   readonly initial?: DeskState
 }
 
+export interface TileOptions {
+  /** Where among the tiles it lands. Default: where it already sits in the open order. */
+  readonly at?: 'start' | 'end'
+}
+
 export interface OpenOptions {
   /** Force a mode instead of following the tile-first rule. */
   readonly mode?: WindowMode

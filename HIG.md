@@ -157,7 +157,11 @@ Nobody has to arrange windows, and nobody is stopped from arranging them.
 4. A person can float any tile, tile any floating window, or tile everything at once.
 5. Tiles keep the order they were opened in. Focusing a window never reshuffles them.
 
-**Open:** snapping a dragged window to an edge; remembering where a floating window was last placed.
+**Dragging a floating window against the left or right edge tiles it there** — at the start or the end of
+the tile order. A preview shows where it will land before it is dropped.
+
+**A window that is floated again goes back where it last was**, not to the next step of the cascade, unless
+that place no longer lands on this screen.
 
 ### Arrangement on touch devices
 
@@ -241,7 +245,11 @@ Use the platform's modifier (⌘ on Apple devices, Ctrl elsewhere). Don't reassi
 | Find in window | ⌘F |
 | Next window | ⌘\` |
 
-**Open:** which browser-reserved shortcuts the toolkit may take when running as an installed app.
+**Shortcuts the browser owns** — ⌘W, ⌘T, ⌘N, ⌘` and the number keys — are the browser's while the app runs
+in a tab, and taking them there breaks what people expect of every other tab. An app **installed** to the
+dock or home screen has the window to itself, and may take ⌘W for "close window" and ⌘\` for "next window".
+`isInstalledApp()` reports which case this is; bind those two only when it is true, and never take ⌘T or ⌘N
+at all.
 
 ---
 

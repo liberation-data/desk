@@ -11,7 +11,9 @@ npm install @liberation-data/desk
 The first window takes the stage. The second splits it. Everything after that floats, cascading down and
 right from the last. A user can float any tile or tile any floating window; `tileAll()` tidies the lot.
 
-Nobody has to arrange anything, and nobody is stopped from arranging.
+Nobody has to arrange anything, and nobody is stopped from arranging. Drag a floating window against the
+left or right edge and it tiles there, with a preview of where it will land; tile it and float it again and
+it returns to where it last sat.
 
 ## Use it
 
@@ -201,6 +203,9 @@ const perform = usePerform()        // perform('edit.copy') → true if somethin
 const canPerform = useCanPerform()  // what a menu asks before drawing the item enabled
 useShortcuts(KEYMAP)                // { 'mod+c': 'edit.copy', 'mod+shift+z': 'edit.redo' }
 ```
+
+`isInstalledApp()` says whether the app is running installed rather than in a tab. Only then may it take
+shortcuts the browser owns: ⌘W for close window and ⌘\` for next window, and never ⌘T or ⌘N at all.
 
 The chain is the DOM: commands travel as events that bubble from the focused element, so there is no second
 tree to keep in step. The first responder that implements a command decides — if it is disabled, the

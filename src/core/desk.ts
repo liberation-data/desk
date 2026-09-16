@@ -6,6 +6,7 @@ import type {
   Frame,
   OpenOptions,
   Size,
+  TileOptions,
   WindowId,
 } from './types.js'
 
@@ -20,7 +21,7 @@ export interface Desk {
   /** Floats a tiled window, or moves a floating one when a frame is given. */
   float(id: WindowId, frame?: Frame): void
   /** Returns a floating window to the tiles. Not limited by maxTiled: the user asked for it. */
-  tile(id: WindowId): void
+  tile(id: WindowId, options?: TileOptions): void
   toggleMode(id: WindowId): void
   tileAll(): void
   /** Replaces the whole state, e.g. from a URL. Unknown shapes are normalised, not trusted. */
@@ -112,18 +113,39 @@ export function createDesk(options: DeskOptions = {}): Desk {
 
   const find = (id: WindowId) => state.windows.find(w => w.id === id)
 
+  /** Where each window last floated, so tiling and floating again is not a surprise. */
+  const remembered = new Map<WindowId, Frame>()
+
+  /** A remembered frame is only worth restoring while it still lands on this screen. */
+  const fits = (frame: Frame | undefined) => {
+    if (!frame) return undefined
+    const { width, height } = stage()
+    return frame.x + 40 <= width && frame.y + 20 <= height && frame.x >= 0 && frame.y >= 0 ? frame : undefined
+  }
+
   // Plain functions rather than methods, so `const { open } = desk` works.
   const float = (id: WindowId, frame?: Frame) => {
     const window = find(id)
     if (!window) return
     if (window.mode === 'floating' && !frame) return
-    commit(toFront(replace(state, { id, mode: 'floating', frame: frame ?? nextFrame(state) }), id))
+    const next = frame ?? fits(remembered.get(id)) ?? nextFrame(state)
+    if (frame) remembered.set(id, frame)
+    commit(toFront(replace(state, { id, mode: 'floating', frame: next }), id))
   }
 
-  const tile = (id: WindowId) => {
+  const tile = (id: WindowId, options: TileOptions = {}) => {
     const window = find(id)
-    if (!window || window.mode === 'tiled') return
-    commit(toFront(replace(state, { id, mode: 'tiled' }), id))
+    if (!window || (window.mode === 'tiled' && !options.at)) return
+    // Coming back from floating, remember where it was: floating it again should
+    // put it back where the person left it, not at the next step of the cascade.
+    if (window.mode === 'floating') remembered.set(id, window.frame)
+    const tiled: DeskWindow = { id, mode: 'tiled' }
+    const rest = state.windows.filter(w => w.id !== id)
+    const windows =
+      options.at === 'start' ? [tiled, ...rest]
+      : options.at === 'end' ? [...rest, tiled]
+      : state.windows.map(w => (w.id === id ? tiled : w))
+    commit(toFront({ ...state, windows }, id))
   }
 
   return {

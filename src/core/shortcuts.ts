@@ -33,6 +33,13 @@ export function parseShortcut(text: string): Shortcut {
   }
 }
 
+/**
+ * Whether the app is running installed, rather than in a browser tab. Only then
+ * may it take shortcuts the browser normally owns, such as ⌘W (HIG.md §5).
+ */
+export const isInstalledApp = (): boolean =>
+  typeof matchMedia === 'function' && (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: window-controls-overlay)').matches)
+
 export const isApplePlatform = (): boolean =>
   typeof navigator !== 'undefined' && /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent)
 

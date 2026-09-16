@@ -41,6 +41,8 @@ function useMediaQuery(query: string): boolean {
 
 const MIN_WIDTH = 240
 const MIN_HEIGHT = 160
+/** How close to the edge a dragged window has to get before it will tile there. */
+const SNAP_MARGIN = 56
 
 /** One column, then two side by side, then the smallest square grid that fits. */
 const columnsFor = (tiled: number) => (tiled <= 2 ? Math.max(1, tiled) : Math.ceil(Math.sqrt(tiled)))
@@ -130,8 +132,20 @@ function WindowView({ window, layout, hidden, depth, focused, title, children }:
     const startX = event.clientX
     const startY = event.clientY
     const handle = event.currentTarget
-    handle.setPointerCapture(event.pointerId)
+    handle.setPointerCapture?.(event.pointerId)
+    const stage = handle.closest<HTMLElement>(`[${STAGE_ATTRIBUTE}]`)
     let latest = origin
+    let snap: 'start' | 'end' | null = null
+
+    // Dragging a window against an edge tiles it there — the way the tiles were
+    // going to lay themselves out anyway, chosen by hand.
+    const snapAt = (clientX: number) => {
+      if (gesture !== 'move' || !stage) return null
+      const box = stage.getBoundingClientRect()
+      if (clientX - box.left < SNAP_MARGIN) return 'start' as const
+      if (box.right - clientX < SNAP_MARGIN) return 'end' as const
+      return null
+    }
 
     const onMove = (move: PointerEvent) => {
       const dx = move.clientX - startX
@@ -141,13 +155,20 @@ function WindowView({ window, layout, hidden, depth, focused, title, children }:
           ? { ...origin, x: origin.x + dx, y: Math.max(0, origin.y + dy) }
           : { ...origin, width: Math.max(MIN_WIDTH, origin.width + dx), height: Math.max(MIN_HEIGHT, origin.height + dy) }
       setLive(latest)
+      snap = snapAt(move.clientX)
+      if (stage) {
+        if (snap) stage.dataset.snap = snap
+        else delete stage.dataset.snap
+      }
     }
     const onUp = () => {
       handle.removeEventListener('pointermove', onMove)
       handle.removeEventListener('pointerup', onUp)
       handle.removeEventListener('pointercancel', onUp)
       setLive(null)
-      if (latest !== origin) desk.float(window.id, latest)
+      if (stage) delete stage.dataset.snap
+      if (snap) desk.tile(window.id, { at: snap })
+      else if (latest !== origin) desk.float(window.id, latest)
     }
     handle.addEventListener('pointermove', onMove)
     handle.addEventListener('pointerup', onUp)
