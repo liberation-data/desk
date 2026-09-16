@@ -1,4 +1,4 @@
-import { forwardRef, useId, useRef } from 'react'
+import { forwardRef, useEffect, useId, useRef } from 'react'
 import type { ButtonHTMLAttributes, InputHTMLAttributes, KeyboardEvent, ReactNode } from 'react'
 
 /*
@@ -126,6 +126,89 @@ export function Toggle({ checked, onChange, label, description, disabled, 'aria-
         {description && <span id={descriptionId} className="desk-help">{description}</span>}
       </span>
       {control}
+    </div>
+  )
+}
+
+export interface CheckboxProps {
+  readonly checked: boolean
+  /** Some of the things this stands for are checked, and some are not. */
+  readonly indeterminate?: boolean
+  readonly onChange: (checked: boolean) => void
+  readonly label?: ReactNode
+  readonly description?: ReactNode
+  readonly disabled?: boolean
+  readonly 'aria-label'?: string
+}
+
+/** For a setting that waits for Save. One that applies at once is a Toggle. */
+export function Checkbox({ checked, indeterminate, onChange, label, description, disabled, 'aria-label': ariaLabel }: CheckboxProps) {
+  const id = useId()
+  const descriptionId = description ? `${id}-description` : undefined
+  const box = useRef<HTMLInputElement>(null)
+  // Indeterminate is a property, not an attribute: it cannot be set in markup.
+  useEffect(() => {
+    if (box.current) box.current.indeterminate = indeterminate ?? false
+  }, [indeterminate])
+
+  const input = (
+    <input
+      ref={box}
+      id={id}
+      type="checkbox"
+      className="desk-checkbox"
+      checked={checked}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      aria-describedby={descriptionId}
+      onChange={event => onChange(event.target.checked)}
+    />
+  )
+  if (!label && !description) return input
+  return (
+    <div className="desk-check-row">
+      {input}
+      <span className="desk-check-text">
+        {label && <label htmlFor={id} className="desk-check-label">{label}</label>}
+        {description && <span id={descriptionId} className="desk-help">{description}</span>}
+      </span>
+    </div>
+  )
+}
+
+export interface SliderProps {
+  readonly value: number
+  readonly onChange: (value: number) => void
+  readonly label: string
+  readonly min?: number
+  readonly max?: number
+  readonly step?: number
+  readonly disabled?: boolean
+  /** How the value reads to a person: `v => \`${v} psi\``. Shown beside the label and announced. */
+  readonly format?: (value: number) => string
+}
+
+export function Slider({ value, onChange, label, min = 0, max = 100, step = 1, disabled, format }: SliderProps) {
+  const id = useId()
+  const shown = format ? format(value) : String(value)
+  return (
+    <div className="desk-slider">
+      <div className="desk-slider-head">
+        <label htmlFor={id} className="desk-label">{label}</label>
+        <output htmlFor={id} className="desk-slider-value">{shown}</output>
+      </div>
+      <input
+        id={id}
+        type="range"
+        className="desk-slider-track"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        disabled={disabled}
+        aria-valuetext={format ? shown : undefined}
+        onChange={event => onChange(Number(event.target.value))}
+      />
     </div>
   )
 }

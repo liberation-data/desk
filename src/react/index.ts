@@ -4,8 +4,23 @@ export { useCanPerform, useCommand, usePerform, useShortcuts } from './commands.
 export type { UseCommandOptions } from './commands.js'
 export { Desktop } from './Desktop.js'
 export type { DeskLayout, DesktopProps } from './Desktop.js'
-export { Button, SegmentedControl, TextField, Toggle } from './controls.js'
-export type { ButtonIntent, ButtonProps, SegmentedControlProps, SegmentedOption, TextFieldProps, ToggleProps } from './controls.js'
+export { Button, Checkbox, SegmentedControl, Slider, TextField, Toggle } from './controls.js'
+export type {
+  ButtonIntent,
+  ButtonProps,
+  CheckboxProps,
+  SegmentedControlProps,
+  SegmentedOption,
+  SliderProps,
+  TextFieldProps,
+  ToggleProps,
+} from './controls.js'
+export { PopUpButton } from './popup.js'
+export type { PopUpButtonProps, PopUpOption } from './popup.js'
+export { Table } from './table.js'
+export type { Column, Sort, TableProps } from './table.js'
+export { Sidebar } from './sidebar.js'
+export type { SidebarItem, SidebarProps, SidebarSection } from './sidebar.js'
 export { TourBar } from './tour.js'
 export type { Tour, TourBarProps, TourStep } from './tour.js'
 export { SearchCommand, SearchPalette, windowResults } from './search.js'

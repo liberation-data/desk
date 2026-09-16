@@ -170,6 +170,27 @@ button instead of yanking you away. The composer grows with the text, sends on E
 a new line, never sends mid-composition in an input method, and turns Send into Stop while an answer is
 arriving.
 
+## Lists and choices
+
+```tsx
+<Table label="Rides" rows={rides} columns={COLUMNS} rowId={r => r.id}
+       selected={selected} onSelect={choose} onActivate={open}
+       sort={sort} onSortChange={setSort} empty={<p>No rides yet</p>} />
+
+<Sidebar label="Bikes" sections={SECTIONS} value={bike} onChange={setBike} />
+
+<PopUpButton label="Distance" options={UNITS} value={units} onChange={setUnits} />
+<Checkbox checked={commutes} onChange={setCommutes} label="Count commutes towards wear" />
+<Slider label="Warn at" value={90} onChange={setThreshold} format={v => `${v}% worn`} />
+```
+
+A **table** renders what it is given — no paging, no fetching — and is one tab stop: arrow keys move the
+selection, Enter or a double click opens a row, and a sortable heading says which way it is sorted. A
+**sidebar** is navigation, so where you are is `aria-current` and stays put. A **pop-up button** is what a
+segmented control becomes when there are too many options to show at once; unlike a menu it takes focus, and
+typing jumps to an option. A **checkbox** is for a setting that waits for Save (a Toggle applies at once),
+and can stand for a mixed set. A **slider** reads its value in words for people who cannot see it.
+
 ## Overlays
 
 Least interrupting to most (see [HIG.md](HIG.md) §7):

@@ -334,7 +334,9 @@ td {
   margin-left: auto;
 }
 
-.settings .desk-field + .desk-field {
+.settings .desk-field + .desk-field,
+.settings .desk-slider,
+.settings .desk-check-row {
   margin-top: var(--desk-space-3);
 }
 
@@ -445,6 +447,24 @@ td {
 .mapcard span {
   font-size: 12px;
   color: var(--desk-muted);
+}
+
+.split {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.split-side {
+  flex: none;
+  width: 180px;
+  border-right: 1px solid var(--desk-rule);
+}
+
+.split-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
 }
 
 .chat {

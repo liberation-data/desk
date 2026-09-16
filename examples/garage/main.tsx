@@ -8,6 +8,7 @@ import {
   Alert,
   BusProvider,
   Button,
+  Checkbox,
   Composer,
   Desktop,
   DeskProvider,
@@ -15,30 +16,36 @@ import {
   dockItem,
   dockSeparator,
   dockStack,
+  InputBar,
   MenuBar,
   menuAction,
   menuCommand,
   menuSeparator,
   Popover,
-  SegmentedControl,
-  InputBar,
+  PopUpButton,
   SearchCommand,
   SearchPalette,
-  TourBar,
+  SegmentedControl,
   Sheet,
-  Thread,
+  Sidebar,
+  Slider,
+  Table,
   TextField,
+  Thread,
   ToastProvider,
   Toggle,
+  TourBar,
   useCommand,
+  useDesk,
   useDeskEvent,
+  useDeskState,
   usePublish,
   useToast,
   useWindowInput,
-  useDeskState,
   windowMenuItems,
+  windowResults,
 } from '../../src/react/index.js'
-import type { DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption, Tour } from '../../src/react/index.js'
+import type { Column, DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption, Sort, Tour } from '../../src/react/index.js'
 import '../../src/desk.css'
 import './garage.css'
 
@@ -112,9 +119,21 @@ const BIKES: readonly SegmentedOption<'all' | 'Road' | 'Gravel' | 'MTB'>[] = [
   { value: 'MTB', label: 'MTB' },
 ]
 
+const RIDE_COLUMNS: Column<(typeof RIDES)[number]>[] = [
+  { key: 'date', header: 'Date', sortable: true },
+  { key: 'name', header: 'Ride', sortable: true },
+  { key: 'bike', header: 'Bike', render: r => <span className="chip">{r.bike}</span> },
+  { key: 'km', header: 'km', numeric: true, sortable: true, render: r => r.km.toFixed(1) },
+  { key: 'climb', header: 'Climb', numeric: true, sortable: true, render: r => `${r.climb.toLocaleString()} m` },
+  { key: 'time', header: 'Time', numeric: true },
+]
+
 function Rides() {
+  const desk = useDesk()
   const toast = useToast()
   const publish = usePublish()
+  const [selected, setSelected] = useState<string | null>(null)
+  const [sort, setSort] = useState<Sort | null>(null)
   const [query, setQuery] = useState('')
   const [bike, setBike] = useState<(typeof BIKES)[number]['value']>('all')
   const [minKm, setMinKm] = useState('')
@@ -126,9 +145,17 @@ function Rides() {
   useWindowInput(setQuery, { placeholder: 'Filter rides by name…', target: 'Rides' })
 
   const floor = Number(minKm) || 0
-  const rides = RIDES.filter(
+  const filtered = RIDES.filter(
     r => (bike === 'all' || r.bike === bike) && r.km >= floor && r.name.toLowerCase().includes(query.trim().toLowerCase()),
   )
+  const rides = sort
+    ? [...filtered].sort((a, b) => {
+        const key = sort.key as keyof (typeof RIDES)[number]
+        const [x, y] = [a[key], b[key]]
+        const order = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y))
+        return sort.direction === 'ascending' ? order : -order
+      })
+    : filtered
   const total = rides.reduce((sum, r) => sum + r.km, 0)
 
   // Export belongs to this window, so the menu item is live only while Rides is key.
@@ -169,28 +196,27 @@ function Rides() {
         <Stat label="Climbing" value={`${rides.reduce((s, r) => s + r.climb, 0).toLocaleString()} m`} />
         <Stat label="Rides" value={String(rides.length)} />
       </div>
-      <div className="tablewrap">
-        <table>
-          <thead>
-            <tr><th>Date</th><th>Ride</th><th>Bike</th><th className="r">km</th><th className="r">Climb</th><th className="r">Time</th></tr>
-          </thead>
-          <tbody>
-            {rides.map(r => (
-              <tr key={r.date}>
-                <td className="muted">{r.date}</td>
-                <td>
-                  {/* Say what happened; the map answers if it is open. */}
-                  <button type="button" className="linkish" onClick={() => publish('ride.selected', r)}>{r.name}</button>
-                </td>
-                <td><span className="chip">{r.bike}</span></td>
-                <td className="r">{r.km.toFixed(1)}</td><td className="r">{r.climb.toLocaleString()} m</td><td className="r">{r.time}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table
+        label="Rides"
+        rows={rides}
+        columns={RIDE_COLUMNS}
+        rowId={r => r.date}
+        selected={selected}
+        onSelect={(id, row) => {
+          setSelected(id)
+          // Say what happened: the map draws it if it is open.
+          publish('ride.selected', row)
+        }}
+        onActivate={(_id, row) => {
+          publish('ride.selected', row)
+          desk.open('map')
+        }}
+        sort={sort}
+        onSortChange={setSort}
+        empty={<p>No rides match those filters.</p>}
+      />
       {query && <p className="small">Filtered by “{query}” · <button type="button" className="linkish" onClick={() => setQuery('')}>clear</button></p>}
-      {rides.length === 0 && <p className="muted">No rides match those filters.</p>}
+
 
       <Sheet
         open={exporting}
@@ -214,21 +240,40 @@ const Stat = ({ label, value }: { readonly label: string; readonly value: string
   <div className="stat"><span>{label}</span><b>{value}</b></div>
 )
 
+const BIKE_SECTIONS = [
+  {
+    id: 'bikes',
+    label: 'Bikes',
+    items: [
+      { id: 'all', label: 'All bikes' },
+      { id: 'Road', label: 'Road' },
+      { id: 'Gravel', label: 'Gravel' },
+      { id: 'MTB', label: 'MTB' },
+    ],
+  },
+]
+
 function Parts() {
+  const [bike, setBike] = useState('all')
+  const parts = PARTS.filter(p => bike === 'all' || p.bike === bike)
   return (
-    <div className="pad">
-      <p className="lede">Wear is counted from the rides each bike has done since the part was fitted.</p>
-      {PARTS.map(p => {
-        const ratio = p.used / p.life
-        const tone = ratio >= 0.9 ? 'bad' : ratio >= 0.75 ? 'warn' : 'ok'
-        return (
-          <div className="wear" key={p.part} data-tour={p.part === 'Chain' ? 'part-chain' : undefined}>
-            <div className="wear-head"><b>{p.part}</b><span className="muted">{p.bike}</span>
-              <span className="r muted">{p.used.toLocaleString()} / {p.life.toLocaleString()} {p.unit ?? 'km'}</span></div>
-            <div className="meter" data-tone={tone}><i style={{ width: `${Math.min(100, ratio * 100)}%` }} /></div>
-          </div>
-        )
-      })}
+    <div className="split">
+      <Sidebar label="Bikes" sections={BIKE_SECTIONS} value={bike} onChange={setBike} className="split-side" />
+      <div className="pad split-main">
+        <p className="lede">Wear is counted from the rides each bike has done since the part was fitted.</p>
+        {parts.map(p => {
+          const ratio = p.used / p.life
+          const tone = ratio >= 0.9 ? 'bad' : ratio >= 0.75 ? 'warn' : 'ok'
+          return (
+            <div className="wear" key={p.part} data-tour={p.part === 'Chain' ? 'part-chain' : undefined}>
+              <div className="wear-head"><b>{p.part}</b><span className="muted">{p.bike}</span>
+                <span className="r muted">{p.used.toLocaleString()} / {p.life.toLocaleString()} {p.unit ?? 'km'}</span></div>
+              <div className="meter" data-tone={tone}><i style={{ width: `${Math.min(100, ratio * 100)}%` }} /></div>
+            </div>
+          )
+        })}
+        {parts.length === 0 && <p className="muted">Nothing fitted to that bike yet.</p>}
+      </div>
     </div>
   )
 }
@@ -386,9 +431,16 @@ function Notes() {
   )
 }
 
+const UNIT_OPTIONS = [
+  { value: 'metric', label: 'Kilometres and metres' },
+  { value: 'imperial', label: 'Miles and feet' },
+] as const
+
 function Settings() {
-  const [metric, setMetric] = useState(true)
+  const [units, setUnits] = useState<(typeof UNIT_OPTIONS)[number]['value']>('metric')
   const [remind, setRemind] = useState(true)
+  const [threshold, setThreshold] = useState(90)
+  const [commutes, setCommutes] = useState(true)
   const [name, setName] = useState('Jasper')
   const [wheel, setWheel] = useState('622')
   const wheelError = /^\d+$/.test(wheel) ? undefined : 'Enter a size in millimetres, like 622'
@@ -396,11 +448,22 @@ function Settings() {
     <div className="pad settings">
       <section className="section">
         <h3>Units</h3>
-        <Toggle checked={metric} onChange={setMetric} label="Kilometres and metres" description="Off shows miles and feet" />
+        <PopUpButton label="Distance" options={UNIT_OPTIONS} value={units} onChange={setUnits} />
       </section>
       <section className="section">
         <h3>Service reminders</h3>
-        <Toggle checked={remind} onChange={setRemind} label="Warn me before a part wears out" description="At 90% of its expected life" />
+        <Toggle checked={remind} onChange={setRemind} label="Warn me before a part wears out" description="A badge on the dock" />
+        <Slider
+          label="Warn at"
+          value={threshold}
+          onChange={setThreshold}
+          min={50}
+          max={100}
+          step={5}
+          disabled={!remind}
+          format={v => `${v}% worn`}
+        />
+        <Checkbox checked={commutes} onChange={setCommutes} label="Count commutes towards wear" description="Short rides under 30 km" />
       </section>
       <section className="section">
         <h3>Rider</h3>
