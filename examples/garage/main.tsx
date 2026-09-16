@@ -22,6 +22,8 @@ import {
   Popover,
   SegmentedControl,
   InputBar,
+  SearchCommand,
+  SearchPalette,
   Sheet,
   Thread,
   TextField,
@@ -35,7 +37,7 @@ import {
   useDeskState,
   windowMenuItems,
 } from '../../src/react/index.js'
-import type { DockEntry, DockItem, Menu, Message as MessageT, SegmentedOption } from '../../src/react/index.js'
+import type { DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption } from '../../src/react/index.js'
 import '../../src/desk.css'
 import './garage.css'
 
@@ -531,6 +533,7 @@ const item = (id: Id, extra: Partial<DockItem> = {}): DockItem => ({
 function Garage({ desk }: { readonly desk: Desk }) {
   const [steps, setSteps] = useState(INITIAL_SERVICE)
   const [pending, setPending] = useState<string | null>(null)
+  const [searching, setSearching] = useState(false)
   const due = steps.filter(s => s.state === 'todo').length
 
   useEffect(() => syncWithLocation(desk, () => {
@@ -554,6 +557,52 @@ function Garage({ desk }: { readonly desk: Desk }) {
     dockItem(item('playlist')),
     dockItem(item('notes')),
   ]
+
+  // Everything this world holds, in one list: windows, rides, parts and what needs doing.
+  const search = (query: string): SearchResult[] => {
+    const text = query.trim().toLowerCase()
+    const hit = (...fields: string[]) => !text || fields.some(f => f.toLowerCase().includes(text))
+    return [
+      ...(Object.keys(SURFACES) as Id[])
+        .filter(id => hit(SURFACES[id].title, SURFACES[id].description))
+        .map(id => ({
+          id: `open:${id}`,
+          title: SURFACES[id].title,
+          subtitle: SURFACES[id].description,
+          group: 'Open',
+          kind: 'window',
+          icon: <Icon name={SURFACES[id].icon} />,
+          onSelect: () => desk.open(id),
+        })),
+      ...RIDES.filter(r => hit(r.name, r.bike)).map(r => ({
+        id: `ride:${r.date}`,
+        title: r.name,
+        subtitle: `${r.date} · ${r.km.toFixed(1)} km · ${r.bike}`,
+        group: 'Rides',
+        kind: 'ride',
+        icon: <Icon name="ride" />,
+        onSelect: () => desk.open('map'),
+      })),
+      ...PARTS.filter(p => hit(p.part, p.bike)).map(p => ({
+        id: `part:${p.part}`,
+        title: p.part,
+        subtitle: `${p.bike} · ${Math.round((p.used / p.life) * 100)}% worn`,
+        group: 'Parts',
+        kind: 'part',
+        icon: <Icon name="chain" />,
+        onSelect: () => desk.open('parts'),
+      })),
+      ...steps.filter(step => hit(step.title, step.detail)).map(step => ({
+        id: `service:${step.id}`,
+        title: step.title,
+        subtitle: step.state === 'todo' ? 'still to do' : step.state,
+        group: 'Service',
+        kind: 'job',
+        icon: <Icon name="wrench" />,
+        onSelect: () => desk.open('service'),
+      })),
+    ]
+  }
 
   const body = (id: Id): ReactNode => {
     switch (id) {
@@ -596,6 +645,14 @@ function Garage({ desk }: { readonly desk: Desk }) {
             fallbackTarget="Chat"
           />
           <Dock entries={entries} label="Garage dock" />
+          <SearchPalette
+            open={searching}
+            onOpenChange={setSearching}
+            search={search}
+            shortcut={null}
+            placeholder="Search rides, parts and jobs"
+            hint={<>Search the whole garage — windows, rides, parts and what needs doing.</>}
+          />
         </main>
       </div>
       </ToastProvider>
@@ -616,6 +673,7 @@ function GarageMenuBar({ desk, steps }: { readonly desk: Desk; readonly steps: r
       items: [
         menuAction('About Garage', () => desk.open('about')),
         menuSeparator(),
+        menuCommand('Search…', SearchCommand, { shortcut: 'mod+k' }),
         menuCommand('Settings…', Commands.settings, { shortcut: 'mod+comma' }),
       ],
     },

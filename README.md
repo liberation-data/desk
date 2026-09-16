@@ -90,6 +90,22 @@ tab stop whose arrow keys move the selection past disabled options. A toggle is 
 apply at once — a checkbox is for one that waits for Save. A text field always has a label (`labelHidden`
 keeps it for screen readers), and an `error` marks it invalid and replaces the help text.
 
+## Search
+
+```tsx
+import { SearchPalette, windowResults } from '@liberation-data/desk/react'
+
+<SearchPalette open={open} onOpenChange={setOpen} search={query => [
+  ...windowResults(desk, titleOf),
+  ...rides.filter(matching(query)).map(asResult),
+]} />
+```
+
+The app says what the results are; the palette does the typing, grouping, keyboard and choosing. It binds
+`mod+k` and answers the `desk.search` command, so a menu item can open it too (pass `shortcut={null}` when
+the menu binds the key itself). An async `search` is safe: a slower answer to an older query never overtakes
+a newer one.
+
 ## Typing into the window you are in, and windows telling each other
 
 One bar to type into, which reaches whichever window is key:
