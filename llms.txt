@@ -173,11 +173,23 @@ useWindowId(): string | null                        // inside a window's content
   renderWindow={(id) => ReactNode}                  // memoised: chrome re-renders, content does not
   title={(id) => ReactNode}
   actions?={(id) => ReactNode}                      // window-wide controls in the title bar
+  loading?={(id) => ReactNode}                      // inside a window while its code loads
+  failed?={(id, error, reload) => ReactNode}        // inside a window that could not open
   empty?={ReactNode}
   layout?={'auto' | 'desktop' | 'fullscreen'}       // auto: touch screens get one window at a time
   className?={string}
 />
 ```
+
+### Loading and failing, per window
+
+```tsx
+const QueryStudio = lazyWindow(() => import('./apps/QueryStudio'))   // use in renderWindow
+```
+
+Every window has its own Suspense and error boundary: one window loading or throwing never blanks another,
+the menu bar or the dock. A failure is logged with `console.error` and shows Reload, which remounts the
+window; `lazyWindow` retries its import on reload, unlike `React.lazy`, which caches a failed import.
 
 ### Dock
 

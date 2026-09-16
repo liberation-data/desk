@@ -43,6 +43,16 @@ export function App() {
 Two windows onto the same thing are the same kind with different ids: `desk.openInstance('query')` gives
 `query`, then `query#2`. `windowType(id)` says what to render; the whole id says which one it is.
 
+A window's code can wait until the window opens, and each window loads and fails on its own:
+
+```tsx
+const QueryStudio = lazyWindow(() => import('./apps/QueryStudio'))
+```
+
+While it loads, that window says so and the rest of the desk carries on; if it cannot open, that window says
+what went wrong and offers Reload, which tries the import again rather than remembering the failure.
+`<Desktop loading={…} failed={…}>` replaces the wording.
+
 `renderWindow` is called with a window's id. The desk never owns your content, and a window keeps its DOM
 when focus moves, so scroll positions, carets and iframes survive.
 

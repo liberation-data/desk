@@ -50,6 +50,7 @@ import {
   usePublish,
   useToast,
   useWindowInput,
+  lazyWindow,
   windowMenuItems,
   withAppBridge,
   windowResults,
@@ -88,6 +89,9 @@ const Icon = ({ name }: { readonly name: keyof typeof PATHS }) => (
 )
 
 /* ── Example data ── */
+
+// Its code is fetched the first time the window opens, not with the rest of the app.
+const Weather = lazyWindow(() => import('./Weather.js'))
 
 const RIDES = [
   { date: 'Sun 14 Sep', name: 'Dandenongs loop', bike: 'Road', km: 92.4, climb: 1640, time: '3:41' },
@@ -371,19 +375,6 @@ function Bikes() {
       {[['Road', 'Carbon endurance frame', '6,120 km this year'], ['Gravel', 'Steel, flat-mount discs', '2,340 km this year'], ['MTB', 'Trail, 130 mm travel', '38 h since fork service']].map(([n, d, s]) => (
         <div className="card" key={n}><span className="cardicon"><Icon name="bike" /></span><b>{n}</b><span className="muted">{d}</span><span className="small">{s}</span></div>
       ))}
-    </div>
-  )
-}
-
-function Weather() {
-  return (
-    <div className="pad">
-      <div className="stats">
-        {[['Sat', '19°', 'Wind NW 22 km/h'], ['Sun', '23°', 'Calm'], ['Mon', '14°', 'Showers']].map(([d, t, w]) => (
-          <div className="stat" key={d}><span>{d}</span><b>{t}</b><span className="small">{w}</span></div>
-        ))}
-      </div>
-      <p className="lede">Sunday is the pick: warm, still, and dry roads by 8am.</p>
     </div>
   )
 }

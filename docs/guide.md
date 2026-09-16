@@ -192,4 +192,7 @@ when a test cares where a floating window lands.
   `{ at: 'app' }`.
 - **Keep `renderWindow` stable** — module scope, or `useCallback`. Window content is memoised on it, so an
   inline arrow function gives that up.
+- **Load big windows lazily.** `lazyWindow(() => import('./QueryStudio'))` keeps a window's code out of the
+  first load, and each window already has its own loading and error state, so one slow or broken window
+  never takes the desk down with it.
 - **A search that returns a promise is fine;** a slower answer to an older query never overtakes a newer one.

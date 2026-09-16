@@ -4,6 +4,8 @@ import { addDeskCommands, STAGE_ATTRIBUTE, WINDOW_ATTRIBUTE, windowElement } fro
 import { focusedId } from '../core/desk.js'
 import type { DeskWindow, Frame, WindowId } from '../core/types.js'
 import { useDesk, useDeskState, WindowContext } from './context.js'
+import { WindowBoundary } from './windowBoundary.js'
+import type { WindowFailed, WindowLoading } from './windowBoundary.js'
 
 export type DeskLayout = 'desktop' | 'fullscreen'
 
@@ -14,6 +16,10 @@ export interface DesktopProps {
   readonly actions?: (id: WindowId) => ReactNode
   /** Shown when no window is open. */
   readonly empty?: ReactNode
+  /** Shown inside a window while its code loads. Default: a quiet "Loading…". */
+  readonly loading?: WindowLoading
+  /** Shown inside a window that could not open, with a way to try again. */
+  readonly failed?: WindowFailed
   /**
    * `auto` (the default) reads the device: a touch screen gets `fullscreen`, one
    * window at a time; anything with a pointer gets the tiling `desktop`.
@@ -51,7 +57,7 @@ const columnsFor = (tiled: number) => (tiled <= 2 ? Math.max(1, tiled) : Math.ce
 
 const MIN_SPLIT = 0.2
 
-export function Desktop({ renderWindow, title, actions, empty, layout = 'auto', className }: DesktopProps) {
+export function Desktop({ renderWindow, title, actions, empty, loading, failed, layout = 'auto', className }: DesktopProps) {
   // Where the split between two tiles sits. A third tile makes it a grid again.
   const [split, setSplit] = useState(0.5)
   const desk = useDesk()
@@ -151,15 +157,27 @@ export function Desktop({ renderWindow, title, actions, empty, layout = 'auto', 
         >
           {/* Memoised on the id and the render function: moving or focusing a window
               re-renders its chrome, never the app's content inside it. */}
-          <WindowContent id={window.id} render={renderWindow} />
+          <WindowContent id={window.id} render={renderWindow} loading={loading} failed={failed} />
         </WindowView>
       ))}
     </div>
   )
 }
 
-const WindowContent = memo(function WindowContent({ id, render }: { readonly id: WindowId; readonly render: (id: WindowId) => ReactNode }) {
-  return render(id)
+interface WindowContentProps {
+  readonly id: WindowId
+  readonly render: (id: WindowId) => ReactNode
+  readonly loading: WindowLoading | undefined
+  readonly failed: WindowFailed | undefined
+}
+
+// Each window loads and fails on its own: one fetching its code, or throwing, never blanks another.
+const WindowContent = memo(function WindowContent({ id, render, loading, failed }: WindowContentProps) {
+  return (
+    <WindowBoundary id={id} loading={loading} failed={failed}>
+      {render(id)}
+    </WindowBoundary>
+  )
 })
 
 interface WindowViewProps {

@@ -19,6 +19,8 @@ export { useCanPerform, useCommand, usePerform, useShortcuts } from './commands.
 export type { UseCommandOptions } from './commands.js'
 export { Desktop } from './Desktop.js'
 export type { DeskLayout, DesktopProps } from './Desktop.js'
+export { lazyWindow } from './windowBoundary.js'
+export type { WindowFailed, WindowLoading } from './windowBoundary.js'
 export { Button, Checkbox, RadioGroup, SegmentedControl, Slider, TextField, Toggle } from './controls.js'
 export type {
   ButtonIntent,
