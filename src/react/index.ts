@@ -1,3 +1,5 @@
+export { DragProvider, useDraggable, useDragging, useDragSource, useDropTarget } from './dnd.js'
+export type { Accepts, Drag, DraggableOptions, DraggableResult, DragSource, DragSourceOptions, DropTargetOptions, DropTargetResult } from './dnd.js'
 export { DeskShell } from './shell.js'
 export type { DeskShellProps } from './shell.js'
 export { DeskProvider, useDesk, useDeskState, useWindowId } from './context.js'

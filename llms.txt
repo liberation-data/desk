@@ -125,6 +125,21 @@ isInstalledApp(): boolean                          // gate ⌘W / ⌘` on this; 
 `mod` is ⌘ on Apple, Ctrl elsewhere. Matching also falls back to the physical key, so ⌥] works on a Mac. A
 shortcut nothing handles leaves the browser's default alone. Bare keys are ignored while typing in a field.
 
+### Dragging between windows
+
+```tsx
+useDragSource<T>({ type, disabled? }): { dragProps(payload, preview?), dragging }   // lists
+useDraggable<T>({ type, payload, preview?, disabled? }): { dragProps, dragging }    // one thing
+useDropTarget<T>({ accepts, onDrop, disabled? }): { dropProps, over, ready }
+useDragging(): Drag | null
+interface Drag<T> { type: string; payload: T; from: string | null }
+type Accepts = string | string[] | ((type: string) => boolean)
+```
+
+Pointer Events, so touch and pen work; Escape calls a drag off; the drop brings the receiving window
+forward. `dropProps` carries `data-ready` and `data-over`, which the stylesheet already draws. Needs a
+`DeskShell` (or a `DragProvider`) above it.
+
 ### Events between windows
 
 ```ts
@@ -176,7 +191,8 @@ out above the dock. One tab stop; arrow keys along it; Escape folds a stack away
 
 ```tsx
 <MenuBar menus={Menu[]} status?={Menu[]} leading?={ReactNode} trailing?={ReactNode} shortcuts?={true} />
-interface Menu { id: string; label: string; title?: ReactNode; items: MenuItem[] | (() => MenuItem[]) }
+interface Menu { id: string; label: string; title?: ReactNode; emphasis?: boolean; items: MenuItem[] | (() => MenuItem[]) }
+// emphasis: the app's own menu, its name in bold, conventionally first
 menuCommand(label, command, { shortcut?, checked?, detail?, args? })
 menuAction(label, onSelect, { disabled?, shortcut?, checked?, detail? })
 menuSeparator(); menuHeader(label)
@@ -202,6 +218,21 @@ InputCommands.open = 'desk.input.open'                                   // a me
 ```
 
 `useCommand` defaults to the window it is rendered in, and to the app outside one.
+
+### Dragging between windows
+
+```tsx
+useDragSource<T>({ type, disabled? }): { dragProps(payload, preview?), dragging }   // lists
+useDraggable<T>({ type, payload, preview?, disabled? }): { dragProps, dragging }    // one thing
+useDropTarget<T>({ accepts, onDrop, disabled? }): { dropProps, over, ready }
+useDragging(): Drag | null
+interface Drag<T> { type: string; payload: T; from: string | null }
+type Accepts = string | string[] | ((type: string) => boolean)
+```
+
+Pointer Events, so touch and pen work; Escape calls a drag off; the drop brings the receiving window
+forward. `dropProps` carries `data-ready` and `data-over`, which the stylesheet already draws. Needs a
+`DeskShell` (or a `DragProvider`) above it.
 
 ### Events
 
@@ -239,7 +270,7 @@ SearchCommand = 'desk.search'                          // a menu item can open i
 ### Lists
 
 ```tsx
-<Table rows columns rowId={(row) => string} label
+<Table rows columns rowId={(row) => string} label rowProps?={(row) => object}
        selected?={string | string[] | null} selection?={'single' | 'multiple'}
        onSelect? onSelectionChange? onActivate? sort? onSortChange? empty? />
 interface Column<Row> { key; header; render?; align?; numeric?; sortable?; width? }

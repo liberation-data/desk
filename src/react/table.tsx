@@ -41,6 +41,8 @@ export interface TableProps<Row> {
   readonly sort?: Sort | null
   readonly onSortChange?: (sort: Sort) => void
   readonly empty?: ReactNode
+  /** Extra props for each row — how a row becomes draggable. */
+  readonly rowProps?: (row: Row) => Record<string, unknown>
 }
 
 const cell = <Row,>(row: Row, column: Column<Row>): ReactNode =>
@@ -59,6 +61,7 @@ export function Table<Row>({
   sort,
   onSortChange,
   empty,
+  rowProps,
 }: TableProps<Row>) {
   const body = useRef<HTMLTableSectionElement>(null)
   const anchor = useRef<number>(0)
@@ -156,6 +159,7 @@ export function Table<Row>({
                 data-selected={isSelected || undefined}
                 onClick={event => choose(index, { add: event.metaKey || event.ctrlKey, range: event.shiftKey })}
                 onDoubleClick={() => onActivate?.(id, row)}
+                {...rowProps?.(row)}
               >
                 {columns.map(column => (
                   <td key={column.key} data-align={column.align ?? (column.numeric ? 'end' : 'start')} data-numeric={column.numeric || undefined}>

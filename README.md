@@ -130,6 +130,23 @@ about (`point` is a `data-tour` name or any selector), so the person watches the
 reading about it. A `yourTurn` step hands over and waits, offering Done and Skip. The bar holds no content:
 the steps are the app's.
 
+## Dragging between windows
+
+```tsx
+// In the list — one source, because a hook cannot be called per row
+const rides = useDragSource<Ride>({ type: 'ride' })
+<Table rowProps={row => rides.dragProps(row, row.name)} … />
+
+// In the map
+const { dropProps, over, ready } = useDropTarget<Ride>({ accepts: 'ride', onDrop: ({ payload }) => draw(payload) })
+<div {...dropProps}>{ready && <p>Drop a ride here</p>}</div>
+```
+
+Built on Pointer Events, so touch and pen work the same way, the preview is drawn by us, and Escape calls
+the drag off. A drag carries a `type` and a `payload` and says which window it came from; a target says which
+types it takes and lights up while something acceptable is in the air. Dropping brings the window that took
+it forward. `useDraggable` is the single-item form of the same thing.
+
 ## Search
 
 ```tsx

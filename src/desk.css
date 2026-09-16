@@ -595,6 +595,10 @@
   cursor: default;
 }
 
+.desk-menubar-title[data-emphasis] {
+  font-weight: 700;
+}
+
 .desk-menubar-title:hover,
 .desk-menubar-title[aria-expanded="true"] {
   background: color-mix(in srgb, var(--desk-ink) 12%, transparent);
@@ -2227,4 +2231,42 @@
   .desk-wizard-dot {
     transition: none;
   }
+}
+
+/* ── Dragging between windows ── */
+
+.desk-drag-preview {
+  position: fixed;
+  z-index: 1600;
+  transform: translate(12px, 12px);
+  padding: var(--desk-space-1) var(--desk-space-3);
+  border: 1px solid var(--desk-rule);
+  border-radius: 8px;
+  background: var(--desk-surface);
+  box-shadow: var(--desk-shadow-floating);
+  color: var(--desk-ink);
+  font-family: var(--desk-font);
+  font-size: 12.5px;
+  pointer-events: none;
+}
+
+[data-desk-draggable] {
+  cursor: grab;
+  touch-action: none;
+}
+
+[data-desk-draggable]:active {
+  cursor: grabbing;
+}
+
+/* A target says it could take this while something is being carried, and lights up under it. */
+[data-desk-drop][data-ready] {
+  outline: 1px dashed color-mix(in srgb, var(--desk-accent) 55%, transparent);
+  outline-offset: -3px;
+  border-radius: 8px;
+}
+
+[data-desk-drop][data-over] {
+  outline: 2px solid var(--desk-accent);
+  background: color-mix(in srgb, var(--desk-accent) 12%, transparent);
 }

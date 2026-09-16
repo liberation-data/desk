@@ -867,6 +867,15 @@ td {
   overflow-y: auto;
 }
 
+.dropnote {
+  margin: 0;
+  padding: var(--desk-space-1) var(--desk-space-3);
+  background: color-mix(in srgb, var(--desk-accent) 14%, transparent);
+  color: var(--desk-accent);
+  font-size: 11.5px;
+  text-align: center;
+}
+
 .chat {
   display: flex;
   flex-direction: column;

@@ -37,6 +37,8 @@ import {
   TourBar,
   useCommand,
   useDesk,
+  useDragSource,
+  useDropTarget,
   useDeskEvent,
   useDeskState,
   usePublish,
@@ -144,6 +146,8 @@ function Rides() {
 
   // Typing into the desk's bar filters this window, because Rides is the one in front.
   useWindowInput(setQuery, { placeholder: 'Filter rides by name…', target: 'Rides' })
+  // A row can be carried to another window: the map draws it, the mechanic talks about it.
+  const rideSource = useDragSource<(typeof RIDES)[number]>({ type: 'ride' })
 
   const floor = Number(minKm) || 0
   const filtered = RIDES.filter(
@@ -215,6 +219,7 @@ function Rides() {
         sort={sort}
         onSortChange={setSort}
         empty={<p>No rides match those filters.</p>}
+        rowProps={row => rideSource.dragProps(row, row.name)}
       />
       {query && <p className="small">Filtered by “{query}” · <button type="button" className="linkish" onClick={() => setQuery('')}>clear</button></p>}
 
@@ -332,9 +337,11 @@ function MapView() {
   const [ride, setRide] = useState<(typeof RIDES)[number] | null>(null)
   // Replayed, because the map is usually opened by the very click that chose the ride.
   useDeskEvent<(typeof RIDES)[number]>('ride.selected', event => setRide(event.payload), { replay: true })
+  const { dropProps, over, ready } = useDropTarget<(typeof RIDES)[number]>({ accepts: 'ride', onDrop: drag => setRide(drag.payload) })
   const shown = ride ?? RIDES[0]
   return (
-    <div className="map">
+    <div className="map" {...dropProps}>
+      {ready && <p className="dropnote">{over ? 'Drop to draw this ride' : 'Drop a ride here'}</p>}
       <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice" aria-label="Route map of the Dandenongs loop">
         <path className="contour" d="M0 200 C80 170 120 210 200 180 S330 120 400 150" />
         <path className="contour" d="M0 150 C90 120 140 160 210 130 S320 70 400 100" />
@@ -543,6 +550,10 @@ function Chat({ pending, onPending }: { readonly pending: string | null; readonl
   }
 
   useWindowInput(send, { placeholder: 'Ask about the bikes…', target: 'Chat' })
+  const { dropProps, ready, over } = useDropTarget<(typeof RIDES)[number]>({
+    accepts: 'ride',
+    onDrop: drag => send(`What did ${drag.payload.name} wear out?`),
+  })
 
   // A question typed into the bar while another window was in front arrives here.
   useEffect(() => {
@@ -552,7 +563,8 @@ function Chat({ pending, onPending }: { readonly pending: string | null; readonl
   }, [pending, onPending])
 
   return (
-    <div className="chat">
+    <div className="chat" {...dropProps}>
+      {ready && <p className="dropnote">{over ? 'Drop to ask about this ride' : 'Drop a ride here to ask about it'}</p>}
       <Thread messages={messages} typing={thinking} label="Chat with the mechanic" />
       <Composer
         value={draft}
@@ -1146,6 +1158,13 @@ function GarageMenuBar({
     {
       id: 'garage',
       label: 'Garage',
+      emphasis: true,
+      title: (
+        <span className="brand">
+          <i />
+          Garage
+        </span>
+      ),
       items: [
         menuAction('About Garage', () => desk.open('about')),
         menuSeparator(),
@@ -1212,7 +1231,6 @@ function GarageMenuBar({
     <MenuBar
       menus={menus}
       status={status}
-      leading={<span className="brand"><i />Garage</span>}
       trailing={<span>Sun 14 Sep</span>}
     />
   )

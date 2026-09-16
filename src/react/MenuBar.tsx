@@ -36,6 +36,8 @@ export interface Menu {
   readonly label: string
   /** A richer title: an icon, a badge. */
   readonly title?: ReactNode
+  /** The app's own menu: its name, set in bold. Conventionally the first one. */
+  readonly emphasis?: boolean
   /** Items, or a function called each time the menu opens — for lists that change, like open windows. */
   readonly items: readonly MenuItem[] | (() => readonly MenuItem[])
 }
@@ -262,6 +264,7 @@ export function MenuBar({ menus, status = [], leading, trailing, label = 'Menu b
           aria-expanded={isOpen}
           aria-controls={isOpen ? menuId : undefined}
           aria-label={menu.title ? menu.label : undefined}
+          data-emphasis={menu.emphasis || undefined}
           tabIndex={index === roving ? 0 : -1}
           // Opening a menu with the pointer must not move focus out of the window being worked in.
           onMouseDown={event => event.preventDefault()}
