@@ -122,6 +122,8 @@
 }
 
 .desk-window {
+  /* Positioned, so the resize grip sits in the corner of a tile as well as a floating window. */
+  position: relative;
   box-sizing: border-box;
   min-width: 0;
   min-height: 0;

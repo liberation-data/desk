@@ -66,11 +66,11 @@ describe('one window at a time', () => {
     expect(window_('map').hasAttribute('inert')).toBe(false)
   })
 
-  it('offers close but not float', () => {
+  it('offers close but not zoom', () => {
     const desk = mount()
     act(() => desk.open('rides'))
     expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Float' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Zoom' })).toBeNull()
   })
 
   it('fills the stage even for a window the desk calls floating', () => {
@@ -93,7 +93,7 @@ describe('one window at a time', () => {
     })
     expect(window_('c').dataset.mode).toBe('floating')
     expect(window_('a').dataset.hidden).toBeUndefined()
-    expect(screen.getAllByRole('button', { name: 'Float' }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: 'Zoom' }).length).toBeGreaterThan(0)
   })
 })
 

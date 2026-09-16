@@ -55,9 +55,11 @@ Three things follow from this:
 
 ## 3. How windows arrange themselves
 
-The first window fills the stage, the second splits it, and later ones float above the tiles. People can
-float a tile, tile a floating window, drag one to an edge to tile it there, or tile everything at once.
-Nobody has to arrange anything, and nobody is stopped from arranging.
+The first window fills the stage, the second splits it, and later ones float above the tiles. That
+arrangement is placed once, not held: when someone moves or resizes an arranged window, every window
+becomes independent where it sits and nothing reflows — as on a Mac. Drag a window to an edge to give it that
+half, double-click a title bar to zoom it, or use Tile all to arrange everything again. Nobody has to arrange
+anything, and nobody is stopped from arranging.
 
 On a touch screen the desk shows **one window at a time**; the others stay mounted, so their state survives.
 `<Desktop layout="auto">` decides from the device; pass `"desktop"` or `"fullscreen"` to decide yourself.

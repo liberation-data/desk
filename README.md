@@ -6,16 +6,19 @@ A desktop for the web, in React: windows that tile first and float when asked.
 npm install @liberation-data/desk
 ```
 
-## The rule
+## Window manager defaults
 
 The first window takes the stage. The second splits it. Everything after that floats, cascading down and
-right from the last. A user can float any tile or tile any floating window; `tileAll()` tidies the lot.
+right from the last, never landing on top of another window.
 
-Nobody has to arrange anything, and nobody is stopped from arranging. Every window moves: drag a tile by its
-title bar and it lifts out into a floating window where it stood. Drag one against the left or right edge and
-it tiles there, with a preview of where it will land; tile it and float it again and it returns to where it
-last sat. Two tiles share a split you can drag, double-click to even up, or nudge with the arrow keys; double-clicking
-a title bar moves a window between its two sizes.
+That arrangement is **placed once, not held**. The moment someone moves or resizes one of the arranged
+windows, every window becomes independent exactly where it sits, and only the one being touched moves —
+nothing reflows to fill the space. Dragging a window against the left or right edge gives it that half of the
+desk; double-clicking its title bar (or the green control) zooms it to fill the desk and back. Once windows
+have been placed by hand, new ones open floating. **Window → Tile all** arranges everything again.
+
+While the default arrangement stands, two tiles share a split you can drag, double-click to even up, or nudge
+with the arrow keys.
 
 ## Use it
 

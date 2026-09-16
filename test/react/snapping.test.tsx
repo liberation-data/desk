@@ -1,26 +1,39 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createDesk } from '../../src/core/index.js'
-import type { Desk, DeskWindow } from '../../src/core/index.js'
+import type { Desk, DeskWindow, Frame } from '../../src/core/index.js'
 import { Desktop, DeskProvider } from '../../src/react/index.js'
+
+/*
+ * Arranging windows is something the desk does once, not a mode windows stay in.
+ * jsdom has no layout, so the stage and each window say where they are.
+ */
 
 afterEach(cleanup)
 
-const STAGE = { left: 0, right: 1000, width: 1000, height: 700 }
+const STAGE = { width: 1000, height: 700 }
+
+/** Where each window is drawn right now, as the grid would lay out two tiles side by side. */
+let drawn: Record<string, Frame> = {}
+
+const rect = (f: Frame) =>
+  ({ left: f.x, top: f.y, right: f.x + f.width, bottom: f.y + f.height, width: f.width, height: f.height, x: f.x, y: f.y, toJSON: () => ({}) }) as DOMRect
 
 beforeEach(() => {
-  // jsdom has no layout: describe the stage, and let a drag be captured.
   Element.prototype.setPointerCapture = () => {}
+  drawn = { a: { x: 0, y: 0, width: 494, height: 700 }, b: { x: 506, y: 0, width: 494, height: 700 } }
   Element.prototype.getBoundingClientRect = function () {
-    return this.hasAttribute('data-desk-stage')
-      ? ({ ...STAGE, top: 0, bottom: STAGE.height, x: 0, y: 0, toJSON: () => ({}) } as DOMRect)
-      : ({ left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect)
+    if (this.hasAttribute('data-desk-stage')) return rect({ x: 0, y: 0, ...STAGE })
+    const id = this.getAttribute('data-desk-window')
+    return rect((id && drawn[id]) || { x: 0, y: 0, width: 0, height: 0 })
   }
+  Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get() { return this.hasAttribute('data-desk-stage') ? STAGE.width : 0 } })
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get() { return this.hasAttribute('data-desk-stage') ? STAGE.height : 0 } })
 })
 
 function mount(): Desk {
-  const desk = createDesk({ stage: () => ({ width: STAGE.width, height: STAGE.height }) })
+  const desk = createDesk({ stage: () => STAGE })
   render(
     <DeskProvider desk={desk}>
       <Desktop title={id => id} renderWindow={id => <p>{id}</p>} />
@@ -40,48 +53,89 @@ const windowOf = (desk: Desk, id: string): DeskWindow => {
   if (!found) throw new Error(`No window ${id}`)
   return found
 }
+const frameOf = (desk: Desk, id: string) => {
+  const w = windowOf(desk, id)
+  if (w.mode !== 'floating') throw new Error(`${id} is still arranged`)
+  return w.frame
+}
 
-const drag = (id: string, to: number) => {
+const drag = (id: string, from: { x: number; y: number }, to: { x: number; y: number }) => {
   const bar = titleBar(id)
-  fireEvent.pointerDown(bar, { button: 0, clientX: 500, clientY: 300, pointerId: 1 })
+  fireEvent.pointerDown(bar, { button: 0, clientX: from.x, clientY: from.y, pointerId: 1 })
   act(() => {
-    bar.dispatchEvent(new PointerEvent('pointermove', { clientX: to, clientY: 300, bubbles: true }))
+    bar.dispatchEvent(new PointerEvent('pointermove', { clientX: to.x, clientY: to.y, bubbles: true }))
   })
 }
 
-const drop = (id: string) => {
+const drop = (id: string) =>
   act(() => {
     titleBar(id).dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
   })
-}
 
-describe('dragging a floating window to an edge', () => {
-  it('previews where it would land, and tiles it there', () => {
+describe('moving one of an arranged pair', () => {
+  it('leaves the other exactly where it was, instead of filling the desk', () => {
     const desk = mount()
     act(() => {
       desk.open('a')
       desk.open('b')
-      desk.open('c') // floats
     })
-    drag('c', 20)
-    expect(stage().dataset.snap).toBe('start')
-    drop('c')
-    expect(stage().dataset.snap).toBeUndefined()
-    expect(windowOf(desk, 'c').mode).toBe('tiled')
-    expect(desk.getState().windows.map(w => w.id)).toEqual(['c', 'a', 'b'])
+    drag('b', { x: 700, y: 10 }, { x: 600, y: 80 })
+    drop('b')
+    expect(frameOf(desk, 'a')).toEqual(drawn.a)
+    expect(frameOf(desk, 'b')).toMatchObject({ x: 406, y: 70, width: 494, height: 700 })
   })
 
-  it('tiles at the end when dropped against the far edge', () => {
+  it('opens new windows as windows, once things have been placed by hand', () => {
     const desk = mount()
     act(() => {
       desk.open('a')
       desk.open('b')
-      desk.open('c')
     })
-    drag('c', 985)
+    drag('b', { x: 700, y: 10 }, { x: 600, y: 80 })
+    drop('b')
+    act(() => desk.close('a'))
+    act(() => desk.open('c'))
+    expect(windowOf(desk, 'c').mode).toBe('floating')
+  })
+
+  it('arranges them again on Tile all', () => {
+    const desk = mount()
+    act(() => {
+      desk.open('a')
+      desk.open('b')
+    })
+    drag('b', { x: 700, y: 10 }, { x: 600, y: 80 })
+    drop('b')
+    act(() => desk.tileAll())
+    expect(desk.getState().windows.every(w => w.mode === 'tiled')).toBe(true)
+  })
+})
+
+describe('dragging a window against an edge', () => {
+  it('previews the half it would take, and takes it — nothing else moves', () => {
+    const desk = mount()
+    act(() => {
+      desk.open('a')
+      desk.open('b')
+    })
+    drag('b', { x: 700, y: 10 }, { x: 20, y: 300 })
+    expect(stage().dataset.snap).toBe('start')
+    drop('b')
+    expect(stage().dataset.snap).toBeUndefined()
+    expect(frameOf(desk, 'b')).toMatchObject({ x: 0, width: 500 })
+    expect(frameOf(desk, 'a')).toEqual(drawn.a)
+  })
+
+  it('takes the far half against the far edge', () => {
+    const desk = mount()
+    act(() => {
+      desk.open('a')
+      desk.open('b')
+    })
+    drag('a', { x: 200, y: 10 }, { x: 985, y: 300 })
     expect(stage().dataset.snap).toBe('end')
-    drop('c')
-    expect(desk.getState().windows.map(w => w.id)).toEqual(['a', 'b', 'c'])
+    drop('a')
+    expect(frameOf(desk, 'a')).toMatchObject({ x: 500, width: 500 })
   })
 
   it('just moves the window when it is dropped away from the edges', () => {
@@ -89,47 +143,61 @@ describe('dragging a floating window to an edge', () => {
     act(() => {
       desk.open('a')
       desk.open('b')
-      desk.open('c')
     })
-    drag('c', 500)
+    drag('b', { x: 700, y: 10 }, { x: 500, y: 200 })
     expect(stage().dataset.snap).toBeUndefined()
-    drop('c')
-    expect(windowOf(desk, 'c').mode).toBe('floating')
+    drop('b')
+    expect(frameOf(desk, 'b')).toMatchObject({ x: 306, y: 190 })
   })
 })
 
-describe('double-clicking a title bar', () => {
-  it('puts a floating window back in the tiles, and takes it out again where it was', () => {
+describe('resizing an arranged window', () => {
+  it('resizes that window alone', () => {
     const desk = mount()
     act(() => {
       desk.open('a')
       desk.open('b')
-      desk.open('c') // floats
     })
-    const before = windowOf(desk, 'c')
-    act(() => fireEvent.doubleClick(titleBar('c')))
-    expect(windowOf(desk, 'c').mode).toBe('tiled')
-    act(() => fireEvent.doubleClick(titleBar('c')))
-    expect(windowOf(desk, 'c')).toEqual(before)
+    const grip = document.querySelector<HTMLElement>('[data-desk-window="a"] .desk-grip') as HTMLElement
+    fireEvent.pointerDown(grip, { button: 0, clientX: 494, clientY: 700, pointerId: 1 })
+    act(() => {
+      grip.dispatchEvent(new PointerEvent('pointermove', { clientX: 394, clientY: 600, bubbles: true }))
+    })
+    act(() => {
+      grip.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+    })
+    expect(frameOf(desk, 'a')).toMatchObject({ x: 0, y: 0, width: 394, height: 600 })
+    expect(frameOf(desk, 'b')).toEqual(drawn.b)
+  })
+})
+
+describe('zooming', () => {
+  it('fills the desk from a double-click on the title bar, and goes back', () => {
+    const desk = mount()
+    act(() => {
+      desk.open('a')
+      desk.open('b')
+    })
+    act(() => fireEvent.doubleClick(titleBar('b')))
+    expect(frameOf(desk, 'b')).toEqual({ x: 0, y: 0, width: 1000, height: 700 })
+    expect(frameOf(desk, 'a')).toEqual(drawn.a)
+    act(() => fireEvent.doubleClick(titleBar('b')))
+    expect(frameOf(desk, 'b')).toEqual(drawn.b)
   })
 
-  it('takes a tile out and puts it back', () => {
+  it('does the same from the green control', () => {
     const desk = mount()
-    act(() => {
-      desk.open('a')
-      desk.open('b')
-    })
-    act(() => fireEvent.doubleClick(titleBar('a')))
-    expect(windowOf(desk, 'a').mode).toBe('floating')
-    act(() => fireEvent.doubleClick(titleBar('a')))
-    expect(windowOf(desk, 'a').mode).toBe('tiled')
+    act(() => desk.open('a'))
+    const zoomControl = document.querySelector<HTMLElement>('[data-desk-window="a"] [aria-label="Zoom"]') as HTMLElement
+    act(() => fireEvent.click(zoomControl))
+    expect(frameOf(desk, 'a')).toEqual({ x: 0, y: 0, width: 1000, height: 700 })
   })
 })
 
 describe('a window that floats again', () => {
   it('goes back where it last was', () => {
     // No React here: a mounted Desktop reports the stage it measures, and jsdom measures nothing.
-    const desk = createDesk({ stage: () => ({ width: STAGE.width, height: STAGE.height }) })
+    const desk = createDesk({ stage: () => STAGE })
     desk.open('a')
     desk.float('a', { x: 120, y: 90, width: 400, height: 300 })
     desk.tile('a')

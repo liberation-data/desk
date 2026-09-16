@@ -59,7 +59,8 @@ interface Desk {
   float(id: string, frame?: Frame): void          // no frame: last place it sat, else the next cascade step
   tile(id: string, options?: { at?: 'start' | 'end' }): void
   toggleMode(id: string): void
-  tileAll(): void
+  tileAll(): void                                 // arrange everything again
+  placeAll(frames: Record<string, Frame>): void   // let go of an arrangement: windows stay where they are
   restore(state: DeskState): void                 // e.g. from a URL; normalised, not trusted
   setStage(stage: () => Size): void
 }
@@ -82,8 +83,10 @@ nextCascadeFrame(windows, stage, options?): Frame
 EMPTY: DeskState
 ```
 
-Default arrangement: 2 tiles, then floating. Dragging a tile's title bar lifts it out into a floating
-window; two tiles share a draggable split. State is immutable; every mutator returns void and notifies
+Default arrangement: 2 tiles, then floating. An arrangement is placed once, not held: moving or resizing
+an arranged window makes every window independent where it sits (`placeAll`), and nothing reflows. Edge
+drops take a half; double-click or the green control zooms. After a placement by hand, new windows float
+until `tileAll`. State is immutable; every mutator returns void and notifies
 subscribers only when something actually changed.
 
 ### URL and history

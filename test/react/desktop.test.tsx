@@ -39,13 +39,11 @@ describe('Desktop', () => {
     expect(desk.getState().windows).toHaveLength(0)
   })
 
-  it('floats and tiles from the mode button', () => {
+  it('offers close and zoom in the title bar', () => {
     const desk = mount()
     act(() => desk.open('notes'))
-    fireEvent.click(screen.getByRole('button', { name: 'Float' }))
-    expect(screen.getByRole('region', { name: 'Notes' }).dataset.mode).toBe('floating')
-    fireEvent.click(screen.getByRole('button', { name: 'Tile' }))
-    expect(screen.getByRole('region', { name: 'Notes' }).dataset.mode).toBe('tiled')
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Zoom' })).toBeTruthy()
   })
 
   it('focuses a window when it is pressed', () => {

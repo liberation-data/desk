@@ -57,6 +57,28 @@ const columnsFor = (tiled: number) => (tiled <= 2 ? Math.max(1, tiled) : Math.ce
 
 const MIN_SPLIT = 0.2
 
+/** The part of the stage windows are arranged in: inside its padding, with its gap. */
+function arrangementArea(stage: HTMLElement) {
+  const style = getComputedStyle(stage)
+  const left = parseFloat(style.paddingLeft) || 0
+  const right = parseFloat(style.paddingRight) || 0
+  const top = parseFloat(style.paddingTop) || 0
+  const bottom = parseFloat(style.paddingBottom) || 0
+  const gap = parseFloat(style.columnGap) || 0
+  return { x: left, y: top, width: stage.clientWidth - left - right, height: stage.clientHeight - top - bottom, gap }
+}
+
+const halfFrame = (stage: HTMLElement, side: 'start' | 'end'): Frame => {
+  const area = arrangementArea(stage)
+  const width = (area.width - area.gap) / 2
+  return { x: side === 'start' ? area.x : area.x + width + area.gap, y: area.y, width, height: area.height }
+}
+
+const fullFrame = (stage: HTMLElement): Frame => {
+  const { x, y, width, height } = arrangementArea(stage)
+  return { x, y, width, height }
+}
+
 export function Desktop({ renderWindow, title, actions, empty, loading, failed, layout = 'auto', className }: DesktopProps) {
   // Where the split between two tiles sits. A third tile makes it a grid again.
   const [split, setSplit] = useState(0.5)
@@ -71,6 +93,25 @@ export function Desktop({ renderWindow, title, actions, empty, loading, failed, 
   }, [desk])
 
   useEffect(() => (stage.current ? addDeskCommands(stage.current, desk) : undefined), [desk])
+
+  // Arranged windows are placed once, not held in place. The first time a person moves or
+  // resizes one, every tile becomes an independent window exactly where it sits, so the
+  // others stay put instead of reflowing into the space.
+  const letGo = useCallback(() => {
+    const element = stage.current
+    if (!element) return
+    const box = element.getBoundingClientRect()
+    const frames = Object.fromEntries(
+      desk
+        .getState()
+        .windows.filter(w => w.mode === 'tiled')
+        .flatMap(w => {
+          const rect = windowElement(element, w.id)?.getBoundingClientRect()
+          return rect ? [[w.id, { x: rect.left - box.left, y: rect.top - box.top, width: rect.width, height: rect.height }] as const] : []
+        }),
+    )
+    desk.placeAll(frames)
+  }, [desk])
 
   const tiled = state.windows.filter(w => w.mode === 'tiled').length
   const focused = focusedId(state)
@@ -154,6 +195,7 @@ export function Desktop({ renderWindow, title, actions, empty, loading, failed, 
           hidden={mode === 'fullscreen' && window.id !== focused}
           title={title(window.id)}
           actions={actions?.(window.id)}
+          letGo={letGo}
         >
           {/* Memoised on the id and the render function: moving or focusing a window
               re-renders its chrome, never the app's content inside it. */}
@@ -188,12 +230,13 @@ interface WindowViewProps {
   readonly focused: boolean
   readonly title: ReactNode
   readonly actions?: ReactNode
+  readonly letGo: () => void
   readonly children: ReactNode
 }
 
 type Gesture = 'move' | 'resize'
 
-function WindowView({ window, layout, hidden, depth, focused, title, actions, children }: WindowViewProps) {
+function WindowView({ window, layout, hidden, depth, focused, title, actions, letGo, children }: WindowViewProps) {
   const desk = useDesk()
   // While dragging, the frame lives here and commits once on release, so a drag
   // re-renders one window rather than notifying every subscriber per pixel.
@@ -204,13 +247,11 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
 
   const startGesture = (gesture: Gesture) => (event: ReactPointerEvent<HTMLElement>) => {
     if (event.button !== 0 || layout === 'fullscreen') return
-    // Only a floating window resizes; a tile is dragged out of the tiles instead.
-    if (gesture === 'resize' && !floating) return
     if (gesture === 'move' && (event.target as HTMLElement).closest('button')) return
     event.preventDefault()
     const stageBox = event.currentTarget.closest<HTMLElement>(`[${STAGE_ATTRIBUTE}]`)?.getBoundingClientRect()
     const windowBox = event.currentTarget.closest<HTMLElement>(`[${WINDOW_ATTRIBUTE}]`)?.getBoundingClientRect()
-    // A tile becomes a floating window exactly where it already sits, so it does not jump under the pointer.
+    // A tile is let go of exactly where it already sits, so it does not jump under the pointer.
     const origin: Frame =
       window.mode === 'floating'
         ? window.frame
@@ -229,8 +270,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
     let latest = origin
     let snap: 'start' | 'end' | null = null
 
-    // Dragging a window against an edge tiles it there — the way the tiles were
-    // going to lay themselves out anyway, chosen by hand.
+    // Dragging a window against an edge offers it that half of the desk.
     const snapAt = (clientX: number) => {
       if (gesture !== 'move' || !stage) return null
       const box = stage.getBoundingClientRect()
@@ -244,7 +284,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
       const dy = move.clientY - startY
       if (!pulledOut && Math.hypot(dx, dy) > 5) {
         pulledOut = true
-        desk.float(window.id, origin)
+        letGo()
       }
       latest =
         gesture === 'move'
@@ -263,7 +303,8 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
       handle.removeEventListener('pointercancel', onUp)
       setLive(null)
       if (stage) delete stage.dataset.snap
-      if (snap) desk.tile(window.id, { at: snap })
+      // Dropped against an edge, it takes that half of the desk — and nothing else moves.
+      if (snap && stage) desk.float(window.id, halfFrame(stage, snap))
       else if (pulledOut && latest !== origin) desk.float(window.id, latest)
     }
     handle.addEventListener('pointermove', onMove)
@@ -272,10 +313,27 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
   }
 
   const floating = window.mode === 'floating' && layout === 'desktop'
-  // Double-clicking a title bar moves between the two sizes a window has: the
-  // tile it shares with its neighbour, and the floating frame it last had.
+  // Where it was before it was zoomed, so zooming again puts it back.
+  const unzoomed = useRef<Frame | null>(null)
+
+  // Double-clicking a title bar, or the green control, zooms a window to fill the desk and
+  // back — as on a Mac. It is a placement by hand, so any arrangement is let go of first.
   const zoom = () => {
-    if (layout !== 'fullscreen') desk.toggleMode(window.id)
+    const stage = element.current?.closest<HTMLElement>(`[${STAGE_ATTRIBUTE}]`)
+    if (layout !== 'desktop' || !stage) return
+    if (desk.getState().windows.some(w => w.mode === 'tiled')) letGo()
+    const current = desk.getState().windows.find(w => w.id === window.id)
+    if (current?.mode !== 'floating') return
+    const full = fullFrame(stage)
+    const isZoomed = Math.abs(current.frame.width - full.width) < 2 && Math.abs(current.frame.height - full.height) < 2
+    if (isZoomed && unzoomed.current) {
+      const back = unzoomed.current
+      unzoomed.current = null
+      desk.float(window.id, back)
+    } else {
+      unzoomed.current = current.frame
+      desk.float(window.id, full)
+    }
   }
 
   const frame = floating ? (live ?? window.frame) : null
@@ -312,13 +370,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
           <div className="desk-controls">
             <button type="button" className="desk-control" data-control="close" aria-label="Close" onClick={() => desk.close(window.id)} />
             {layout === 'desktop' && (
-              <button
-                type="button"
-                className="desk-control"
-                data-control="mode"
-                aria-label={window.mode === 'tiled' ? 'Float' : 'Tile'}
-                onClick={() => desk.toggleMode(window.id)}
-              />
+              <button type="button" className="desk-control" data-control="mode" aria-label="Zoom" onClick={zoom} />
             )}
           </div>
           <h2 id={titleId} className="desk-title">
@@ -327,7 +379,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
           {actions && <div className="desk-window-actions">{actions}</div>}
         </header>
         <div className="desk-body">{children}</div>
-        {floating && <div className="desk-grip" aria-hidden="true" onPointerDown={startGesture('resize')} />}
+        {layout === 'desktop' && <div className="desk-grip" aria-hidden="true" onPointerDown={startGesture('resize')} />}
       </section>
     </WindowContext.Provider>
   )

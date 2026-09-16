@@ -154,12 +154,16 @@ Nobody has to arrange windows, and nobody is stopped from arranging them.
 1. The first window fills the stage.
 2. The second splits it: two tiles side by side.
 3. Every window after that **floats** above the tiles, cascading down and right from the last, and wraps
-   back to the top-left before it can leave the stage.
-4. A person can float any tile, tile any floating window, or tile everything at once.
-5. Tiles keep the order they were opened in. Focusing a window never reshuffles them.
-
-**Dragging a floating window against the left or right edge tiles it there** — at the start or the end of
-the tile order. A preview shows where it will land before it is dropped.
+   back to the top-left before it can leave the stage. It never opens exactly on top of another window.
+4. **An arrangement is placed once, not held.** When a person moves or resizes one arranged window, every
+   window becomes independent where it sits and only the one they touched changes. Nothing reflows into the
+   space — the way arranged windows behave on a Mac.
+5. Dragging a window against the left or right edge gives it that half of the desk, with a preview of where
+   it will land. Double-clicking a title bar, or pressing the green control, zooms the window to fill the
+   desk and back.
+6. Once windows have been placed by hand, a new window opens floating rather than tiling in behind them.
+   **Tile all** hands the layout back to the desk.
+7. Tiles keep the order they were opened in. Focusing a window never reshuffles anything.
 
 **A window that is floated again goes back where it last was**, not to the next step of the cascade, unless
 that place no longer lands on this screen.
