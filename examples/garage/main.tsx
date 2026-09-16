@@ -5,6 +5,7 @@ import type { Root } from 'react-dom/client'
 import { createDesk, DeskCommands, focusedId, formatShortcut, syncWithLocation } from '../../src/core/index.js'
 import type { Desk } from '../../src/core/index.js'
 import {
+  Alert,
   Button,
   Desktop,
   DeskProvider,
@@ -16,10 +17,14 @@ import {
   menuAction,
   menuCommand,
   menuSeparator,
+  Popover,
   SegmentedControl,
+  Sheet,
   TextField,
+  ToastProvider,
   Toggle,
   useCommand,
+  useToast,
   useDeskState,
   windowMenuItems,
 } from '../../src/react/index.js'
@@ -97,20 +102,49 @@ const BIKES: readonly SegmentedOption<'all' | 'Road' | 'Gravel' | 'MTB'>[] = [
 ]
 
 function Rides() {
+  const toast = useToast()
   const [bike, setBike] = useState<(typeof BIKES)[number]['value']>('all')
-  const rides = bike === 'all' ? RIDES : RIDES.filter(r => r.bike === bike)
+  const [minKm, setMinKm] = useState('')
+  const [filters, setFilters] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [fileName, setFileName] = useState('rides.csv')
+
+  const floor = Number(minKm) || 0
+  const rides = RIDES.filter(r => (bike === 'all' || r.bike === bike) && r.km >= floor)
   const total = rides.reduce((sum, r) => sum + r.km, 0)
-  const [exported, setExported] = useState<string | null>(null)
-  // Only the Rides window can export rides, so the menu item is enabled only while it is the key window.
-  useCommand(Commands.exportRides, () => setExported(`Exported ${rides.length} rides to rides.csv (example — nothing was saved)`))
+
+  // Export belongs to this window, so the menu item is live only while Rides is key.
+  useCommand(Commands.exportRides, () => setExporting(true))
+
+  const doExport = () => {
+    setExporting(false)
+    toast.show({ message: `Exported ${rides.length} rides to ${fileName}`, tone: 'ok' })
+  }
+
   return (
     <div className="pad">
-      {exported && <p className="notice" role="status">{exported}</p>}
       <div className="toolbar">
         <SegmentedControl label="Filter rides by bike" options={BIKES} value={bike} onChange={setBike} size="small" />
-        <Button size="small" icon={<Icon name="log" />} onClick={() => setExported(`Exported ${rides.length} rides to rides.csv (example — nothing was saved)`)}>
-          Export
-        </Button>
+        <Popover
+          open={filters}
+          onOpenChange={setFilters}
+          label="More filters"
+          trigger={props => <Button size="small" {...props}>Filters{floor > 0 ? ` · ${floor} km` : ''}</Button>}
+        >
+          <TextField
+            label="Longer than"
+            value={minKm}
+            onChange={e => setMinKm(e.target.value)}
+            inputMode="numeric"
+            placeholder="0"
+            help="Kilometres"
+          />
+          <div className="actions">
+            <Button size="small" onClick={() => setMinKm('')}>Clear</Button>
+            <Button size="small" intent="default" onClick={() => setFilters(false)}>Done</Button>
+          </div>
+        </Popover>
+        <Button size="small" icon={<Icon name="log" />} onClick={() => setExporting(true)}>Export</Button>
       </div>
       <div className="stats">
         <Stat label="This fortnight" value={`${total.toFixed(0)} km`} />
@@ -132,7 +166,22 @@ function Rides() {
           </tbody>
         </table>
       </div>
-      {rides.length === 0 && <p className="muted">No rides on that bike in this fortnight.</p>}
+      {rides.length === 0 && <p className="muted">No rides match those filters.</p>}
+
+      <Sheet
+        open={exporting}
+        onDismiss={() => setExporting(false)}
+        title="Export rides"
+        description={`${rides.length} rides, as they are filtered now. This is a sample, so nothing is written.`}
+        actions={
+          <>
+            <Button onClick={() => setExporting(false)}>Cancel</Button>
+            <Button intent="default" onClick={doExport}>Export</Button>
+          </>
+        }
+      >
+        <TextField label="File name" value={fileName} onChange={e => setFileName(e.target.value)} />
+      </Sheet>
     </div>
   )
 }
@@ -161,7 +210,16 @@ function Parts() {
 }
 
 function Service({ steps, setSteps }: { readonly steps: Step[]; readonly setSteps: (s: Step[]) => void }) {
+  const toast = useToast()
   const set = (id: string, state: Step['state']) => setSteps(steps.map(s => (s.id === id ? { ...s, state } : s)))
+  const markDone = (step: Step) => {
+    set(step.id, 'done')
+    toast.show({
+      message: `${step.title} — done`,
+      tone: 'ok',
+      action: { label: 'Undo', onSelect: () => setSteps(steps.map(s => (s.id === step.id ? { ...s, state: 'todo' } : s))) },
+    })
+  }
   useCommand(Commands.completeService, () => setSteps(steps.map(s => (s.state === 'todo' ? { ...s, state: 'done' } : s))), {
     enabled: steps.some(s => s.state === 'todo'),
   })
@@ -178,7 +236,7 @@ function Service({ steps, setSteps }: { readonly steps: Step[]; readonly setStep
               <div className="actions">
                 {s.state === 'todo' && (
                   <>
-                    <Button intent="default" size="small" onClick={() => set(s.id, 'done')}>Mark done</Button>
+                    <Button intent="default" size="small" onClick={() => markDone(s)}>Mark done</Button>
                     <Button size="small" onClick={() => set(s.id, 'skipped')}>Not going to</Button>
                   </>
                 )}
@@ -268,9 +326,32 @@ function Playlist() {
   )
 }
 
+const FIRST_NOTES = 'Seat post creaks on climbs. Grease it before Sunday.\n\nTry 5 psi lower on the gravel tyres.'
+
 function Notes() {
-  const [text, setText] = useState('Seat post creaks on climbs. Grease it before Sunday.\n\nTry 5 psi lower on the gravel tyres.')
-  return <textarea className="notes" aria-label="Notes" value={text} onChange={e => setText(e.target.value)} />
+  const [text, setText] = useState(FIRST_NOTES)
+  const [confirming, setConfirming] = useState(false)
+  return (
+    <div className="notesbox">
+      <textarea className="notes" aria-label="Notes" value={text} onChange={e => setText(e.target.value)} />
+      <div className="notesbar">
+        <span className="small">{text.length} characters</span>
+        <Button size="small" intent="destructive" disabled={!text} onClick={() => setConfirming(true)}>Clear notes</Button>
+      </div>
+      <Alert
+        open={confirming}
+        title="Clear these notes?"
+        message="There is no copy of them anywhere else."
+        confirmLabel="Clear notes"
+        destructive
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => {
+          setText('')
+          setConfirming(false)
+        }}
+      />
+    </div>
+  )
 }
 
 function Settings() {
@@ -409,6 +490,7 @@ function Garage({ desk }: { readonly desk: Desk }) {
 
   return (
     <DeskProvider desk={desk}>
+      <ToastProvider>
       <div className="garage">
         <GarageMenuBar desk={desk} steps={steps} />
         <main className="screen">
@@ -420,6 +502,7 @@ function Garage({ desk }: { readonly desk: Desk }) {
           <Dock entries={entries} label="Garage dock" />
         </main>
       </div>
+      </ToastProvider>
     </DeskProvider>
   )
 }

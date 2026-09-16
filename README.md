@@ -88,6 +88,31 @@ tab stop whose arrow keys move the selection past disabled options. A toggle is 
 apply at once — a checkbox is for one that waits for Save. A text field always has a label (`labelHidden`
 keeps it for screen readers), and an `error` marks it invalid and replaces the help text.
 
+## Overlays
+
+Least interrupting to most (see [HIG.md](HIG.md) §7):
+
+```tsx
+import { Alert, Popover, Sheet, ToastProvider, useToast } from '@liberation-data/desk/react'
+
+<Popover open={open} onOpenChange={setOpen} label="More filters"
+         trigger={props => <Button {...props}>Filters</Button>}>…</Popover>
+
+<Sheet open={exporting} onDismiss={cancel} title="Export rides" actions={…}>…</Sheet>
+
+<Alert open={confirming} title="Clear these notes?" confirmLabel="Clear notes" destructive
+       onConfirm={clear} onCancel={stop} />
+
+const toast = useToast()
+toast.show({ message: 'Ride deleted', action: { label: 'Undo', onSelect: restore } })
+```
+
+A **popover** belongs to one control and closes when you press outside. A **sheet** belongs to one window
+and blocks only that window — it renders inside it, so the rest of the desk stays usable. An **alert** stops
+the app and is for what cannot be undone; Cancel comes before the action, and a destructive action is never
+the default button. A **toast** interrupts nothing, carries Undo, and waits while the pointer or focus is on
+it. All three overlays trap focus, give it back on close, and answer Escape topmost-first.
+
 ## Menu bar
 
 ```tsx
