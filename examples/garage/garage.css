@@ -450,7 +450,11 @@ td {
 }
 
 .setup {
+  /* Padding counts inside the height: without this the screen is 100% plus 32px, and scrolls. */
+  box-sizing: border-box;
   height: 100%;
+  /* A window shorter than the pane still gets to see all of it. */
+  overflow: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
