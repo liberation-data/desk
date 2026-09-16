@@ -2,7 +2,8 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../../examples/garage/app.js'
+import { isTitleCase } from '../../src/core/index.js'
+import { App, SURFACES } from '../../examples/garage/app.js'
 
 /*
  * The sample, walked through the way a person would. The library has its own
@@ -40,6 +41,10 @@ async function arrive(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('the garage sample', () => {
+  it('names every window in title case', () => {
+    expect(Object.values(SURFACES).map(s => s.title).filter(title => !isTitleCase(title))).toEqual([])
+  })
+
   it('walks through setup and lands on the desktop', async () => {
     const user = userEvent.setup()
     await arrive(user)
@@ -58,7 +63,7 @@ describe('the garage sample', () => {
     // And the rest, through the stacks.
     for (const [stack, item] of [
       ['Garage', 'Bikes'],
-      ['Garage', 'Parts & wear'],
+      ['Garage', 'Parts & Wear'],
       ['Plan', 'Routes'],
       ['Plan', 'Weather'],
       ['Plan', 'Calendar'],

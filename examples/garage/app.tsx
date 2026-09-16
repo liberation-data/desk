@@ -994,7 +994,7 @@ const RIDE_CARD_APP = withAppBridge(`<!doctype html>
   button { font: inherit; padding: 6px 14px; border-radius: 8px; border: 1px solid #ff7a45; background: #ff7a45; color: #1a0f08; font-weight: 600; cursor: pointer; }
   .note { margin-top: 14px; font-size: 11px; color: #9a9ea6; }
 </style></head><body>
-  <div id="root" class="empty"><div><b>Ride card</b><br>Drop a ride here, or choose one in Rides.</div></div>
+  <div id="root" class="empty"><div><b>Ride Card</b><br>Drop a ride here, or choose one in Rides.</div></div>
   <script>
     let ride = null, source = '';
     const render = () => {
@@ -1018,14 +1018,14 @@ const RIDE_CARD_APP = withAppBridge(`<!doctype html>
 /* ── Shell ── */
 
 interface Surface { readonly title: string; readonly icon: keyof typeof PATHS; readonly description: string }
-const SURFACES = {
+export const SURFACES = {
   rides: { title: 'Rides', icon: 'ride', description: 'Every ride, newest first' },
   service: { title: 'Service', icon: 'wrench', description: 'What the bikes need' },
   map: { title: 'Map', icon: 'map', description: 'The last ride, drawn' },
   chat: { title: 'Chat', icon: 'chat', description: 'Ask about the bikes' },
-  card: { title: 'Ride card', icon: 'log', description: 'A generated app, in a window' },
+  card: { title: 'Ride Card', icon: 'log', description: 'A generated app, in a window' },
   bikes: { title: 'Bikes', icon: 'bike', description: 'The whole stable' },
-  parts: { title: 'Parts & wear', icon: 'chain', description: 'How worn each part is' },
+  parts: { title: 'Parts & Wear', icon: 'chain', description: 'How worn each part is' },
   routes: { title: 'Routes', icon: 'route', description: 'Saved loops' },
   weather: { title: 'Weather', icon: 'weather', description: 'The next three days' },
   calendar: { title: 'Calendar', icon: 'calendar', description: 'Rides and workshop' },
@@ -1140,7 +1140,7 @@ function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupA
       case 'chat': return <Chat pending={pending} onPending={setPending} />
       // Granted per app: it may hear and say ride.selected, take a dropped ride, and open the map. Nothing else.
       case 'card':
-        return <AppFrame title="Ride card" srcDoc={RIDE_CARD_APP} listens={['ride.selected']} says={['ride.selected']} accepts="ride" opens={['map']} />
+        return <AppFrame title="Ride Card" srcDoc={RIDE_CARD_APP} listens={['ride.selected']} says={['ride.selected']} accepts="ride" opens={['map']} />
       case 'bikes': return <Bikes />
       case 'parts': return <Parts />
       case 'routes': return <Routes />

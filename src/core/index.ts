@@ -28,6 +28,7 @@ export type { Bus, DeskEvent, EventHandler, InputDescription, SubscribeOptions }
 export { bindShortcuts, formatShortcut, isApplePlatform, isInstalledApp, matchesShortcut, parseShortcut } from './shortcuts.js'
 export type { Keymap, Shortcut, ShortcutOptions } from './shortcuts.js'
 export { parse, serialize, syncWithLocation } from './location.js'
+export { isTitleCase, titleCase } from './titles.js'
 export type { LocationEnv, LocationOptions } from './location.js'
 export type {
   CascadeOptions,

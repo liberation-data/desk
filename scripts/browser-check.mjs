@@ -21,8 +21,8 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage()
 page.on('pageerror', e => console.log('PAGE ERROR', e.message))
 await page.goto(`${url}/#w=rides,card&f=rides`, { waitUntil: 'networkidle0' })
-await page.waitForSelector('iframe[title="Ride card"]')
-const frame = await (await page.$('iframe[title="Ride card"]')).contentFrame()
+await page.waitForSelector('iframe[title="Ride Card"]')
+const frame = await (await page.$('iframe[title="Ride Card"]')).contentFrame()
 await frame.waitForFunction(() => window.desk && window.desk.window === 'card', { timeout: 5000 })
 step(1, 'the app connected as window', await frame.evaluate(() => window.desk.window))
 

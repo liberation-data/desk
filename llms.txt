@@ -127,6 +127,8 @@ matchesShortcut(event, shortcut, apple?): boolean
 formatShortcut('mod+comma', apple?): string        // '⌘,' or 'Ctrl+,'
 isApplePlatform(): boolean
 isInstalledApp(): boolean                          // gate ⌘W / ⌘` on this; never take ⌘T or ⌘N
+titleCase('what next'): string                    // 'What Next' — app and window names; a document keeps its own name
+isTitleCase(name): boolean                         // for a test over the names an app defines
 ```
 
 `mod` is ⌘ on Apple, Ctrl elsewhere. Matching also falls back to the physical key, so ⌥] works on a Mac. A

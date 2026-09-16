@@ -124,7 +124,10 @@ Colour has **roles**, not names. Components use roles; a theme assigns colours t
 
 - Name things the way people who use the app name them, not the way the code does.
 - Buttons say what happens: **Delete ride**, not **OK**. A confirmation repeats the verb.
-- Sentence case for everything — titles, buttons, menu items.
+- **App and window names are names, in title case:** Ride Card, Parts & Wear, What Next. Short articles,
+  conjunctions and prepositions stay lower case inside a name. A window that shows one document takes the
+  document's own name, as written: **Dandenongs loop**. `titleCase` and `isTitleCase` help.
+- Sentence case for everything else — headings, buttons, menu items, labels.
 - Errors say what went wrong and what to do next. No apologies, no blame, no codes on their own.
 - Empty states say what goes here and how to add the first one.
 - Use an ellipsis (…) on a command only when it asks for more before acting.
@@ -231,7 +234,8 @@ open.
 
 ### Menus
 
-- Menu items are commands. Sentence case, a verb first where it fits.
+- Menu items are commands. Sentence case, a verb first where it fits. A menu item that names a window uses
+  the window's name.
 - An unavailable command is **disabled**, not hidden, so people learn where it lives.
 - Group related items; separate groups with a rule. At most seven or so items per group.
 - Show the keyboard shortcut on the trailing side.

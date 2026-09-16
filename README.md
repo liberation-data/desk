@@ -169,7 +169,7 @@ part like any other:
 
 ```tsx
 <AppFrame
-  title="Ride card"
+  title="Ride Card"
   srcDoc={withAppBridge(generatedHtml)}
   listens={['ride.selected']}   // what it may hear
   says={['ride.selected']}      // what it may say
