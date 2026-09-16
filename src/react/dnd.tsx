@@ -99,14 +99,22 @@ export function useDragSource<T>({ type, disabled }: DragSourceOptions): DragSou
         document.removeEventListener('keydown', onKey)
         if (!started) return
         setDragging(false)
+        // Pointer capture sends the release back to where the drag began, and the browser then
+        // counts the whole gesture as a click on it. A drag is never also a click.
+        const swallow = (click: MouseEvent) => {
+          click.stopPropagation()
+          click.preventDefault()
+        }
+        globalThis.addEventListener('click', swallow, { capture: true, once: true })
+        setTimeout(() => globalThis.removeEventListener('click', swallow, { capture: true }), 0)
         const key = drop && released ? findTarget(released.clientX, released.clientY) : null
         const target = key ? targets.get(key) : undefined
         setState(null)
         if (!target) return
         target.onDrop({ type, payload, from })
         // The window that took it comes forward: that is where the work moved to.
-        const window = document.querySelector(`[${TARGET_ATTRIBUTE}="${key}"]`)?.closest(`[${WINDOW_ATTRIBUTE}]`)
-        const windowId = window?.getAttribute(WINDOW_ATTRIBUTE)
+        const receiving = document.querySelector(`[${TARGET_ATTRIBUTE}="${key}"]`)?.closest(`[${WINDOW_ATTRIBUTE}]`)
+        const windowId = receiving?.getAttribute(WINDOW_ATTRIBUTE)
         if (windowId) desk.focus(windowId)
       }
 

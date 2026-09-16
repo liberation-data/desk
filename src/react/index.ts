@@ -1,3 +1,5 @@
+export { APP_BRIDGE_SCRIPT, AppFrame, withAppBridge } from './appFrame.js'
+export type { AppFrameProps } from './appFrame.js'
 export { DragProvider, useDraggable, useDragging, useDragSource, useDropTarget } from './dnd.js'
 export type {
   Accepts,

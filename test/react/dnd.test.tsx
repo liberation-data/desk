@@ -163,6 +163,28 @@ describe('dragging between windows', () => {
     expect(document.querySelector('.desk-drag-preview')).toBeNull()
   })
 
+  it('is never also a click on the thing it was picked up from', () => {
+    mount()
+    const ride = screen.getByTestId('ride')
+    const clicked = vi.fn()
+    ride.addEventListener('click', clicked)
+    pointAt(screen.getByTestId('map'))
+    pickUp(ride)
+    moveTo(200, 200)
+    release(200, 200)
+    // The browser follows a captured release with a click on the capture target.
+    fireEvent.click(ride)
+    expect(clicked).not.toHaveBeenCalled()
+    // But the next real click is a click.
+    return new Promise<void>(resolve =>
+      setTimeout(() => {
+        fireEvent.click(ride)
+        expect(clicked).toHaveBeenCalledOnce()
+        resolve()
+      }, 5),
+    )
+  })
+
   it('stops offering a target once it is gone', () => {
     const desk = mount()
     const map = screen.getByTestId('map')

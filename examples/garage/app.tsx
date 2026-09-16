@@ -12,6 +12,7 @@ import {
 import type { Desk } from '../../src/core/index.js'
 import {
   Alert,
+  AppFrame,
   Button,
   Checkbox,
   Composer,
@@ -50,6 +51,7 @@ import {
   useToast,
   useWindowInput,
   windowMenuItems,
+  withAppBridge,
   windowResults,
   Wizard,
 } from '../../src/react/index.js'
@@ -978,6 +980,49 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
   )
 }
 
+/*
+ * A generated app, as the assistant might write one: a self-contained page. It knows
+ * nothing about React or the desk's internals — only the small `desk` object the
+ * bridge gives it. It hears which ride was chosen, takes a ride dropped on it, and
+ * can send one to the map.
+ */
+const RIDE_CARD_APP = withAppBridge(`<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+  body { margin: 0; padding: 20px; background: #15171b; color: #ececec; }
+  .empty { height: calc(100vh - 40px); display: grid; place-items: center; text-align: center; color: #9a9ea6;
+           border: 1.5px dashed #25282e; border-radius: 14px; }
+  .card { border: 1px solid #25282e; border-radius: 14px; padding: 18px; }
+  .eyebrow { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #9a9ea6; }
+  h1 { margin: 6px 0 14px; font-size: 22px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat { background: #101114; border-radius: 10px; padding: 10px; }
+  .stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 11px; color: #9a9ea6; }
+  button { font: inherit; padding: 6px 14px; border-radius: 8px; border: 1px solid #ff7a45; background: #ff7a45; color: #1a0f08; font-weight: 600; cursor: pointer; }
+  .note { margin-top: 14px; font-size: 11px; color: #9a9ea6; }
+</style></head><body>
+  <div id="root" class="empty"><div><b>Ride card</b><br>Drop a ride here, or choose one in Rides.</div></div>
+  <script>
+    let ride = null, source = '';
+    const render = () => {
+      if (!ride) return;
+      const root = document.getElementById('root');
+      root.className = 'card';
+      root.innerHTML = '<div class="eyebrow">' + ride.bike + ' · ' + ride.date + '</div>'
+        + '<h1>' + ride.name + '</h1>'
+        + '<div class="stats"><div class="stat"><b>' + ride.km.toFixed(1) + '</b><span>km</span></div>'
+        + '<div class="stat"><b>' + ride.climb.toLocaleString() + '</b><span>m climbed</span></div>'
+        + '<div class="stat"><b>' + ride.time + '</b><span>moving</span></div></div>'
+        + '<button id="map">Show on the map</button>'
+        + '<div class="note">' + source + '</div>';
+      document.getElementById('map').onclick = () => { desk.publish('ride.selected', ride); desk.open('map'); };
+    };
+    desk.on('ride.selected', message => { ride = message.payload; source = 'Heard from ' + message.from; render(); });
+    desk.onDrop(message => { ride = message.payload; source = 'Dropped from ' + message.from; render(); });
+  </script>
+</body></html>`)
+
 /* ── Shell ── */
 
 interface Surface { readonly title: string; readonly icon: keyof typeof PATHS; readonly description: string }
@@ -986,6 +1031,7 @@ const SURFACES = {
   service: { title: 'Service', icon: 'wrench', description: 'What the bikes need' },
   map: { title: 'Map', icon: 'map', description: 'The last ride, drawn' },
   chat: { title: 'Chat', icon: 'chat', description: 'Ask about the bikes' },
+  card: { title: 'Ride card', icon: 'log', description: 'A generated app, in a window' },
   bikes: { title: 'Bikes', icon: 'bike', description: 'The whole stable' },
   parts: { title: 'Parts & wear', icon: 'chain', description: 'How worn each part is' },
   routes: { title: 'Routes', icon: 'route', description: 'Saved loops' },
@@ -1036,6 +1082,7 @@ function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupA
     dockStack({ id: 'plan', label: 'Plan', items: [item('routes'), item('weather'), item('calendar')] }),
     dockStack({ id: 'system', label: 'System', items: [item('settings'), item('shortcuts'), item('about')] }),
     dockSeparator('sep-pins'),
+    dockItem(item('card')),
     dockItem(item('playlist')),
     dockItem(item('notes')),
   ]
@@ -1099,6 +1146,9 @@ function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupA
       case 'service': return <Service steps={steps} setSteps={setSteps} />
       case 'map': return <MapView />
       case 'chat': return <Chat pending={pending} onPending={setPending} />
+      // Granted per app: it may hear and say ride.selected, take a dropped ride, and open the map. Nothing else.
+      case 'card':
+        return <AppFrame title="Ride card" srcDoc={RIDE_CARD_APP} listens={['ride.selected']} says={['ride.selected']} accepts="ride" opens={['map']} />
       case 'bikes': return <Bikes />
       case 'parts': return <Parts />
       case 'routes': return <Routes />

@@ -151,6 +151,27 @@ the drag off. A drag carries a `type` and a `payload` and says which window it c
 types it takes and lights up while something acceptable is in the air. Dropping brings the window that took
 it forward. `useDraggable` is the single-item form of the same thing.
 
+## Generated apps
+
+A self-contained page — the kind an assistant writes when asked for an app — can run in a window and take
+part like any other:
+
+```tsx
+<AppFrame
+  title="Ride card"
+  srcDoc={withAppBridge(generatedHtml)}
+  listens={['ride.selected']}   // what it may hear
+  says={['ride.selected']}      // what it may say
+  accepts="ride"                // what may be dropped on it
+  opens={['map']}               // windows it may ask for
+/>
+```
+
+Inside the page, the bridge gives it a small `desk` object: `desk.on(topic, …)`, `desk.onDrop(…)`,
+`desk.publish(topic, payload)` and `desk.open(window)`. The page runs sandboxed with no access to the host's
+origin, and talks only through messages. The host grants each app its topics, drop types and windows;
+anything else it sends is dropped, and messages from anywhere but its own frame are ignored.
+
 ## Search
 
 ```tsx
@@ -359,6 +380,7 @@ npm run typecheck
 npm run example     # the Garage sample in examples/garage
 npm run size        # the gzipped budget: core 9 KiB, react 46, css 9
 npm run check       # everything CI runs
+npm run check:browser   # the generated-app bridge in real Chrome, against a running sample
 npm run build       # dist/
 ```
 

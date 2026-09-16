@@ -36,7 +36,8 @@
     "example": "vite examples/garage",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
     "size": "node scripts/size.mjs",
-    "check": "npm run typecheck && npm test && npm run build && npm run size"
+    "check": "npm run typecheck && npm test && npm run build && npm run size",
+    "check:browser": "node scripts/browser-check.mjs"
   },
   "peerDependencies": {
     "react": "^19.0.0"
@@ -53,6 +54,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "jsdom": "^30.0.1",
+    "puppeteer-core": "^25.11.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "typescript": "^7.0.2",
