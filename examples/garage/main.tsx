@@ -6,6 +6,7 @@ import { createDesk, DeskCommands, focusedId, formatShortcut, syncWithLocation }
 import type { Desk } from '../../src/core/index.js'
 import {
   Alert,
+  BusProvider,
   Button,
   Composer,
   Desktop,
@@ -20,13 +21,17 @@ import {
   menuSeparator,
   Popover,
   SegmentedControl,
+  InputBar,
   Sheet,
   Thread,
   TextField,
   ToastProvider,
   Toggle,
   useCommand,
+  useDeskEvent,
+  usePublish,
   useToast,
+  useWindowInput,
   useDeskState,
   windowMenuItems,
 } from '../../src/react/index.js'
@@ -106,14 +111,21 @@ const BIKES: readonly SegmentedOption<'all' | 'Road' | 'Gravel' | 'MTB'>[] = [
 
 function Rides() {
   const toast = useToast()
+  const publish = usePublish()
+  const [query, setQuery] = useState('')
   const [bike, setBike] = useState<(typeof BIKES)[number]['value']>('all')
   const [minKm, setMinKm] = useState('')
   const [filters, setFilters] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [fileName, setFileName] = useState('rides.csv')
 
+  // Typing into the desk's bar filters this window, because Rides is the one in front.
+  useWindowInput(setQuery, { placeholder: 'Filter rides by name…', target: 'Rides' })
+
   const floor = Number(minKm) || 0
-  const rides = RIDES.filter(r => (bike === 'all' || r.bike === bike) && r.km >= floor)
+  const rides = RIDES.filter(
+    r => (bike === 'all' || r.bike === bike) && r.km >= floor && r.name.toLowerCase().includes(query.trim().toLowerCase()),
+  )
   const total = rides.reduce((sum, r) => sum + r.km, 0)
 
   // Export belongs to this window, so the menu item is live only while Rides is key.
@@ -162,13 +174,19 @@ function Rides() {
           <tbody>
             {rides.map(r => (
               <tr key={r.date}>
-                <td className="muted">{r.date}</td><td>{r.name}</td><td><span className="chip">{r.bike}</span></td>
+                <td className="muted">{r.date}</td>
+                <td>
+                  {/* Say what happened; the map answers if it is open. */}
+                  <button type="button" className="linkish" onClick={() => publish('ride.selected', r)}>{r.name}</button>
+                </td>
+                <td><span className="chip">{r.bike}</span></td>
                 <td className="r">{r.km.toFixed(1)}</td><td className="r">{r.climb.toLocaleString()} m</td><td className="r">{r.time}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {query && <p className="small">Filtered by “{query}” · <button type="button" className="linkish" onClick={() => setQuery('')}>clear</button></p>}
       {rides.length === 0 && <p className="muted">No rides match those filters.</p>}
 
       <Sheet
@@ -262,6 +280,10 @@ function Service({ steps, setSteps }: { readonly steps: Step[]; readonly setStep
 }
 
 function MapView() {
+  const [ride, setRide] = useState<(typeof RIDES)[number] | null>(null)
+  // Replayed, because the map is usually opened by the very click that chose the ride.
+  useDeskEvent<(typeof RIDES)[number]>('ride.selected', event => setRide(event.payload), { replay: true })
+  const shown = ride ?? RIDES[0]
   return (
     <div className="map">
       <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice" aria-label="Route map of the Dandenongs loop">
@@ -271,7 +293,11 @@ function MapView() {
         <path className="route" d="M40 220 C70 200 90 150 130 140 S190 90 230 80 S300 60 330 90 S340 170 290 190 S150 230 40 220" />
         <circle className="start" cx="40" cy="220" r="6" />
       </svg>
-      <div className="mapcard"><b>Dandenongs loop</b><span>92.4 km · 1,640 m · 3:41</span></div>
+      <div className="mapcard">
+        <b>{shown?.name}</b>
+        <span>{shown ? `${shown.km.toFixed(1)} km · ${shown.climb.toLocaleString()} m · ${shown.time}` : ''}</span>
+        {!ride && <span className="small">Pick a ride in the Rides window.</span>}
+      </div>
     </div>
   )
 }
@@ -428,7 +454,7 @@ const ANSWERS: readonly { readonly match: RegExp; readonly reply: string }[] = [
   { match: /km|distance|far/i, reply: 'You have ridden 231 km over five rides this fortnight, with 2,878 m of climbing.' },
 ]
 
-function Chat() {
+function Chat({ pending, onPending }: { readonly pending: string | null; readonly onPending: (text: string | null) => void }) {
   const [messages, setMessages] = useState<MessageT[]>([
     { id: 'hello', from: 'mechanic', authorName: 'Mechanic', body: 'Ask about the bikes, the rides, or what needs doing.', at: '08:30' },
   ])
@@ -446,6 +472,15 @@ function Chat() {
       setThinking(false)
     }, 900)
   }
+
+  useWindowInput(send, { placeholder: 'Ask about the bikes…', target: 'Chat' })
+
+  // A question typed into the bar while another window was in front arrives here.
+  useEffect(() => {
+    if (!pending) return
+    send(pending)
+    onPending(null)
+  }, [pending, onPending])
 
   return (
     <div className="chat">
@@ -495,6 +530,7 @@ const item = (id: Id, extra: Partial<DockItem> = {}): DockItem => ({
 
 function Garage({ desk }: { readonly desk: Desk }) {
   const [steps, setSteps] = useState(INITIAL_SERVICE)
+  const [pending, setPending] = useState<string | null>(null)
   const due = steps.filter(s => s.state === 'todo').length
 
   useEffect(() => syncWithLocation(desk, () => {
@@ -524,7 +560,7 @@ function Garage({ desk }: { readonly desk: Desk }) {
       case 'rides': return <Rides />
       case 'service': return <Service steps={steps} setSteps={setSteps} />
       case 'map': return <MapView />
-      case 'chat': return <Chat />
+      case 'chat': return <Chat pending={pending} onPending={setPending} />
       case 'bikes': return <Bikes />
       case 'parts': return <Parts />
       case 'routes': return <Routes />
@@ -540,6 +576,7 @@ function Garage({ desk }: { readonly desk: Desk }) {
 
   return (
     <DeskProvider desk={desk}>
+      <BusProvider>
       <ToastProvider>
       <div className="garage">
         <GarageMenuBar desk={desk} steps={steps} />
@@ -549,10 +586,20 @@ function Garage({ desk }: { readonly desk: Desk }) {
             renderWindow={id => (isKnown(id) ? body(id) : null)}
             empty={<div className="empty"><h2>Nothing open</h2><p>Pick something from the dock.</p></div>}
           />
+          <InputBar
+            onSubmit={text => {
+              // Nobody in front took it, so it becomes a question for the mechanic.
+              setPending(text)
+              desk.open('chat')
+            }}
+            fallbackPlaceholder="Ask the mechanic…"
+            fallbackTarget="Chat"
+          />
           <Dock entries={entries} label="Garage dock" />
         </main>
       </div>
       </ToastProvider>
+      </BusProvider>
     </DeskProvider>
   )
 }

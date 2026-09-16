@@ -88,6 +88,34 @@ tab stop whose arrow keys move the selection past disabled options. A toggle is 
 apply at once — a checkbox is for one that waits for Save. A text field always has a label (`labelHidden`
 keeps it for screen readers), and an `error` marks it invalid and replaces the help text.
 
+## Typing into the window you are in, and windows telling each other
+
+One bar to type into, which reaches whichever window is key:
+
+```tsx
+// In a window: take the text while this window is in front.
+useWindowInput(setFilter, { placeholder: 'Filter rides by name…', target: 'Rides' })
+
+// In the shell: the bar, and what happens when no window takes the text.
+<InputBar onSubmit={askTheAssistant} fallbackPlaceholder="Ask anything…" fallbackTarget="Chat" />
+```
+
+The bar asks the responder chain how to present itself, so its placeholder and the *goes to* line follow the
+key window, and a window that registers nothing lets the fallback have the text.
+
+Windows tell each other what happened rather than calling each other:
+
+```tsx
+const publish = usePublish()                 // stamped with the window it came from
+publish('ride.selected', ride)
+
+useDeskEvent<Ride>('ride.selected', event => show(event.payload), { replay: true })
+```
+
+Topics are dotted names; a subscriber can take a branch with `ride.*` or everything with `*`. `replay`
+delivers the last event on the topic straight away — the window that the event concerns is often opened by
+that very event, and would otherwise miss it by a frame.
+
 ## Conversation
 
 ```tsx

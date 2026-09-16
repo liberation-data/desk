@@ -1,7 +1,7 @@
 /* The sample's own look, on top of desk.css tokens. */
 :root {
   --desk-accent: #ff7a45;
-  --desk-inset-bottom: 76px;
+  --desk-inset-bottom: 168px;
   --ok: #3ecf8e;
   --warn: #fbbf24;
   --bad: #f87171;
@@ -57,6 +57,32 @@ textarea {
     radial-gradient(70ch 50ch at 15% -10%, rgb(255 122 69 / 12%), transparent 70%),
     radial-gradient(60ch 45ch at 95% 110%, rgb(62 207 142 / 8%), transparent 70%),
     var(--desk-ground);
+}
+
+.garage .desk-inputbar {
+  position: absolute;
+  left: 50%;
+  bottom: 88px;
+  transform: translateX(-50%);
+  z-index: 900;
+  max-width: calc(100% - 32px);
+}
+
+.linkish {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--desk-accent) 60%, transparent);
+  text-underline-offset: 3px;
+}
+
+.linkish:hover {
+  color: var(--desk-accent);
 }
 
 .brand {

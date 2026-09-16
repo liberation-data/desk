@@ -1319,3 +1319,34 @@
     animation: none;
   }
 }
+
+/* ── Input bar: one place to type, which reaches the key window ── */
+
+.desk-inputbar {
+  box-sizing: border-box;
+  width: min(720px, 100%);
+  border: 1px solid var(--desk-rule);
+  border-radius: 14px;
+  background: var(--desk-dock-glass);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  box-shadow: var(--desk-shadow-floating);
+}
+
+.desk-inputbar .desk-composer {
+  border-top: 0;
+  padding: var(--desk-space-2);
+}
+
+.desk-inputbar-target {
+  display: block;
+  padding: 0 var(--desk-space-3) var(--desk-space-2);
+  font-family: var(--desk-font);
+  font-size: 11px;
+  color: var(--desk-muted);
+}
+
+.desk-inputbar-target b {
+  font-weight: 600;
+  color: var(--desk-ink);
+}
