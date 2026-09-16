@@ -1,14 +1,18 @@
+export { DeskShell } from './shell.js'
+export type { DeskShellProps } from './shell.js'
 export { DeskProvider, useDesk, useDeskState, useWindowId } from './context.js'
 export type { DeskProviderProps } from './context.js'
 export { useCanPerform, useCommand, usePerform, useShortcuts } from './commands.js'
 export type { UseCommandOptions } from './commands.js'
 export { Desktop } from './Desktop.js'
 export type { DeskLayout, DesktopProps } from './Desktop.js'
-export { Button, Checkbox, SegmentedControl, Slider, TextField, Toggle } from './controls.js'
+export { Button, Checkbox, RadioGroup, SegmentedControl, Slider, TextField, Toggle } from './controls.js'
 export type {
   ButtonIntent,
   ButtonProps,
   CheckboxProps,
+  RadioGroupProps,
+  RadioOption,
   SegmentedControlProps,
   SegmentedOption,
   SliderProps,

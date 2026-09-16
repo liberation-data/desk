@@ -23,8 +23,7 @@ import '@liberation-data/desk/desk.css'                                      // 
 ```tsx
 const desk = createDesk()
 
-<DeskProvider desk={desk}>
-  <ToastProvider>               {/* only if you use toasts */}
+<DeskShell desk={desk}>         {/* desk + bus + toasts; or DeskProvider on its own */}
       <MenuBar menus={…} status={…} />
       <div className="screen">  {/* position: relative; the stage fills it */}
         <Desktop title={id => TITLES[id]} renderWindow={id => SURFACES[id]} empty={…} />
@@ -32,8 +31,7 @@ const desk = createDesk()
         <Dock entries={…} />
         <SearchPalette open={…} onOpenChange={…} search={…} />
       </div>
-  </ToastProvider>
-</DeskProvider>
+</DeskShell>
 ```
 
 Rules that are easy to get wrong:
@@ -145,14 +143,16 @@ InputCommands = { submit: 'desk.input.submit', describe: 'desk.input.describe' }
 ### Shell
 
 ```tsx
+<DeskShell desk?={Desk} options?={DeskOptions} bus?={Bus} toasts?={true}>
 <DeskProvider desk={desk}>                          // or options={…} to make one
 useDesk(): Desk
 useDeskState(): DeskState
 useWindowId(): string | null                        // inside a window's content
 
 <Desktop
-  renderWindow={(id) => ReactNode}
+  renderWindow={(id) => ReactNode}                  // memoised: chrome re-renders, content does not
   title={(id) => ReactNode}
+  actions?={(id) => ReactNode}                      // window-wide controls in the title bar
   empty?={ReactNode}
   layout?={'auto' | 'desktop' | 'fullscreen'}       // auto: touch screens get one window at a time
   className?={string}
@@ -228,6 +228,7 @@ SearchCommand = 'desk.search'                          // a menu item can open i
 <Checkbox checked indeterminate? onChange label? description? disabled? />   // waits for Save
 <Slider value onChange label min? max? step? disabled? format?={(v) => string} />
 <TextField label labelHidden? help? error? … />                             // error marks it invalid
+<RadioGroup options={{value,label,description?,disabled?}[]} value onChange label labelHidden? />
 <PopUpButton value={T|null} onChange options={{value,label,description?,icon?,disabled?}[]}
              label labelHidden? placeholder? disabled? size? />
 ```
@@ -236,7 +237,8 @@ SearchCommand = 'desk.search'                          // a menu item can open i
 
 ```tsx
 <Table rows columns rowId={(row) => string} label
-       selected? onSelect? onActivate? sort? onSortChange? empty? />
+       selected?={string | string[] | null} selection?={'single' | 'multiple'}
+       onSelect? onSelectionChange? onActivate? sort? onSortChange? empty? />
 interface Column<Row> { key; header; render?; align?; numeric?; sortable?; width? }
 interface Sort { key: string; direction: 'ascending' | 'descending' }
 
@@ -312,4 +314,7 @@ in the accessibility tree.
 - `desk.tile()` is not limited by `maxTiled`: the person asked for it.
 - Focus follows the key window when it changes, but never on first render.
 - A `DeskProvider` already carries an event bus; `BusProvider` is only for supplying or sharing one.
+- `renderWindow` must be stable (module scope or `useCallback`) for the memoisation to hold.
+- `parse`/`syncWithLocation` warn once when no `isKnown` is given: unknown ids from a URL are then trusted.
+- `npm run size` enforces a gzipped budget: core 9 KiB, react 46 KiB, css 9 KiB.
 - The package is ESM only, with `"sideEffects": ["**/*.css"]`.

@@ -333,6 +333,8 @@ npm install
 npm test            # vitest
 npm run typecheck
 npm run example     # the Garage sample in examples/garage
+npm run size        # the gzipped budget: core 9 KiB, react 46, css 9
+npm run check       # everything CI runs
 npm run build       # dist/
 ```
 

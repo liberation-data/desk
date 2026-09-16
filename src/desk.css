@@ -209,6 +209,13 @@
   color: var(--desk-muted);
 }
 
+.desk-window-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-1);
+}
+
 .desk-body {
   flex: 1;
   min-height: 0;
@@ -1654,6 +1661,33 @@
 
 .desk-checkbox:focus-visible,
 .desk-slider-track:focus-visible {
+  outline: 2px solid var(--desk-accent);
+  outline-offset: 2px;
+}
+
+.desk-radiogroup {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--desk-space-1);
+}
+
+.desk-radiogroup legend {
+  padding: 0;
+  margin-bottom: var(--desk-space-1);
+}
+
+.desk-radio {
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--desk-accent);
+  flex: none;
+}
+
+.desk-radio:focus-visible {
   outline: 2px solid var(--desk-accent);
   outline-offset: 2px;
 }

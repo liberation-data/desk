@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 import { addDeskCommands, STAGE_ATTRIBUTE, WINDOW_ATTRIBUTE, windowElement } from '../core/commands.js'
 import { focusedId } from '../core/desk.js'
@@ -10,6 +10,8 @@ export type DeskLayout = 'desktop' | 'fullscreen'
 export interface DesktopProps {
   readonly renderWindow: (id: WindowId) => ReactNode
   readonly title: (id: WindowId) => ReactNode
+  /** Window-wide controls on the trailing side of the title bar. One or two; more belongs in a toolbar. */
+  readonly actions?: (id: WindowId) => ReactNode
   /** Shown when no window is open. */
   readonly empty?: ReactNode
   /**
@@ -47,7 +49,7 @@ const SNAP_MARGIN = 56
 /** One column, then two side by side, then the smallest square grid that fits. */
 const columnsFor = (tiled: number) => (tiled <= 2 ? Math.max(1, tiled) : Math.ceil(Math.sqrt(tiled)))
 
-export function Desktop({ renderWindow, title, empty, layout = 'auto', className }: DesktopProps) {
+export function Desktop({ renderWindow, title, actions, empty, layout = 'auto', className }: DesktopProps) {
   const desk = useDesk()
   const state = useDeskState()
   const stage = useRef<HTMLDivElement>(null)
@@ -95,13 +97,20 @@ export function Desktop({ renderWindow, title, empty, layout = 'auto', className
           // One window at a time: the rest stay mounted, keeping their state, and simply wait offstage.
           hidden={mode === 'fullscreen' && window.id !== focused}
           title={title(window.id)}
+          actions={actions?.(window.id)}
         >
-          {renderWindow(window.id)}
+          {/* Memoised on the id and the render function: moving or focusing a window
+              re-renders its chrome, never the app's content inside it. */}
+          <WindowContent id={window.id} render={renderWindow} />
         </WindowView>
       ))}
     </div>
   )
 }
+
+const WindowContent = memo(function WindowContent({ id, render }: { readonly id: WindowId; readonly render: (id: WindowId) => ReactNode }) {
+  return render(id)
+})
 
 interface WindowViewProps {
   readonly window: DeskWindow
@@ -110,12 +119,13 @@ interface WindowViewProps {
   readonly depth: number
   readonly focused: boolean
   readonly title: ReactNode
+  readonly actions?: ReactNode
   readonly children: ReactNode
 }
 
 type Gesture = 'move' | 'resize'
 
-function WindowView({ window, layout, hidden, depth, focused, title, children }: WindowViewProps) {
+function WindowView({ window, layout, hidden, depth, focused, title, actions, children }: WindowViewProps) {
   const desk = useDesk()
   // While dragging, the frame lives here and commits once on release, so a drag
   // re-renders one window rather than notifying every subscriber per pixel.
@@ -215,6 +225,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, children }:
           <h2 id={titleId} className="desk-title">
             {title}
           </h2>
+          {actions && <div className="desk-window-actions">{actions}</div>}
         </header>
         <div className="desk-body">{children}</div>
         {floating && <div className="desk-grip" aria-hidden="true" onPointerDown={startGesture('resize')} />}

@@ -14,6 +14,14 @@ import type { DeskState, DeskWindow, Size, WindowId } from './types.js'
 
 const FLOAT = '~'
 
+const warned = new Set<string>()
+/** Said once per message: a warning on every parse would be noise, not help. */
+const warnOnce = (message: string) => {
+  if (warned.has(message)) return
+  warned.add(message)
+  console.warn(message)
+}
+
 export interface LocationOptions {
   /** Hash parameter that holds the windows. Default `w`. */
   readonly key?: string
@@ -36,7 +44,13 @@ export function serialize(state: DeskState, options: LocationOptions = {}): URLS
 }
 
 export function parse(params: URLSearchParams, stage: Size, options: LocationOptions = {}): DeskState {
-  const known = options.isKnown ?? (() => true)
+  const known =
+    options.isKnown ??
+    (id => {
+      // Without `isKnown` a stale or hand-edited link opens ids the app cannot render.
+      warnOnce(`desk: no isKnown given, so "${id}" from a URL is taken on trust. Pass isKnown to drop unknown windows.`)
+      return true
+    })
   const raw = params.get(options.key ?? 'w')
   if (!raw) return { windows: [], stack: [] }
 

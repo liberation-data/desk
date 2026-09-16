@@ -184,6 +184,54 @@ export function Checkbox({ checked, indeterminate, onChange, label, description,
   )
 }
 
+export interface RadioOption<T extends string> {
+  readonly value: T
+  readonly label: string
+  readonly description?: string
+  readonly disabled?: boolean
+}
+
+export interface RadioGroupProps<T extends string> {
+  readonly options: readonly RadioOption<T>[]
+  readonly value: T | null
+  readonly onChange: (value: T) => void
+  readonly label: string
+  readonly labelHidden?: boolean
+  readonly disabled?: boolean
+}
+
+/** Mutually exclusive choices that each need a line of explanation. */
+export function RadioGroup<T extends string>({ options, value, onChange, label, labelHidden, disabled }: RadioGroupProps<T>) {
+  const name = useId()
+  return (
+    <fieldset className="desk-radiogroup" disabled={disabled}>
+      <legend className="desk-label" data-hidden={labelHidden || undefined}>{label}</legend>
+      {options.map(option => {
+        const id = `${name}-${option.value}`
+        return (
+          <div className="desk-check-row" key={option.value}>
+            <input
+              id={id}
+              type="radio"
+              name={name}
+              className="desk-radio"
+              value={option.value}
+              checked={option.value === value}
+              disabled={option.disabled}
+              aria-describedby={option.description ? `${id}-description` : undefined}
+              onChange={() => onChange(option.value)}
+            />
+            <span className="desk-check-text">
+              <label htmlFor={id} className="desk-check-label">{option.label}</label>
+              {option.description && <span id={`${id}-description`} className="desk-help">{option.description}</span>}
+            </span>
+          </div>
+        )
+      })}
+    </fieldset>
+  )
+}
+
 export interface SliderProps {
   readonly value: number
   readonly onChange: (value: number) => void

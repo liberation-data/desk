@@ -29,8 +29,13 @@ export interface TableProps<Row> {
   readonly rowId: (row: Row) => string
   /** The accessible name, e.g. "Rides". */
   readonly label: string
-  readonly selected?: string | null
+  /** One id, or several when `selection` is `multiple`. */
+  readonly selected?: string | readonly string[] | null
+  /** Default `single`. `multiple` adds ⌘/Ctrl to add one and Shift for a run. */
+  readonly selection?: 'single' | 'multiple'
   readonly onSelect?: (id: string, row: Row) => void
+  /** Called instead of `onSelect` when `selection` is `multiple`. */
+  readonly onSelectionChange?: (ids: string[]) => void
   /** Enter, or a double click. */
   readonly onActivate?: (id: string, row: Row) => void
   readonly sort?: Sort | null
@@ -47,19 +52,44 @@ export function Table<Row>({
   rowId,
   label,
   selected,
+  selection = 'single',
   onSelect,
+  onSelectionChange,
   onActivate,
   sort,
   onSortChange,
   empty,
 }: TableProps<Row>) {
   const body = useRef<HTMLTableSectionElement>(null)
+  const anchor = useRef<number>(0)
+  const chosen = selected == null ? [] : Array.isArray(selected) ? selected : [selected as string]
+  const isChosen = (id: string) => chosen.includes(id)
 
-  const focusRow = (index: number) => {
-    const clamped = Math.max(0, Math.min(index, rows.length - 1))
-    const row = rows[clamped]
+  const choose = (index: number, modifiers: { readonly add?: boolean; readonly range?: boolean } = {}) => {
+    const row = rows[index]
     if (!row) return
-    onSelect?.(rowId(row), row)
+    const id = rowId(row)
+    if (selection === 'multiple' && onSelectionChange) {
+      if (modifiers.range) {
+        const [from, to] = [Math.min(anchor.current, index), Math.max(anchor.current, index)]
+        onSelectionChange(rows.slice(from, to + 1).map(rowId))
+      } else if (modifiers.add) {
+        anchor.current = index
+        onSelectionChange(isChosen(id) ? chosen.filter(x => x !== id) : [...chosen, id])
+      } else {
+        anchor.current = index
+        onSelectionChange([id])
+      }
+      return
+    }
+    anchor.current = index
+    onSelect?.(id, row)
+  }
+
+  const focusRow = (index: number, modifiers: { readonly range?: boolean } = {}) => {
+    const clamped = Math.max(0, Math.min(index, rows.length - 1))
+    if (!rows[clamped]) return
+    choose(clamped, modifiers)
     body.current?.querySelectorAll<HTMLElement>('tr')[clamped]?.focus()
   }
 
@@ -68,10 +98,11 @@ export function Table<Row>({
     if (index < 0) return
     const row = rows[index]
     switch (event.key) {
-      case 'ArrowDown': focusRow(index + 1); break
-      case 'ArrowUp': focusRow(index - 1); break
-      case 'Home': focusRow(0); break
-      case 'End': focusRow(rows.length - 1); break
+      case 'ArrowDown': focusRow(index + 1, { range: event.shiftKey }); break
+      case 'ArrowUp': focusRow(index - 1, { range: event.shiftKey }); break
+      case 'Home': focusRow(0, { range: event.shiftKey }); break
+      case 'End': focusRow(rows.length - 1, { range: event.shiftKey }); break
+      case ' ': if (selection === 'multiple') choose(index, { add: true }); break
       case 'Enter': if (row) onActivate?.(rowId(row), row); break
       default: return
     }
@@ -88,7 +119,7 @@ export function Table<Row>({
 
   return (
     <div className="desk-table-wrap">
-      <table className="desk-table" aria-label={label}>
+      <table className="desk-table" aria-label={label} aria-multiselectable={selection === 'multiple' || undefined}>
         <thead>
           <tr>
             {columns.map(column => (
@@ -114,15 +145,16 @@ export function Table<Row>({
         <tbody ref={body} onKeyDown={onKeyDown}>
           {rows.map((row, index) => {
             const id = rowId(row)
-            const isSelected = id === selected
+            const isSelected = isChosen(id)
+            const selectable = Boolean(onSelect || onSelectionChange)
             return (
               <tr
                 key={id}
                 // One tab stop for the whole table; arrow keys move within it.
-                tabIndex={isSelected || (!selected && index === 0) ? 0 : -1}
-                aria-selected={onSelect ? isSelected : undefined}
+                tabIndex={isSelected || (!chosen.length && index === 0) ? 0 : -1}
+                aria-selected={selectable ? isSelected : undefined}
                 data-selected={isSelected || undefined}
-                onClick={() => onSelect?.(id, row)}
+                onClick={event => choose(index, { add: event.metaKey || event.ctrlKey, range: event.shiftKey })}
                 onDoubleClick={() => onActivate?.(id, row)}
               >
                 {columns.map(column => (

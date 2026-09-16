@@ -18,7 +18,7 @@ A page with one task at a time is better as a page.
 
 ```tsx
 import { createDesk } from '@liberation-data/desk'
-import { Desktop, DeskProvider } from '@liberation-data/desk/react'
+import { Desktop, DeskShell } from '@liberation-data/desk/react'
 import '@liberation-data/desk/desk.css'
 
 const SURFACES = {
@@ -27,17 +27,18 @@ const SURFACES = {
 }
 
 const desk = createDesk()
+const renderWindow = (id: string) => SURFACES[id].body   // stable: window content is memoised on it
 
 export function App() {
   return (
-    <DeskProvider desk={desk}>
+    <DeskShell desk={desk}>
       <button onClick={() => desk.open('rides')}>Rides</button>
       <Desktop
         title={id => SURFACES[id].title}
-        renderWindow={id => SURFACES[id].body}
+        renderWindow={renderWindow}
         empty={<p>Nothing open</p>}
       />
-    </DeskProvider>
+    </DeskShell>
   )
 }
 ```
@@ -47,6 +48,8 @@ Three things follow from this:
 - **A window is an id.** The desk tracks ids; you decide what an id renders as.
 - **The stage is where windows live.** Give `.desk-stage` a height — usually a flex child that fills the
   screen — or nothing will show.
+- **`DeskShell` is the surround:** the desk, its event bus and toasts in one component. `DeskProvider` on
+  its own is there when an app wants to assemble them itself.
 - **The desk can be driven from anywhere.** `desk.open('rides')` works in an event handler, a router, a
   test, or a tour. `createDesk()` has no React in it.
 
@@ -187,4 +190,6 @@ when a test cares where a floating window lands.
   were working in — so a menu item that inspects `document.activeElement` sees your window, not the menu.
 - **`useCommand` inside a window answers only while that window is key.** For an app-wide command, pass
   `{ at: 'app' }`.
+- **Keep `renderWindow` stable** — module scope, or `useCallback`. Window content is memoised on it, so an
+  inline arrow function gives that up.
 - **A search that returns a promise is fine;** a slower answer to an older query never overtakes a newer one.
