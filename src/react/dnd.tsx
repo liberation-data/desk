@@ -1,8 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react'
-import { createPortal } from 'react-dom'
 import { WINDOW_ATTRIBUTE } from '../core/commands.js'
 import { useDesk, useWindowId } from './context.js'
+import { accepted, DragContext, TARGET_ATTRIBUTE } from './dragContext.js'
+import type { Accepts, Drag } from './dragContext.js'
+
+export { DragProvider } from './dragContext.js'
+export type { Accepts, Drag } from './dragContext.js'
 
 /*
  * Dragging something from one window to another — a ride onto the map, a
@@ -14,69 +18,9 @@ import { useDesk, useWindowId } from './context.js'
  * takes; nothing else about the two windows is shared.
  */
 
-export interface Drag<T = unknown> {
-  readonly type: string
-  readonly payload: T
-  /** The window it was picked up in, when it was picked up in one. */
-  readonly from: string | null
-}
-
-export type Accepts = string | readonly string[] | ((type: string) => boolean)
-
-const accepted = (accepts: Accepts, type: string) =>
-  typeof accepts === 'function' ? accepts(type) : typeof accepts === 'string' ? accepts === type : accepts.includes(type)
-
-interface Target {
-  readonly accepts: Accepts
-  readonly onDrop: (drag: Drag) => void
-}
-
-interface DragState {
-  readonly drag: Drag
-  readonly x: number
-  readonly y: number
-  readonly over: string | null
-  readonly preview: ReactNode
-}
-
-interface DragContextValue {
-  readonly state: DragState | null
-  readonly targets: Map<string, Target>
-  readonly setState: (state: DragState | null) => void
-}
-
-const DragContext = createContext<DragContextValue | null>(null)
-
-const TARGET_ATTRIBUTE = 'data-desk-drop'
-
-export function DragProvider({ children }: { readonly children: ReactNode }) {
-  const [state, setState] = useState<DragState | null>(null)
-  const [targets] = useState(() => new Map<string, Target>())
-  const value = useMemo(() => ({ state, targets, setState }), [state, targets])
-  return (
-    <DragContext.Provider value={value}>
-      {children}
-      {state && (
-        <DragPreview x={state.x} y={state.y}>
-          {state.preview}
-        </DragPreview>
-      )}
-    </DragContext.Provider>
-  )
-}
-
-function DragPreview({ x, y, children }: { readonly x: number; readonly y: number; readonly children: ReactNode }) {
-  return createPortal(
-    <div className="desk-drag-preview" style={{ left: x, top: y }} aria-hidden="true">
-      {children}
-    </div>,
-    document.body,
-  )
-}
-
 const useDrag = () => {
   const context = useContext(DragContext)
-  if (!context) throw new Error('Dragging needs a <DeskProvider> (or <DragProvider>) above it')
+  if (!context) throw new Error('Dragging needs a <DeskProvider> (or a <DragProvider>) above it')
   return context
 }
 

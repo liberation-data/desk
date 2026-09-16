@@ -5,7 +5,6 @@ import type { Desk } from '../core/desk.js'
 import type { Bus } from '../core/events.js'
 import type { DeskOptions } from '../core/types.js'
 import { DeskProvider } from './context.js'
-import { DragProvider } from './dnd.js'
 import { BusProvider } from './events.js'
 import { ToastProvider } from './overlays.js'
 
@@ -23,7 +22,6 @@ export interface DeskShellProps {
 /** Everything an app needs around it, in one component: the desk, its bus, and toasts. */
 export function DeskShell({ desk, options, bus, toasts = true, children }: DeskShellProps) {
   const [made] = useState(() => desk ?? createDesk(options))
-  const dragging = <DragProvider>{children}</DragProvider>
-  const inner = toasts ? <ToastProvider>{dragging}</ToastProvider> : dragging
+  const inner = toasts ? <ToastProvider>{children}</ToastProvider> : children
   return <DeskProvider desk={made}>{bus ? <BusProvider bus={bus}>{inner}</BusProvider> : inner}</DeskProvider>
 }

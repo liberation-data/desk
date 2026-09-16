@@ -137,8 +137,8 @@ type Accepts = string | string[] | ((type: string) => boolean)
 ```
 
 Pointer Events, so touch and pen work; Escape calls a drag off; the drop brings the receiving window
-forward. `dropProps` carries `data-ready` and `data-over`, which the stylesheet already draws. Needs a
-`DeskShell` (or a `DragProvider`) above it.
+forward. `dropProps` carries `data-ready` and `data-over`, which the stylesheet already draws. A
+`DeskProvider` supplies the drag state, as it does the bus.
 
 ### Events between windows
 
@@ -231,8 +231,8 @@ type Accepts = string | string[] | ((type: string) => boolean)
 ```
 
 Pointer Events, so touch and pen work; Escape calls a drag off; the drop brings the receiving window
-forward. `dropProps` carries `data-ready` and `data-over`, which the stylesheet already draws. Needs a
-`DeskShell` (or a `DragProvider`) above it.
+forward. `dropProps` carries `data-ready` and `data-over`, which the stylesheet already draws. A
+`DeskProvider` supplies the drag state, as it does the bus.
 
 ### Events
 

@@ -660,11 +660,12 @@ function ChoiceCard({
 function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) => void }) {
   const [index, setIndex] = useState(0)
   const [workshop, setWorkshop] = useState<0 | 1 | 2>(0)
-  const [rider, setRider] = useState('')
-  const [home, setHome] = useState('')
-  const [bikes, setBikes] = useState<string[]>(['Road'])
+  // A sample: the fields come filled in so the flow can be walked through quickly.
+  const [rider, setRider] = useState('Jasper Blues')
+  const [home, setHome] = useState('Melbourne')
+  const [bikes, setBikes] = useState<string[]>(['Road', 'Gravel'])
   const [music, setMusic] = useState<(typeof MUSIC_OPTIONS)[number]['value']>('tempo')
-  const [key, setKey] = useState('')
+  const [key, setKey] = useState('wx-sample-key')
   const [keyState, setKeyState] = useState<'idle' | 'checking' | 'ok' | 'bad' | 'skipped'>('idle')
   const [maps, setMaps] = useState<'online' | 'offline' | 'none'>('online')
   const [jobs, setJobs] = useState(0)

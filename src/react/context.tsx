@@ -3,6 +3,7 @@ import type { ReactNode, RefObject } from 'react'
 import { createBus } from '../core/events.js'
 import type { Bus } from '../core/events.js'
 import { createDesk } from '../core/desk.js'
+import { DragProvider } from './dragContext.js'
 import type { Desk } from '../core/desk.js'
 import type { DeskOptions, DeskState, WindowId } from '../core/types.js'
 
@@ -24,7 +25,9 @@ export function DeskProvider({ desk, options, children }: DeskProviderProps) {
   const [bus] = useState(createBus)
   return (
     <DeskContext.Provider value={value}>
-      <BusContext.Provider value={bus}>{children}</BusContext.Provider>
+      <BusContext.Provider value={bus}>
+        <DragProvider>{children}</DragProvider>
+      </BusContext.Provider>
     </DeskContext.Provider>
   )
 }
