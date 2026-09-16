@@ -39,7 +39,7 @@ function MenuProbe() {
     <>
       <button type="button" onClick={() => perform('increment')}>Increment</button>
       <button type="button" onClick={() => perform('copy')}>Copy</button>
-      <button type="button" onClick={() => setEnabled(can(DeskCommands.tileAll))}>Check tile all</button>
+      <button type="button" onClick={() => setEnabled(can(DeskCommands.closeWindow))}>Check close</button>
       <output>{enabled === null ? 'unchecked' : String(enabled)}</output>
     </>
   )
@@ -94,14 +94,10 @@ describe('useCommand', () => {
 describe('Desktop', () => {
   it('answers desk commands, so a menu can ask before drawing an item', () => {
     const desk = mount()
-    act(() => {
-      desk.open('a')
-      desk.open('b')
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Check tile all' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Check close' }))
     expect(screen.getByText('false')).toBeTruthy()
-    act(() => desk.float('a'))
-    fireEvent.click(screen.getByRole('button', { name: 'Check tile all' }))
+    act(() => desk.open('a'))
+    fireEvent.click(screen.getByRole('button', { name: 'Check close' }))
     expect(screen.getByText('true')).toBeTruthy()
   })
 

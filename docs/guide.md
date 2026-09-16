@@ -55,10 +55,10 @@ Three things follow from this:
 
 ## 3. How windows arrange themselves
 
-The first window fills the stage, the second splits it, and later ones float above the tiles. That
-arrangement is placed once, not held: when someone moves or resizes an arranged window, every window
-becomes independent where it sits and nothing reflows — as on a Mac. Drag a window to an edge to give it that
-half, double-click a title bar to zoom it, or use Arrange to lay everything out again. Nobody has to arrange
+Every window opens filling the stage, layered over the ones before it. Arrange (⌥⌘A in the sample's Window
+menu) lays them out once — two side by side, three one tall and two stacked, four a grid — and after that each
+is an ordinary window: move or resize one and only that one changes. Drag a window to free it, drop it against
+an edge to give it that half, double-click a title bar to fill the desk and back. Nobody has to arrange
 anything, and nobody is stopped from arranging.
 
 On a touch screen the desk shows **one window at a time**; the others stay mounted, so their state survives.
@@ -66,9 +66,10 @@ On a touch screen the desk shows **one window at a time**; the others stay mount
 
 Two rules worth knowing:
 
-- **Tiles keep the order they were opened in.** Focusing a window never reshuffles the screen.
+- **Arrange uses the order windows were opened in**, with the focused window first. Focusing never moves
+  anything.
 - **A window keeps its DOM while it is open.** Scroll positions, carets, iframes and video all survive
-  focusing, tiling, floating and dragging. Closing a window unmounts it; if state has to outlive that, keep
+  focusing, filling, arranging and dragging. Closing a window unmounts it; if state has to outlive that, keep
   it above the desk.
 
 ## 4. Links, history and reloads
@@ -185,7 +186,7 @@ when a test cares where a floating window lands.
 ## 10. Things that catch people out
 
 - **The stage needs a height.** It fills its parent; give that parent one.
-- **An overlay dock covers the bottom of the stage.** Set `--desk-inset-bottom` so tiles stop above it.
+- **An overlay dock covers the bottom of the stage.** Set `--desk-inset-bottom` so windows stop above it.
 - **`renderWindow` is called for every open window,** including the ones offstage on a touch layout. That is
   what keeps their state; keep the work in them cheap, or memoise.
 - **Menus do not take focus.** That is deliberate — a command chosen from a menu has to reach the window you

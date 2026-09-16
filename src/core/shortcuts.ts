@@ -96,13 +96,16 @@ export interface ShortcutOptions {
 }
 
 /** Performs commands from keyboard shortcuts. Returns a function that stops listening. */
-export function bindShortcuts(desk: Desk | null, keymap: Keymap, options: ShortcutOptions = {}): () => void {
+export function bindShortcuts(desk: Desk | null, keymap: Keymap | (() => Keymap), options: ShortcutOptions = {}): () => void {
   const target = options.target ?? globalThis
-  const bindings = Object.entries(keymap).map(([text, command]) => ({ shortcut: parseShortcut(text), command }))
+  const bind = (map: Keymap) => Object.entries(map).map(([text, command]) => ({ shortcut: parseShortcut(text), command }))
+  // A keymap given as a function is read at each key press, for menus whose items change.
+  const fixed = typeof keymap === 'function' ? null : bind(keymap)
 
   const onKeyDown = (event: Event) => {
     const key = event as KeyboardEvent
     if (key.defaultPrevented || key.isComposing) return
+    const bindings = fixed ?? bind((keymap as () => Keymap)())
     const binding = bindings.find(b => matchesShortcut(key, b.shortcut, options.apple))
     if (!binding) return
     // A bare key belongs to whatever is being typed into; a modified one can still be a command.

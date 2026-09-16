@@ -37,7 +37,6 @@ export type {
   Frame,
   OpenOptions,
   Size,
-  TileOptions,
   WindowId,
   WindowMode,
 } from './types.js'

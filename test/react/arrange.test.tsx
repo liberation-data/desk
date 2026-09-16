@@ -69,26 +69,37 @@ describe('the Arrange command', () => {
     return desk
   }
 
-  it('is offered once windows have been placed by hand, and not for the split the desk made', () => {
+  it('is offered for two windows or more, and for one that is free', () => {
     const desk = mount()
+    act(() => desk.open('a'))
+    expect(canPerform(desk, DeskCommands.arrange)).toBe(false)
+    act(() => desk.float('a'))
+    expect(canPerform(desk, DeskCommands.arrange)).toBe(true)
     act(() => {
-      desk.open('a')
+      desk.fill('a')
       desk.open('b')
     })
-    expect(canPerform(desk, DeskCommands.arrange)).toBe(false)
-    act(() => desk.float('b', { x: 40, y: 40, width: 300, height: 300 }))
     expect(canPerform(desk, DeskCommands.arrange)).toBe(true)
   })
 
-  it('returns two windows to a split', () => {
+  it('fills the desk with a single free window', () => {
+    const desk = mount()
+    act(() => desk.open('a', { frame: { x: 40, y: 40, width: 300, height: 300 } }))
+    act(() => void perform(desk, DeskCommands.arrange))
+    expect(desk.getState().windows[0]?.mode).toBe('filled')
+  })
+
+  it('puts two layered windows side by side', () => {
     const desk = mount()
     act(() => {
       desk.open('a')
       desk.open('b')
-      desk.float('b', { x: 40, y: 40, width: 300, height: 300 })
     })
     act(() => void perform(desk, DeskCommands.arrange))
-    expect(desk.getState().windows.map(w => w.mode)).toEqual(['tiled', 'tiled'])
+    expect(desk.getState().windows).toEqual([
+      { id: 'a', mode: 'floating', frame: { x: 500, y: 0, width: 500, height: 700 } },
+      { id: 'b', mode: 'floating', frame: { x: 0, y: 0, width: 500, height: 700 } },
+    ])
   })
 
   it('places three as windows that can be moved again, keeping focus where it was', () => {

@@ -116,8 +116,8 @@ export function canPerform(desk: Desk | null, command: CommandId, options: Chain
 /** The commands the desk itself answers, at the stage. */
 export const DeskCommands = {
   closeWindow: 'desk.window.close',
-  toggleWindowMode: 'desk.window.toggle-mode',
-  tileAll: 'desk.window.tile-all',
+  /** Fills the key window, or frees it: the green control. */
+  zoomWindow: 'desk.window.zoom',
   /** Answered by a mounted Desktop, which knows the space windows are laid out in. */
   arrange: 'desk.window.arrange',
   nextWindow: 'desk.window.next',
@@ -134,10 +134,7 @@ export function addDeskCommands(stage: EventTarget, desk: Desk): () => void {
   }
   const removers = [
     addCommandHandler(stage, DeskCommands.closeWindow, () => { const id = key(); if (id) desk.close(id) }, { enabled: () => key() !== null }),
-    addCommandHandler(stage, DeskCommands.toggleWindowMode, () => { const id = key(); if (id) desk.toggleMode(id) }, { enabled: () => key() !== null }),
-    addCommandHandler(stage, DeskCommands.tileAll, () => desk.tileAll(), {
-      enabled: () => desk.getState().windows.some(w => w.mode === 'floating'),
-    }),
+    addCommandHandler(stage, DeskCommands.zoomWindow, () => { const id = key(); if (id) desk.toggleMode(id) }, { enabled: () => key() !== null }),
     addCommandHandler(stage, DeskCommands.nextWindow, () => cycle(1), { enabled: () => desk.getState().windows.length > 1 }),
     addCommandHandler(stage, DeskCommands.previousWindow, () => cycle(-1), { enabled: () => desk.getState().windows.length > 1 }),
   ]

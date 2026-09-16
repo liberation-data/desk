@@ -26,6 +26,15 @@ const frame = await (await page.$('iframe[title="Ride card"]')).contentFrame()
 await frame.waitForFunction(() => window.desk && window.desk.window === 'card', { timeout: 5000 })
 step(1, 'the app connected as window', await frame.evaluate(() => window.desk.window))
 
+// Windows open layered; Arrange (⌥⌘A, Ctrl+Alt+A elsewhere) puts the two side by side.
+const mod = process.platform === 'darwin' ? 'Meta' : 'Control'
+await page.keyboard.down(mod)
+await page.keyboard.down('Alt')
+await page.keyboard.press('KeyA')
+await page.keyboard.up('Alt')
+await page.keyboard.up(mod)
+await page.waitForFunction(() => document.querySelectorAll('[data-desk-window][data-mode="floating"]').length === 2)
+
 // Choose a ride in Rides: the app should hear it through the bridge.
 const row = await page.$$('table[aria-label="Rides"] tbody tr')
 await row[2].click()

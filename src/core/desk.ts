@@ -6,31 +6,26 @@ import type {
   Frame,
   OpenOptions,
   Size,
-  TileOptions,
   WindowId,
 } from './types.js'
 
 export interface Desk {
   getState(): DeskState
   subscribe(listener: (state: DeskState) => void): () => void
-  /** Opens a window, or brings it to the front if it is already open. */
+  /** Opens a window filling the desk, over the ones already open, or brings it to the front if it is open. */
   open(id: WindowId, options?: OpenOptions): void
   /** Opens another window of the same kind — `query#2` beside `query` — and returns its id. */
   openInstance(type: string, options?: OpenOptions): WindowId
   close(id: WindowId): void
   closeAll(): void
   focus(id: WindowId): void
-  /** Floats a tiled window, or moves a floating one when a frame is given. */
+  /** Frees a window: where it last was, or at the next step of the cascade. Given a frame, puts it there. */
   float(id: WindowId, frame?: Frame): void
-  /** Returns a floating window to the tiles. Not limited by maxTiled: the user asked for it. */
-  tile(id: WindowId, options?: TileOptions): void
+  /** Makes a window fill the desk, remembering where it was so freeing it again puts it back. */
+  fill(id: WindowId): void
+  /** Zooms: fills a free window, or frees a filled one. */
   toggleMode(id: WindowId): void
-  tileAll(): void
-  /**
-   * Places windows exactly where they are, as independent windows. This is how an
-   * arrangement is let go of: once somebody moves one window, the rest stay put
-   * rather than reflowing to fill the space.
-   */
+  /** Places windows exactly where they are given, as free windows. Arrange uses it. */
   placeAll(frames: Readonly<Record<WindowId, Frame>>): void
   /** Replaces the whole state, e.g. from a URL. Unknown shapes are normalised, not trusted. */
   restore(state: DeskState): void
@@ -107,7 +102,6 @@ export function normalise(state: DeskState): DeskState {
 }
 
 export function createDesk(options: DeskOptions = {}): Desk {
-  const maxTiled = options.maxTiled ?? 2
   const cascade: CascadeOptions = { ...DEFAULT_CASCADE, ...options.cascade }
   let stage = options.stage ?? (() => DEFAULT_STAGE)
   let state = normalise(options.initial ?? EMPTY)
@@ -131,14 +125,7 @@ export function createDesk(options: DeskOptions = {}): Desk {
 
   const find = (id: WindowId) => state.windows.find(w => w.id === id)
 
-  /**
-   * Whether a person has placed windows themselves. A window the cascade floated does
-   * not count; one dragged, resized, snapped or zoomed does. Tile all hands the layout
-   * back to the desk.
-   */
-  let placedByHand = false
-
-  /** Where each window last floated, so tiling and floating again is not a surprise. */
+  /** Where each window was last free, so filling it and freeing it again is not a surprise. */
   const remembered = new Map<WindowId, Frame>()
 
   /** A remembered frame is only worth restoring while it still lands on this screen. */
@@ -154,26 +141,15 @@ export function createDesk(options: DeskOptions = {}): Desk {
     if (!window) return
     if (window.mode === 'floating' && !frame) return
     const next = frame ?? fits(remembered.get(id)) ?? nextFrame(state)
-    if (frame) {
-      remembered.set(id, frame)
-      placedByHand = true
-    }
+    if (frame) remembered.set(id, frame)
     commit(toFront(replace(state, { id, mode: 'floating', frame: next }), id))
   }
 
-  const tile = (id: WindowId, options: TileOptions = {}) => {
+  const fill = (id: WindowId) => {
     const window = find(id)
-    if (!window || (window.mode === 'tiled' && !options.at)) return
-    // Coming back from floating, remember where it was: floating it again should
-    // put it back where the person left it, not at the next step of the cascade.
-    if (window.mode === 'floating') remembered.set(id, window.frame)
-    const tiled: DeskWindow = { id, mode: 'tiled' }
-    const rest = state.windows.filter(w => w.id !== id)
-    const windows =
-      options.at === 'start' ? [tiled, ...rest]
-      : options.at === 'end' ? [...rest, tiled]
-      : state.windows.map(w => (w.id === id ? tiled : w))
-    commit(toFront({ ...state, windows }, id))
+    if (!window || window.mode === 'filled') return
+    remembered.set(id, window.frame)
+    commit(toFront(replace(state, { id, mode: 'filled' }), id))
   }
 
   return {
@@ -191,11 +167,8 @@ export function createDesk(options: DeskOptions = {}): Desk {
         commit(toFront(state, id))
         return
       }
-      const tiled = state.windows.filter(w => w.mode === 'tiled').length
-      // The default arrangement only lasts until somebody places a window by hand. After
-      // that a new window floats, rather than tiling in behind the windows they placed.
-      const mode = opts.mode ?? (tiled < maxTiled && !placedByHand ? 'tiled' : 'floating')
-      const window: DeskWindow = mode === 'tiled' ? { id, mode } : { id, mode, frame: opts.frame ?? nextFrame(state) }
+      const mode = opts.mode ?? (opts.frame ? 'floating' : 'filled')
+      const window: DeskWindow = mode === 'filled' ? { id, mode } : { id, mode, frame: opts.frame ?? nextFrame(state) }
       commit({ windows: [...state.windows, window], stack: [...state.stack, id] })
     },
 
@@ -208,13 +181,10 @@ export function createDesk(options: DeskOptions = {}): Desk {
     },
 
     close(id) {
-      if (!find(id)) return
-      if (state.windows.length === 1) placedByHand = false
-      commit({ windows: state.windows.filter(w => w.id !== id), stack: state.stack.filter(x => x !== id) })
+      if (find(id)) commit({ windows: state.windows.filter(w => w.id !== id), stack: state.stack.filter(x => x !== id) })
     },
 
     closeAll() {
-      placedByHand = false
       if (state.windows.length) commit(EMPTY)
     },
 
@@ -223,25 +193,18 @@ export function createDesk(options: DeskOptions = {}): Desk {
     },
 
     float,
-    tile,
+    fill,
 
     toggleMode(id) {
       const window = find(id)
       if (!window) return
-      if (window.mode === 'tiled') float(id)
-      else tile(id)
-    },
-
-    tileAll() {
-      placedByHand = false
-      if (state.windows.every(w => w.mode === 'tiled')) return
-      commit({ ...state, windows: state.windows.map(w => ({ id: w.id, mode: 'tiled' as const })) })
+      if (window.mode === 'filled') float(id)
+      else fill(id)
     },
 
     placeAll(frames) {
       const ids = Object.keys(frames)
       if (!ids.length) return
-      placedByHand = true
       ids.forEach(id => {
         const frame = frames[id]
         if (frame) remembered.set(id, frame)

@@ -165,10 +165,15 @@ describe('desk commands', () => {
     expect(focusedId(desk.getState())).toBe('map')
   })
 
-  it('offers Tile all only when something floats', () => {
-    expect(canPerform(desk, DeskCommands.tileAll)).toBe(false)
-    desk.float('map')
-    expect(canPerform(desk, DeskCommands.tileAll)).toBe(true)
+  it('zooms the key window out of filling the desk, and back', () => {
+    perform(desk, DeskCommands.zoomWindow)
+    expect(desk.getState().windows.find(w => w.id === 'map')?.mode).toBe('floating')
+    perform(desk, DeskCommands.zoomWindow)
+    expect(desk.getState().windows.find(w => w.id === 'map')?.mode).toBe('filled')
+  })
+
+  it('leaves Arrange to a mounted Desktop, which knows the space', () => {
+    expect(canPerform(desk, DeskCommands.arrange)).toBe(false)
   })
 
   it('lets a window override a desk command', () => {

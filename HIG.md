@@ -19,8 +19,7 @@ is quiet, translucent and small, and never competes with a window's content for 
 **Clarity over cleverness.** Text is legible at every size, icons are recognisable without a tooltip, and a
 control looks like what it does. When in doubt, use a word rather than an icon.
 
-**Depth means something.** Layering is information: a floating window is above the tiles because it was
-asked to be; a popover is above its window because it belongs to that moment. Never add shadow, blur or
+**Depth means something.** Layering is information: the window in front is the one last used; a popover is above its window because it belongs to that moment. Never add shadow, blur or
 elevation for decoration.
 
 **Consistency.** The same action has the same name, place and shortcut everywhere. A person who learns one
@@ -151,28 +150,25 @@ together, they are one window; if people want them side by side, they are two.
 
 Nobody has to arrange windows, and nobody is stopped from arranging them.
 
-1. The first window fills the stage.
-2. The second splits it: two tiles side by side.
-3. Every window after that **floats** above the tiles, cascading down and right from the last, and wraps
-   back to the top-left before it can leave the stage. It never opens exactly on top of another window.
-4. **An arrangement is placed once, not held.** When a person moves or resizes one arranged window, every
-   window becomes independent where it sits and only the one they touched changes. Nothing reflows into the
-   space — the way arranged windows behave on a Mac.
+1. Every window opens **filling the desk**, over the windows already open. It keeps filling the desk when the
+   screen or browser changes size. Opening a window never moves another one.
+2. **Arrange** lays the open windows out, once. It goes by how many are open, never by where they sit, so it
+   always gives the same result: one fills the desk, two sit side by side, three go one tall and two stacked,
+   four make a 2 × 2 grid, and more make a grid while every cell stays usable. Past that, the focused window
+   and the one used before it share the desk and the rest cascade over the second half. The focused window
+   takes the first place. Arrange belongs in the Window menu with the shortcut ⌥⌘A.
+3. **An arrangement is placed, not held.** After Arrange every window is an ordinary window; moving or
+   resizing one changes that window and nothing else. Nothing reflows into the space — as on a Mac.
+4. Dragging a filled window by its title bar frees it where it sits, so it never jumps under the pointer.
 5. A window resizes from its left, right and bottom edges and its bottom-right corner. There is no top
    edge: the title bar is there, and dragging it moves the window.
 6. Dragging a window against the left or right edge gives it that half of the desk, with a preview of where
-   it will land. Double-clicking a title bar, or pressing the green control, zooms the window to fill the
-   desk and back.
-7. Once windows have been placed by hand, a new window opens floating rather than tiling in behind them.
-   **Arrange** hands the layout back to the desk.
-8. **Arrange** lays windows out by how many are open, never by where they sit, so it always gives the same
-   result: one fills the desk, two split it, three go one tall and two stacked, four make a 2 × 2 grid, and
-   more make a grid while every cell stays usable. Past that, the focused window and the one used before it
-   share the desk and the rest cascade over the second half. The focused window takes the first place. Two
-   windows go back to a split that can be dragged; any more are placed once and can be moved straight away.
-9. Tiles keep the order they were opened in. Focusing a window never reshuffles anything.
+   it will land.
+7. Double-clicking a title bar, or pressing the green control, **zooms**: a free window fills the desk, a
+   filled one goes back to where it last was.
+8. Arrange uses the order windows were opened in. Focusing a window never reshuffles anything.
 
-**A window that is floated again goes back where it last was**, not to the next step of the cascade, unless
+**A window that is freed again goes back where it last was**, not to the next step of the cascade, unless
 that place no longer lands on this screen.
 
 ### Arrangement on touch devices
@@ -182,14 +178,14 @@ the stage.
 
 - The dock stays visible and is how people switch.
 - Other open windows stay open and keep their state; they are hidden, not closed.
-- There is no floating or tiling, and the float control is not shown. Close remains.
+- Windows are not moved, resized or arranged, and the zoom control is not shown. Close remains.
 - A tablet with a trackpad or mouse attached uses the pointer arrangement.
 - Links and history are the same on every device: a link opens the same windows everywhere, shown one at a
   time on touch.
 
 ### Title bars
 
-- Controls are on the leading side: **close**, then **float/tile**. Title follows.
+- Controls are on the leading side: **close**, then **zoom**. Title follows.
 - A title is the name of the thing, not the app: **Dandenongs loop**, not **Garage — Map**.
 - A title bar may hold at most one or two window-wide actions on its trailing side. Anything more belongs
   in a toolbar inside the window.

@@ -9,7 +9,7 @@ describe('serialize and parse', () => {
     const desk = createDesk()
     desk.open('notes')
     desk.open('clock')
-    desk.open('inspector')
+    desk.open('inspector', { mode: 'floating' })
     desk.focus('clock')
 
     const params = serialize(desk.getState())
@@ -17,7 +17,7 @@ describe('serialize and parse', () => {
     expect(params.get('f')).toBe('clock')
 
     const restored = parse(params, stage)
-    expect(restored.windows.map(w => `${w.id}:${w.mode}`)).toEqual(['notes:tiled', 'clock:tiled', 'inspector:floating'])
+    expect(restored.windows.map(w => `${w.id}:${w.mode}`)).toEqual(['notes:filled', 'clock:filled', 'inspector:floating'])
     expect(focusedId(restored)).toBe('clock')
   })
 

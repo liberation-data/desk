@@ -93,8 +93,7 @@
   padding: var(--desk-padding);
   padding-bottom: calc(var(--desk-padding) + var(--desk-inset-bottom));
   display: grid;
-  grid-template-columns: repeat(var(--desk-columns, 1), minmax(0, 1fr));
-  grid-auto-rows: minmax(0, 1fr);
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   gap: var(--desk-gap);
   overflow: hidden;
   background: var(--desk-ground);
@@ -102,28 +101,13 @@
   font-family: var(--desk-font);
 }
 
-.desk-split {
-  grid-row: 1 / -1;
-  grid-column: 2;
-  align-self: stretch;
-  width: 7px;
-  margin: 0 calc(var(--desk-gap) / -2 + 1px);
-  border-radius: 4px;
-  cursor: col-resize;
-  touch-action: none;
-  background: transparent;
-  transition: background .15s var(--desk-ease);
-}
-
-.desk-split:hover,
-.desk-split:focus-visible {
-  background: color-mix(in srgb, var(--desk-accent) 45%, transparent);
-  outline: none;
-}
-
 .desk-window {
-  /* Positioned, so the resize grip sits in the corner of a tile as well as a floating window. */
-  position: relative;
+  /* Filled windows fill the stage inside its padding, layered in the order they were used. */
+  position: absolute;
+  top: var(--desk-padding);
+  right: var(--desk-padding);
+  bottom: calc(var(--desk-padding) + var(--desk-inset-bottom));
+  left: var(--desk-padding);
   box-sizing: border-box;
   min-width: 0;
   min-height: 0;
@@ -150,14 +134,16 @@
   display: none;
 }
 
-/* One window at a time: it fills the stage, and the float control is not offered. */
+/* One window at a time: it fills the stage, and the zoom control is not offered. */
 .desk-stage[data-layout="fullscreen"] .desk-window {
   position: static;
+  inset: auto;
   grid-area: 1 / 1;
 }
 
 .desk-window[data-mode="floating"] {
-  position: absolute;
+  right: auto;
+  bottom: auto;
   box-shadow: var(--desk-shadow-floating);
 }
 

@@ -1,6 +1,6 @@
 # desk
 
-A desktop for the web, in React: windows that tile first and float when asked.
+A desktop for the web, in React: windows that fill the desk, layered, and arrange when asked.
 
 ```bash
 npm install @liberation-data/desk
@@ -8,18 +8,15 @@ npm install @liberation-data/desk
 
 ## Window manager defaults
 
-The first window takes the stage. The second splits it. Everything after that floats, cascading down and
-right from the last, never landing on top of another window.
+Every window opens filling the desk, over the ones already open, and keeps filling it when the browser
+resizes. Nothing is laid out behind anyone's back.
 
-That arrangement is **placed once, not held**. The moment someone moves or resizes one of the arranged
-windows, every window becomes independent exactly where it sits, and only the one being touched moves —
-nothing reflows to fill the space. Dragging a window against the left or right edge gives it that half of the
-desk; double-clicking its title bar (or the green control) zooms it to fill the desk and back. Once windows
-have been placed by hand, new ones open floating. **Window → Arrange** lays everything out again: two windows
-split, three go one tall and two stacked, four make a grid.
+**Window → Arrange** (⌥⌘A) lays the open windows out once: two side by side, three one tall and two stacked,
+four a grid. After that they are ordinary windows. Move or resize one and only that one changes.
 
-While the default arrangement stands, two tiles share a split you can drag, double-click to even up, or nudge
-with the arrow keys.
+Drag a window by its title bar to free it where it sits. Drop it against the left or right edge and it takes
+that half. Resize from the sides, the bottom or the corner. Double-click the title bar, or press the green
+control, to fill the desk and back.
 
 ## Use it
 
@@ -63,8 +60,8 @@ when focus moves, so scroll positions, carets and iframes survive.
 ## Touch: one window at a time
 
 `<Desktop layout="auto">` (the default) reads the device. A touch screen that cannot hover gets
-`fullscreen`: the key window fills the stage, the dock stays as the way to switch, and there is no tiling or
-floating. Windows you are not looking at stay mounted — their drafts, scroll positions and carets survive —
+`fullscreen`: the key window fills the stage, the dock stays as the way to switch, and windows are not
+moved or arranged. Windows you are not looking at stay mounted — their drafts, scroll positions and carets survive —
 and are simply offstage and `inert`. A tablet with a trackpad reports a fine pointer, so it gets the
 desktop. Pass `layout="desktop"` or `layout="fullscreen"` to decide for yourself.
 
@@ -90,7 +87,7 @@ its items out above the dock and previews the first four icons. `onSelect` repla
 
 The dock is one tab stop: arrow keys move along it, Enter opens, Escape folds a stack away and returns focus
 to it. With `placement="overlay"` (the default) it floats over the bottom of its positioned parent; set
-`--desk-inset-bottom` so tiles stop above it.
+`--desk-inset-bottom` so windows stop above it.
 
 ## Controls
 
@@ -346,8 +343,8 @@ shortcuts the browser owns: ⌘W for close window and ⌘\` for next window, and
 The chain is the DOM: commands travel as events that bubble from the focused element, so there is no second
 tree to keep in step. The first responder that implements a command decides — if it is disabled, the
 command stops there. `mod` means ⌘ on Apple devices and Ctrl elsewhere; a shortcut nothing handles leaves
-the browser's default alone. The desk answers `DeskCommands` (close, float or tile, tile all, next and
-previous window) at the stage, and any window can override them.
+the browser's default alone. The desk answers `DeskCommands` (close, zoom, arrange, next and previous
+window) at the stage, and any window can override them.
 
 ## The core has no React in it
 
@@ -355,10 +352,10 @@ previous window) at the stage, and any window can override them.
 test:
 
 ```ts
-const { open, focus, close, float, tile, toggleMode, tileAll, closeAll, subscribe, getState } = createDesk()
+const { open, focus, close, float, fill, toggleMode, closeAll, subscribe, getState } = createDesk()
 ```
 
-State is immutable. `windows` is the order windows were opened, which is the order tiles are laid out,
+State is immutable. `windows` is the order windows were opened, which is the order Arrange lays them out,
 so focusing never reshuffles them. `stack` is back to front; `focusedId(state)` is its last entry.
 
 ## Links and Back

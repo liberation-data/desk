@@ -485,6 +485,7 @@ const SHORTCUTS: readonly { readonly keys: string; readonly does: string }[] = [
   { keys: 'mod+comma', does: 'Settings' },
   { keys: 'mod+j', does: 'Type to the window in front' },
   { keys: 'mod+e', does: 'Export rides, from the Rides window' },
+  { keys: 'mod+alt+a', does: 'Arrange the windows' },
   { keys: 'alt+]', does: 'Next window' },
   { keys: 'alt+[', does: 'Previous window' },
   { keys: 'alt+w', does: 'Close window' },
@@ -512,7 +513,7 @@ function About() {
   return (
     <div className="pad prose">
       <p><b>Garage</b> is a sample app for <code>@liberation-data/desk</code>. All of its data is made up.</p>
-      <p>Open things from the dock. The first window takes the stage, the second splits it, and later ones float. Stacks fan out; Back closes what you opened.</p>
+      <p>Open things from the dock. Each window fills the desk, over the one before; Window → Arrange (⌥⌘A) lays them out side by side. Stacks fan out; Back closes what you opened.</p>
       <p className="muted">Focused: <code>{focusedId(state) ?? 'nothing'}</code> · open: {state.windows.length}</p>
     </div>
   )
@@ -1249,8 +1250,8 @@ function GarageMenuBar({
       id: 'window',
       label: 'Window',
       items: () => [
-        menuCommand('Float or tile', DeskCommands.toggleWindowMode),
-        menuCommand('Arrange', DeskCommands.arrange),
+        menuCommand('Zoom', DeskCommands.zoomWindow),
+        menuCommand('Arrange', DeskCommands.arrange, { shortcut: 'mod+alt+a' }),
         menuSeparator(),
         menuAction('New window of this kind', () => {
           const key = focusedId(desk.getState())

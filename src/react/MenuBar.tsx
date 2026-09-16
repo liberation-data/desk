@@ -74,7 +74,7 @@ export interface MenuBarProps {
   /** Trailing content after the status menus, e.g. a clock. */
   readonly trailing?: ReactNode
   readonly label?: string
-  /** Bind the shortcuts of command items in static menus. Default true. */
+  /** Bind the shortcuts of command items, in every menu. Default true. */
   readonly shortcuts?: boolean
   readonly className?: string
 }
@@ -208,17 +208,26 @@ export function MenuBar({ menus, status = [], leading, trailing, label = 'Menu b
     }
   })
 
-  // Menus own their key equivalents, as in AppKit.
-  const keymap = useMemo(
+  // Menus own their key equivalents, as in AppKit. Menus that build their items when opened are
+  // read when a key is pressed, so their shortcuts work before the menu has ever been opened.
+  const menusNow = useRef(all)
+  menusNow.current = all
+  useEffect(
     () =>
-      Object.fromEntries(
-        all.flatMap(m => (typeof m.items === 'function' ? [] : m.items))
-          .flatMap(i => (i.type === 'command' && i.shortcut ? [[i.shortcut, i.command] as const] : [])),
-      ),
-    [all],
+      shortcuts
+        ? bindShortcuts(
+            desk,
+            () =>
+              Object.fromEntries(
+                menusNow.current
+                  .flatMap(m => (typeof m.items === 'function' ? m.items() : m.items))
+                  .flatMap(i => (i.type === 'command' && i.shortcut ? [[i.shortcut, i.command] as const] : [])),
+              ),
+            { apple },
+          )
+        : undefined,
+    [desk, shortcuts, apple],
   )
-  const keymapKey = JSON.stringify(keymap)
-  useEffect(() => (shortcuts ? bindShortcuts(desk, keymap, { apple }) : undefined), [desk, keymapKey, shortcuts, apple])
 
   const onBarKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (open) return

@@ -52,8 +52,8 @@ function Bar({ onAbout, desk }: { readonly onAbout: () => void; readonly desk: D
       id: 'window',
       label: 'Window',
       items: () => [
-        menuCommand('Tile all', DeskCommands.tileAll),
-        menuCommand('Next window', DeskCommands.nextWindow),
+        menuCommand('Arrange', DeskCommands.arrange),
+        menuCommand('Next window', DeskCommands.nextWindow, { shortcut: 'alt+]' }),
         menuSeparator(),
         ...windowMenuItems(desk.getState(), desk.focus, id => id.toUpperCase()),
       ],
@@ -137,6 +137,16 @@ describe('MenuBar', () => {
     expect(screen.getByText('exported 1')).toBeTruthy()
   })
 
+  it('binds shortcuts in a menu that builds its items when opened, before it is ever opened', () => {
+    const { desk } = mount()
+    act(() => {
+      desk.open('rides')
+      desk.open('notes')
+    })
+    act(() => void fireEvent.keyDown(document.body, { key: ']', code: 'BracketRight', altKey: true }))
+    expect(desk.getState().stack.at(-1)).toBe('rides')
+  })
+
   it('lists open windows with the key window checked', () => {
     const { desk } = mount()
     act(() => {
@@ -155,7 +165,7 @@ describe('MenuBar', () => {
     mount()
     fireEvent.click(title('Garage'))
     fireEvent.pointerEnter(title('Window'))
-    expect(within(menu()).getByRole('menuitem', { name: 'Tile all' })).toBeTruthy()
+    expect(within(menu()).getByRole('menuitem', { name: 'Arrange' })).toBeTruthy()
   })
 
   it('closes when the pointer goes down outside', () => {

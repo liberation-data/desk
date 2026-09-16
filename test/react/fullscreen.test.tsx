@@ -78,18 +78,18 @@ describe('one window at a time', () => {
     act(() => {
       desk.open('a')
       desk.open('b')
-      desk.open('c') // floats on a desktop
+      desk.open('c', { mode: 'floating' })
     })
     expect(window_('c').dataset.mode).toBe('fullscreen')
     expect(window_('c').getAttribute('style')).toBeNull()
   })
 
-  it('still tiles and floats on a desktop', () => {
+  it('still fills and floats on a desktop', () => {
     const desk = mount('desktop')
     act(() => {
       desk.open('a')
       desk.open('b')
-      desk.open('c')
+      desk.open('c', { mode: 'floating' })
     })
     expect(window_('c').dataset.mode).toBe('floating')
     expect(window_('a').dataset.hidden).toBeUndefined()
@@ -116,7 +116,7 @@ describe('auto', () => {
     expect(window_('a').dataset.hidden).toBe('true')
   })
 
-  it('gives a pointer device the tiling desktop', () => {
+  it('gives a pointer device the desktop, windows layered', () => {
     stubMatchMedia(false)
     const desk = mount('auto')
     act(() => {
@@ -124,6 +124,6 @@ describe('auto', () => {
       desk.open('b')
     })
     expect(window_('a').dataset.hidden).toBeUndefined()
-    expect(window_('a').dataset.mode).toBe('tiled')
+    expect(window_('a').dataset.mode).toBe('filled')
   })
 })

@@ -23,7 +23,7 @@ export interface DesktopProps {
   readonly failed?: WindowFailed
   /**
    * `auto` (the default) reads the device: a touch screen gets `fullscreen`, one
-   * window at a time; anything with a pointer gets the tiling `desktop`.
+   * window at a time; anything with a pointer gets the layered `desktop`.
    */
   readonly layout?: DeskLayout | 'auto'
   readonly className?: string
@@ -50,13 +50,8 @@ function useMediaQuery(query: string): boolean {
 
 const MIN_WIDTH = 240
 const MIN_HEIGHT = 160
-/** How close to the edge a dragged window has to get before it will tile there. */
+/** How close to the edge a dragged window has to get before it takes that half. */
 const SNAP_MARGIN = 56
-
-/** One column, then two side by side, then the smallest square grid that fits. */
-const columnsFor = (tiled: number) => (tiled <= 2 ? Math.max(1, tiled) : Math.ceil(Math.sqrt(tiled)))
-
-const MIN_SPLIT = 0.2
 
 /** The part of the stage windows are arranged in: inside its padding, with its gap. */
 function arrangementArea(stage: HTMLElement) {
@@ -75,14 +70,7 @@ const halfFrame = (stage: HTMLElement, side: 'start' | 'end'): Frame => {
   return { x: side === 'start' ? area.x : area.x + width + area.gap, y: area.y, width, height: area.height }
 }
 
-const fullFrame = (stage: HTMLElement): Frame => {
-  const { x, y, width, height } = arrangementArea(stage)
-  return { x, y, width, height }
-}
-
 export function Desktop({ renderWindow, title, actions, empty, loading, failed, layout = 'auto', className }: DesktopProps) {
-  // Where the split between two tiles sits. A third tile makes it a grid again.
-  const [split, setSplit] = useState(0.5)
   const desk = useDesk()
   const state = useDeskState()
   const stage = useRef<HTMLDivElement>(null)
@@ -95,8 +83,7 @@ export function Desktop({ renderWindow, title, actions, empty, loading, failed, 
 
   useEffect(() => (stage.current ? addDeskCommands(stage.current, desk) : undefined), [desk])
 
-  // Arrange lays every window out once. Two windows go back to a split that can be dragged;
-  // more are placed as windows, free to be moved again straight away.
+  // Arrange lays every window out once, as free windows that can be moved again straight away.
   useEffect(() => {
     const element = stage.current
     if (!element || mode !== 'desktop') return undefined
@@ -105,22 +92,20 @@ export function Desktop({ renderWindow, title, actions, empty, loading, failed, 
       DeskCommands.arrange,
       () => {
         const { windows, stack } = desk.getState()
-        if (windows.length <= 2) {
-          setSplit(0.5)
-          desk.tileAll()
+        const [focused, previous] = [stack.at(-1), stack.at(-2)]
+        if (windows.length === 1) {
+          if (focused) desk.fill(focused)
           return
         }
-        const area = arrangementArea(element)
         const frames = arrangement(
           windows.map(w => w.id),
-          stack.at(-1) ?? null,
-          stack.at(-2) ?? null,
-          area,
+          focused ?? null,
+          previous ?? null,
+          arrangementArea(element),
           { minWidth: MIN_WIDTH, minHeight: MIN_HEIGHT },
         )
         desk.placeAll(frames)
         // Windows that cascade come in front of the half they cascade over; the focused window stays in front of all.
-        const [focused, previous] = [stack.at(-1), stack.at(-2)]
         if (previous) desk.focus(previous)
         windows.forEach(w => w.id !== focused && w.id !== previous && desk.focus(w.id))
         if (focused) desk.focus(focused)
@@ -128,32 +113,12 @@ export function Desktop({ renderWindow, title, actions, empty, loading, failed, 
       {
         enabled: () => {
           const { windows } = desk.getState()
-          return windows.some(w => w.mode === 'floating') || windows.length > 2
+          return windows.length > 1 || windows.some(w => w.mode === 'floating')
         },
       },
     )
   }, [desk, mode])
 
-  // Arranged windows are placed once, not held in place. The first time a person moves or
-  // resizes one, every tile becomes an independent window exactly where it sits, so the
-  // others stay put instead of reflowing into the space.
-  const letGo = useCallback(() => {
-    const element = stage.current
-    if (!element) return
-    const box = element.getBoundingClientRect()
-    const frames = Object.fromEntries(
-      desk
-        .getState()
-        .windows.filter(w => w.mode === 'tiled')
-        .flatMap(w => {
-          const rect = windowElement(element, w.id)?.getBoundingClientRect()
-          return rect ? [[w.id, { x: rect.left - box.left, y: rect.top - box.top, width: rect.width, height: rect.height }] as const] : []
-        }),
-    )
-    desk.placeAll(frames)
-  }, [desk])
-
-  const tiled = state.windows.filter(w => w.mode === 'tiled').length
   const focused = focusedId(state)
 
   // Keyboard focus follows the key window, so commands and typing reach the window the person just chose.
@@ -167,63 +132,14 @@ export function Desktop({ renderWindow, title, actions, empty, loading, failed, 
     if (element instanceof HTMLElement && !element.contains(document.activeElement)) element.focus({ preventScroll: true })
   }, [focused])
 
-  const splittable = mode === 'desktop' && tiled === 2
-  const style = {
-    '--desk-columns': mode === 'fullscreen' ? 1 : columnsFor(tiled),
-    ...(splittable ? { gridTemplateColumns: `minmax(0, ${split}fr) auto minmax(0, ${1 - split}fr)` } : {}),
-  } as CSSProperties
-
-  const dragSplit = (event: ReactPointerEvent<HTMLElement>) => {
-    const box = stage.current?.getBoundingClientRect()
-    if (!box) return
-    event.preventDefault()
-    const handle = event.currentTarget
-    handle.setPointerCapture?.(event.pointerId)
-    // From where it was grabbed, not from where the pointer happens to be: taking
-    // the raw position makes the split jump to meet the pointer on the first move.
-    const startX = event.clientX
-    const startSplit = split
-    const onMove = (move: PointerEvent) => {
-      const fraction = startSplit + (move.clientX - startX) / box.width
-      setSplit(Math.min(1 - MIN_SPLIT, Math.max(MIN_SPLIT, fraction)))
-    }
-    const onUp = () => {
-      handle.removeEventListener('pointermove', onMove)
-      handle.removeEventListener('pointerup', onUp)
-    }
-    handle.addEventListener('pointermove', onMove)
-    handle.addEventListener('pointerup', onUp)
-  }
-
   return (
     <div
       ref={stage}
       className={['desk-stage', className].filter(Boolean).join(' ')}
       data-layout={mode}
-      style={style}
       {...{ [STAGE_ATTRIBUTE]: '' }}
     >
       {state.windows.length === 0 && empty}
-      {splittable && (
-        <div
-          className="desk-split"
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Split between the windows"
-          aria-valuenow={Math.round(split * 100)}
-          aria-valuemin={Math.round(MIN_SPLIT * 100)}
-          aria-valuemax={Math.round((1 - MIN_SPLIT) * 100)}
-          tabIndex={0}
-          onPointerDown={dragSplit}
-          onDoubleClick={() => setSplit(0.5)}
-          onKeyDown={event => {
-            const step = event.key === 'ArrowLeft' ? -0.05 : event.key === 'ArrowRight' ? 0.05 : 0
-            if (!step) return
-            event.preventDefault()
-            setSplit(current => Math.min(1 - MIN_SPLIT, Math.max(MIN_SPLIT, current + step)))
-          }}
-        />
-      )}
       {state.windows.map(window => (
         <WindowView
           key={window.id}
@@ -235,7 +151,6 @@ export function Desktop({ renderWindow, title, actions, empty, loading, failed, 
           hidden={mode === 'fullscreen' && window.id !== focused}
           title={title(window.id)}
           actions={actions?.(window.id)}
-          letGo={letGo}
         >
           {/* Memoised on the id and the render function: moving or focusing a window
               re-renders its chrome, never the app's content inside it. */}
@@ -270,7 +185,6 @@ interface WindowViewProps {
   readonly focused: boolean
   readonly title: ReactNode
   readonly actions?: ReactNode
-  readonly letGo: () => void
   readonly children: ReactNode
 }
 
@@ -296,7 +210,7 @@ function reshape(gesture: Gesture, origin: Frame, dx: number, dy: number): Frame
   }
 }
 
-function WindowView({ window, layout, hidden, depth, focused, title, actions, letGo, children }: WindowViewProps) {
+function WindowView({ window, layout, hidden, depth, focused, title, actions, children }: WindowViewProps) {
   const desk = useDesk()
   // While dragging, the frame lives here and commits once on release, so a drag
   // re-renders one window rather than notifying every subscriber per pixel.
@@ -311,7 +225,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, le
     event.preventDefault()
     const stageBox = event.currentTarget.closest<HTMLElement>(`[${STAGE_ATTRIBUTE}]`)?.getBoundingClientRect()
     const windowBox = event.currentTarget.closest<HTMLElement>(`[${WINDOW_ATTRIBUTE}]`)?.getBoundingClientRect()
-    // A tile is let go of exactly where it already sits, so it does not jump under the pointer.
+    // A filled window is freed exactly where it already sits, so it does not jump under the pointer.
     const origin: Frame =
       window.mode === 'floating'
         ? window.frame
@@ -344,7 +258,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, le
       const dy = move.clientY - startY
       if (!pulledOut && Math.hypot(dx, dy) > 5) {
         pulledOut = true
-        letGo()
+        if (window.mode === 'filled') desk.float(window.id, origin)
       }
       latest = reshape(gesture, origin, dx, dy)
       setLive(latest)
@@ -369,34 +283,18 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, le
     handle.addEventListener('pointercancel', onUp)
   }
 
-  const floating = window.mode === 'floating' && layout === 'desktop'
-  // Where it was before it was zoomed, so zooming again puts it back.
-  const unzoomed = useRef<Frame | null>(null)
-
-  // Double-clicking a title bar, or the green control, zooms a window to fill the desk and
-  // back — as on a Mac. It is a placement by hand, so any arrangement is let go of first.
+  // Double-clicking a title bar, or the green control, fills the desk with the window and back — as on a Mac.
   const zoom = () => {
-    const stage = element.current?.closest<HTMLElement>(`[${STAGE_ATTRIBUTE}]`)
-    if (layout !== 'desktop' || !stage) return
-    if (desk.getState().windows.some(w => w.mode === 'tiled')) letGo()
-    const current = desk.getState().windows.find(w => w.id === window.id)
-    if (current?.mode !== 'floating') return
-    const full = fullFrame(stage)
-    const isZoomed = Math.abs(current.frame.width - full.width) < 2 && Math.abs(current.frame.height - full.height) < 2
-    if (isZoomed && unzoomed.current) {
-      const back = unzoomed.current
-      unzoomed.current = null
-      desk.float(window.id, back)
-    } else {
-      unzoomed.current = current.frame
-      desk.float(window.id, full)
-    }
+    if (layout === 'desktop') desk.toggleMode(window.id)
   }
 
-  const frame = floating ? (live ?? window.frame) : null
-  const style: CSSProperties | undefined = frame
-    ? { left: frame.x, top: frame.y, width: frame.width, height: frame.height, zIndex: 10 + depth }
-    : undefined
+  const frame = layout === 'desktop' ? (live ?? (window.mode === 'floating' ? window.frame : null)) : null
+  const style: CSSProperties | undefined =
+    layout !== 'desktop'
+      ? undefined
+      : frame
+        ? { left: frame.x, top: frame.y, width: frame.width, height: frame.height, zIndex: 10 + depth }
+        : { zIndex: 10 + depth }
 
   return (
     <WindowContext.Provider value={context}>
@@ -405,7 +303,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, le
         tabIndex={-1}
         {...{ [WINDOW_ATTRIBUTE]: window.id }}
         className="desk-window"
-        data-mode={layout === 'fullscreen' ? 'fullscreen' : window.mode}
+        data-mode={layout === 'fullscreen' ? 'fullscreen' : live ? 'floating' : window.mode}
         data-hidden={hidden || undefined}
         inert={hidden || undefined}
         data-focused={focused || undefined}

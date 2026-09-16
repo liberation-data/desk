@@ -47,7 +47,7 @@ describe('DeskShell', () => {
 
   it('makes its own desk when it is not given one', () => {
     render(
-      <DeskShell options={{ maxTiled: 1 }}>
+      <DeskShell options={{ cascade: { margin: 24 } }}>
         <Desktop title={id => id} renderWindow={() => null} empty={<p>Nothing open</p>} />
       </DeskShell>,
     )

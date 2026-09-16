@@ -5,17 +5,11 @@ import type { DeskState } from '../../src/core/index.js'
 const modes = (state: DeskState) => state.windows.map(w => `${w.id}:${w.mode}`)
 
 describe('open', () => {
-  it('tiles the first two windows and floats the rest', () => {
+  it('fills the desk with every window, each over the last', () => {
     const desk = createDesk()
-    ;['a', 'b', 'c', 'd'].forEach(id => desk.open(id))
-    expect(modes(desk.getState())).toEqual(['a:tiled', 'b:tiled', 'c:floating', 'd:floating'])
-  })
-
-  it('honours maxTiled', () => {
-    const desk = createDesk({ maxTiled: 1 })
-    desk.open('a')
-    desk.open('b')
-    expect(modes(desk.getState())).toEqual(['a:tiled', 'b:floating'])
+    ;['a', 'b', 'c'].forEach(id => desk.open(id))
+    expect(modes(desk.getState())).toEqual(['a:filled', 'b:filled', 'c:filled'])
+    expect(desk.getState().stack).toEqual(['a', 'b', 'c'])
   })
 
   it('focuses a window that is already open instead of opening it twice', () => {
@@ -27,18 +21,17 @@ describe('open', () => {
     expect(focusedId(desk.getState())).toBe('a')
   })
 
-  it('lets the caller force a mode', () => {
+  it('opens a free window when asked', () => {
     const desk = createDesk()
     desk.open('a', { mode: 'floating' })
     expect(modes(desk.getState())).toEqual(['a:floating'])
   })
 
-  it('counts only tiles against the limit', () => {
+  it('opens a free window where it is given a frame', () => {
     const desk = createDesk()
-    desk.open('f', { mode: 'floating' })
-    desk.open('a')
-    desk.open('b')
-    expect(modes(desk.getState())).toEqual(['f:floating', 'a:tiled', 'b:tiled'])
+    const frame = { x: 10, y: 20, width: 300, height: 200 }
+    desk.open('a', { frame })
+    expect(desk.getState().windows[0]).toEqual({ id: 'a', mode: 'floating', frame })
   })
 })
 
@@ -83,7 +76,7 @@ describe('several windows of the same kind', () => {
 })
 
 describe('focus', () => {
-  it('moves the window to the front without reordering the tiles', () => {
+  it('moves the window to the front without reordering the windows', () => {
     const desk = createDesk()
     desk.open('a')
     desk.open('b')
@@ -111,14 +104,6 @@ describe('close', () => {
     expect(focusedId(desk.getState())).toBe('c')
   })
 
-  it('frees a tile, so the next window tiles again', () => {
-    const desk = createDesk()
-    ;['a', 'b', 'c'].forEach(id => desk.open(id))
-    desk.close('a')
-    desk.open('d')
-    expect(modes(desk.getState())).toEqual(['b:tiled', 'c:floating', 'd:tiled'])
-  })
-
   it('leaves an empty desk with nothing focused', () => {
     const desk = createDesk()
     desk.open('a')
@@ -128,8 +113,8 @@ describe('close', () => {
   })
 })
 
-describe('float and tile', () => {
-  it('floats a tile inside the stage and brings it to the front', () => {
+describe('float and fill', () => {
+  it('frees a filled window inside the stage and brings it to the front', () => {
     const desk = createDesk({ stage: () => ({ width: 800, height: 600 }) })
     desk.open('a')
     desk.open('b')
@@ -143,7 +128,7 @@ describe('float and tile', () => {
     expect(focusedId(desk.getState())).toBe('a')
   })
 
-  it('moves a floating window when given a frame', () => {
+  it('moves a free window when given a frame', () => {
     const desk = createDesk()
     desk.open('a', { mode: 'floating' })
     const frame = { x: 5, y: 6, width: 300, height: 200 }
@@ -151,27 +136,21 @@ describe('float and tile', () => {
     expect(desk.getState().windows[0]).toEqual({ id: 'a', mode: 'floating', frame })
   })
 
-  it('lets the user tile beyond maxTiled', () => {
+  it('zooms between filling the desk and where the window was', () => {
+    const desk = createDesk()
+    const frame = { x: 40, y: 30, width: 300, height: 200 }
+    desk.open('a', { frame })
+    desk.toggleMode('a')
+    expect(modes(desk.getState())).toEqual(['a:filled'])
+    desk.toggleMode('a')
+    expect(desk.getState().windows[0]).toEqual({ id: 'a', mode: 'floating', frame })
+  })
+
+  it('places several windows at once, as free windows', () => {
     const desk = createDesk()
     ;['a', 'b', 'c'].forEach(id => desk.open(id))
-    desk.tile('c')
-    expect(modes(desk.getState())).toEqual(['a:tiled', 'b:tiled', 'c:tiled'])
-  })
-
-  it('toggles between the two', () => {
-    const desk = createDesk()
-    desk.open('a')
-    desk.toggleMode('a')
-    expect(modes(desk.getState())).toEqual(['a:floating'])
-    desk.toggleMode('a')
-    expect(modes(desk.getState())).toEqual(['a:tiled'])
-  })
-
-  it('tiles everything at once', () => {
-    const desk = createDesk()
-    ;['a', 'b', 'c', 'd'].forEach(id => desk.open(id))
-    desk.tileAll()
-    expect(desk.getState().windows.every(w => w.mode === 'tiled')).toBe(true)
+    desk.placeAll({ a: { x: 0, y: 0, width: 10, height: 10 }, b: { x: 10, y: 0, width: 10, height: 10 } })
+    expect(modes(desk.getState())).toEqual(['a:floating', 'b:floating', 'c:filled'])
   })
 
   it('works when methods are destructured', () => {
@@ -206,35 +185,35 @@ describe('the cascade never hides a window under another', () => {
 
   it('gives every floating window its own step', () => {
     const desk = createDesk({ stage })
-    ;['a', 'b', 'c', 'd', 'e'].forEach(id => desk.open(id))
+    ;['a', 'b', 'c', 'd', 'e'].forEach(id => desk.open(id, { mode: 'floating' }))
     expect(new Set(frames(desk)).size).toBe(frames(desk).length)
   })
 
   it('reuses a step only once the window on it has gone', () => {
     const desk = createDesk({ stage })
-    ;['a', 'b', 'c', 'd', 'e'].forEach(id => desk.open(id))
+    ;['a', 'b', 'c', 'd', 'e'].forEach(id => desk.open(id, { mode: 'floating' }))
     const freed = frames(desk)[0]
     desk.close('c')
-    desk.open('f')
+    desk.open('f', { mode: 'floating' })
     expect(frames(desk)).toContain(freed)
     expect(new Set(frames(desk)).size).toBe(frames(desk).length)
   })
 
   it('keeps them apart past the wrap', () => {
     const desk = createDesk({ stage })
-    ;['a', 'b', ...Array.from({ length: 6 }, (_, i) => `f${i}`)].forEach(id => desk.open(id))
+    ;['a', 'b'].forEach(id => desk.open(id))
+    ;Array.from({ length: 6 }, (_, i) => `f${i}`).forEach(id => desk.open(id, { mode: 'floating' }))
     expect(new Set(frames(desk)).size).toBe(frames(desk).length)
   })
 
   it('does not land on a window that was dragged onto a step', () => {
     const desk = createDesk({ stage })
-    ;['a', 'b', 'c'].forEach(id => desk.open(id))
-    const first = desk.getState().windows[2]
+    desk.open('c', { mode: 'floating' })
+    const first = desk.getState().windows[0]
     if (first?.mode !== 'floating') throw new Error('expected a floating window')
-    desk.float('d')
-    desk.open('d')
+    desk.open('d', { mode: 'floating' })
     desk.float('d', { ...first.frame })
-    desk.open('e')
+    desk.open('e', { mode: 'floating' })
     expect(frames(desk).filter(f => f === `${first.frame.x},${first.frame.y}`)).toHaveLength(2)
   })
 })
@@ -243,16 +222,16 @@ describe('restore', () => {
   it('drops duplicates and repairs the stack', () => {
     const repaired = normalise({
       windows: [
-        { id: 'a', mode: 'tiled' },
-        { id: 'a', mode: 'tiled' },
-        { id: 'b', mode: 'tiled' },
+        { id: 'a', mode: 'filled' },
+        { id: 'a', mode: 'filled' },
+        { id: 'b', mode: 'filled' },
       ],
       stack: ['ghost', 'a'],
     })
     expect(repaired).toEqual({
       windows: [
-        { id: 'a', mode: 'tiled' },
-        { id: 'b', mode: 'tiled' },
+        { id: 'a', mode: 'filled' },
+        { id: 'b', mode: 'filled' },
       ],
       stack: ['b', 'a'],
     })

@@ -1,6 +1,6 @@
 # @liberation-data/desk
 
-A desktop for the web, in React: windows that tile first and float when asked, with a dock, a menu bar,
+A desktop for the web, in React: windows that fill the desk, layered, and arrange when asked, with a dock, a menu bar,
 commands routed to whoever is responsible, and the controls to fill the windows. Apache-2.0.
 
 This file is the whole public surface in one place, for a coding agent. Prose for people:
@@ -46,30 +46,29 @@ Rules that are easy to get wrong:
 
 ```ts
 createDesk(options?: DeskOptions): Desk
-interface DeskOptions { maxTiled?: number; cascade?: Partial<CascadeOptions>; stage?: () => Size; initial?: DeskState }
+interface DeskOptions { cascade?: Partial<CascadeOptions>; stage?: () => Size; initial?: DeskState }
 
 interface Desk {
   getState(): DeskState
   subscribe(listener: (state: DeskState) => void): () => void
-  open(id: string, options?: { mode?: 'tiled' | 'floating'; frame?: Frame }): void
+  open(id: string, options?: { mode?: 'filled' | 'floating'; frame?: Frame }): void   // default fills; a frame floats
   openInstance(type: string, options?): string    // 'query', then 'query#2' — returns the id it opened
   close(id: string): void
   closeAll(): void
   focus(id: string): void
   float(id: string, frame?: Frame): void          // no frame: last place it sat, else the next cascade step
-  tile(id: string, options?: { at?: 'start' | 'end' }): void
-  toggleMode(id: string): void
-  tileAll(): void                                 // arrange everything again
-  placeAll(frames: Record<string, Frame>): void   // let go of an arrangement: windows stay where they are
+  fill(id: string): void                          // fill the desk; remembers the frame for float()
+  toggleMode(id: string): void                    // zoom: fill ⇄ free
+  placeAll(frames: Record<string, Frame>): void   // free windows at these frames; Arrange uses it
   restore(state: DeskState): void                 // e.g. from a URL; normalised, not trusted
   setStage(stage: () => Size): void
 }
 
 interface DeskState {
-  windows: readonly DeskWindow[]   // the order they were opened = the order tiles lay out
+  windows: readonly DeskWindow[]   // the order they were opened = the order Arrange lays out
   stack: readonly string[]         // back to front; the last one is key
 }
-type DeskWindow = { id: string; mode: 'tiled' } | { id: string; mode: 'floating'; frame: Frame }
+type DeskWindow = { id: string; mode: 'filled' } | { id: string; mode: 'floating'; frame: Frame }
 interface Frame { x: number; y: number; width: number; height: number }
 
 focusedId(state): string | null
@@ -83,17 +82,16 @@ nextCascadeFrame(windows, stage, options?): Frame
 EMPTY: DeskState
 ```
 
-Default arrangement: 2 tiles, then floating. An arrangement is placed once, not held: moving or resizing
-an arranged window makes every window independent where it sits (`placeAll`), and nothing reflows. Edge
-drops take a half; double-click or the green control zooms. After a placement by hand, new windows float
-until `tileAll` or the Arrange command. State is immutable; every mutator returns void and notifies
+Every window opens filled, layered over the others; a filled window follows the stage's size. Arrange
+lays windows out once as free windows (`placeAll`); moving or resizing one changes only that one. Dragging a
+filled window frees it where it sits. Edge drops take a half; double-click or the green control zooms. State is immutable; every mutator returns void and notifies
 subscribers only when something actually changed.
 
 ### URL and history
 
 ```ts
 syncWithLocation(desk, stage: () => Size, options?: LocationOptions, env?: LocationEnv): () => void
-serialize(state, options?): URLSearchParams        // #w=rides,map~&f=map   (`~` = floating)
+serialize(state, options?): URLSearchParams        // #w=rides,map~&f=map   (`~` = free; the rest fill)
 parse(params, stage, options?): DeskState
 interface LocationOptions { key?: 'w'; focusKey?: 'f'; isKnown?: (id: string) => boolean }
 ```
@@ -110,9 +108,9 @@ addCommandHandler(element: EventTarget, command, handler, { enabled? }): () => v
 addDeskCommands(stage: EventTarget, desk): () => void
 chainStart(desk, options?): EventTarget
 windowElement(doc, id): Element | null
-DeskCommands = { closeWindow, toggleWindowMode, tileAll, arrange, nextWindow, previousWindow }
+DeskCommands = { closeWindow, zoomWindow, arrange, nextWindow, previousWindow }
 // arrange is answered by a mounted Desktop: 1 fills, 2 split, 3 one tall + two stacked, 4+ a grid of usable cells;
-// the focused window takes the first place. Put it in the Window menu as "Arrange".
+// the focused window takes the first place. Put it in the Window menu as "Arrange", shortcut 'mod+alt+a'.
 WINDOW_ATTRIBUTE = 'data-desk-window'; STAGE_ATTRIBUTE = 'data-desk-stage'
 ```
 
@@ -380,7 +378,6 @@ in the accessibility tree.
 
 - React 19 is a peer dependency; the core entry point imports no React and touches no DOM except through
   the command helpers.
-- `desk.tile()` is not limited by `maxTiled`: the person asked for it.
 - Focus follows the key window when it changes, but never on first render.
 - A `DeskProvider` already carries an event bus; `BusProvider` is only for supplying or sharing one.
 - `renderWindow` must be stable (module scope or `useCallback`) for the memoisation to hold.
