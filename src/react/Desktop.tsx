@@ -49,7 +49,11 @@ const SNAP_MARGIN = 56
 /** One column, then two side by side, then the smallest square grid that fits. */
 const columnsFor = (tiled: number) => (tiled <= 2 ? Math.max(1, tiled) : Math.ceil(Math.sqrt(tiled)))
 
+const MIN_SPLIT = 0.2
+
 export function Desktop({ renderWindow, title, actions, empty, layout = 'auto', className }: DesktopProps) {
+  // Where the split between two tiles sits. A third tile makes it a grid again.
+  const [split, setSplit] = useState(0.5)
   const desk = useDesk()
   const state = useDeskState()
   const stage = useRef<HTMLDivElement>(null)
@@ -76,7 +80,29 @@ export function Desktop({ renderWindow, title, actions, empty, layout = 'auto', 
     if (element instanceof HTMLElement && !element.contains(document.activeElement)) element.focus({ preventScroll: true })
   }, [focused])
 
-  const style = { '--desk-columns': mode === 'fullscreen' ? 1 : columnsFor(tiled) } as CSSProperties
+  const splittable = mode === 'desktop' && tiled === 2
+  const style = {
+    '--desk-columns': mode === 'fullscreen' ? 1 : columnsFor(tiled),
+    ...(splittable ? { gridTemplateColumns: `minmax(0, ${split}fr) auto minmax(0, ${1 - split}fr)` } : {}),
+  } as CSSProperties
+
+  const dragSplit = (event: ReactPointerEvent<HTMLElement>) => {
+    const box = stage.current?.getBoundingClientRect()
+    if (!box) return
+    event.preventDefault()
+    const handle = event.currentTarget
+    handle.setPointerCapture?.(event.pointerId)
+    const onMove = (move: PointerEvent) => {
+      const fraction = (move.clientX - box.left) / box.width
+      setSplit(Math.min(1 - MIN_SPLIT, Math.max(MIN_SPLIT, fraction)))
+    }
+    const onUp = () => {
+      handle.removeEventListener('pointermove', onMove)
+      handle.removeEventListener('pointerup', onUp)
+    }
+    handle.addEventListener('pointermove', onMove)
+    handle.addEventListener('pointerup', onUp)
+  }
 
   return (
     <div
@@ -87,6 +113,26 @@ export function Desktop({ renderWindow, title, actions, empty, layout = 'auto', 
       {...{ [STAGE_ATTRIBUTE]: '' }}
     >
       {state.windows.length === 0 && empty}
+      {splittable && (
+        <div
+          className="desk-split"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Split between the windows"
+          aria-valuenow={Math.round(split * 100)}
+          aria-valuemin={Math.round(MIN_SPLIT * 100)}
+          aria-valuemax={Math.round((1 - MIN_SPLIT) * 100)}
+          tabIndex={0}
+          onPointerDown={dragSplit}
+          onDoubleClick={() => setSplit(0.5)}
+          onKeyDown={event => {
+            const step = event.key === 'ArrowLeft' ? -0.05 : event.key === 'ArrowRight' ? 0.05 : 0
+            if (!step) return
+            event.preventDefault()
+            setSplit(current => Math.min(1 - MIN_SPLIT, Math.max(MIN_SPLIT, current + step)))
+          }}
+        />
+      )}
       {state.windows.map(window => (
         <WindowView
           key={window.id}
@@ -135,10 +181,24 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
   const titleId = `desk-title-${window.id}`
 
   const startGesture = (gesture: Gesture) => (event: ReactPointerEvent<HTMLElement>) => {
-    if (!floating || event.button !== 0) return
+    if (event.button !== 0 || layout === 'fullscreen') return
+    // Only a floating window resizes; a tile is dragged out of the tiles instead.
+    if (gesture === 'resize' && !floating) return
     if (gesture === 'move' && (event.target as HTMLElement).closest('button')) return
     event.preventDefault()
-    const origin = window.frame
+    const stageBox = event.currentTarget.closest<HTMLElement>(`[${STAGE_ATTRIBUTE}]`)?.getBoundingClientRect()
+    const windowBox = event.currentTarget.closest<HTMLElement>(`[${WINDOW_ATTRIBUTE}]`)?.getBoundingClientRect()
+    // A tile becomes a floating window exactly where it already sits, so it does not jump under the pointer.
+    const origin: Frame =
+      window.mode === 'floating'
+        ? window.frame
+        : {
+            x: (windowBox?.left ?? 0) - (stageBox?.left ?? 0),
+            y: (windowBox?.top ?? 0) - (stageBox?.top ?? 0),
+            width: windowBox?.width ?? 480,
+            height: windowBox?.height ?? 360,
+          }
+    let pulledOut = window.mode === 'floating'
     const startX = event.clientX
     const startY = event.clientY
     const handle = event.currentTarget
@@ -160,6 +220,10 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
     const onMove = (move: PointerEvent) => {
       const dx = move.clientX - startX
       const dy = move.clientY - startY
+      if (!pulledOut && Math.hypot(dx, dy) > 5) {
+        pulledOut = true
+        desk.float(window.id, origin)
+      }
       latest =
         gesture === 'move'
           ? { ...origin, x: origin.x + dx, y: Math.max(0, origin.y + dy) }
@@ -178,7 +242,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
       setLive(null)
       if (stage) delete stage.dataset.snap
       if (snap) desk.tile(window.id, { at: snap })
-      else if (latest !== origin) desk.float(window.id, latest)
+      else if (pulledOut && latest !== origin) desk.float(window.id, latest)
     }
     handle.addEventListener('pointermove', onMove)
     handle.addEventListener('pointerup', onUp)
@@ -209,7 +273,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
           if (!focused) desk.focus(window.id)
         }}
       >
-        <header className="desk-titlebar" onPointerDown={startGesture('move')}>
+        <header className="desk-titlebar" onPointerDown={startGesture('move')} data-draggable={layout === 'desktop' || undefined}>
           <div className="desk-controls">
             <button type="button" className="desk-control" data-control="close" aria-label="Close" onClick={() => desk.close(window.id)} />
             {layout === 'desktop' && (

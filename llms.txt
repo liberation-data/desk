@@ -78,7 +78,8 @@ nextCascadeFrame(windows, stage, options?): Frame
 EMPTY: DeskState
 ```
 
-Default arrangement: 2 tiles, then floating. State is immutable; every mutator returns void and notifies
+Default arrangement: 2 tiles, then floating. Dragging a tile's title bar lifts it out into a floating
+window; two tiles share a draggable split. State is immutable; every mutator returns void and notifies
 subscribers only when something actually changed.
 
 ### URL and history
@@ -195,7 +196,9 @@ useCanPerform(): (command) => boolean
 useShortcuts(keymap, { target?, apple? })
 
 useWindowInput(handler: (text: string) => void, { placeholder?, target?, disabled? })
-<InputBar onSubmit={(text) => void} fallbackPlaceholder? fallbackTarget? label? />
+<InputBar onSubmit={(text) => void} fallbackPlaceholder? fallbackTarget? label?
+          mode?={'summoned' | 'inline'} shortcut?={'mod+j' | null} />   // summoned: centred, Escape closes
+InputCommands.open = 'desk.input.open'                                   // a menu item can summon it
 ```
 
 `useCommand` defaults to the window it is rendered in, and to the app outside one.

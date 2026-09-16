@@ -1,7 +1,7 @@
 /* The sample's own look, on top of desk.css tokens. */
 :root {
   --desk-accent: #ff7a45;
-  --desk-inset-bottom: 168px;
+  --desk-inset-bottom: 88px;
   --ok: #3ecf8e;
   --warn: #fbbf24;
   --bad: #f87171;

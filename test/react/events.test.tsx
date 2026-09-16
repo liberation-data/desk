@@ -56,7 +56,7 @@ function mount(): { desk: Desk; fallback: ReturnType<typeof vi.fn> } {
           title={id => id}
           renderWindow={id => (id === 'rides' ? <Rides /> : id === 'map' ? <MapView /> : <Weather />)}
         />
-        <InputBar onSubmit={fallback} fallbackPlaceholder="Ask anything…" fallbackTarget="Chat" />
+        <InputBar onSubmit={fallback} fallbackPlaceholder="Ask anything…" fallbackTarget="Chat" shortcut="mod+j" />
       </BusProvider>
     </DeskProvider>,
   )
@@ -84,12 +84,26 @@ describe('events between windows', () => {
 })
 
 describe('InputBar', () => {
-  const field = () => screen.getByRole('textbox', { name: 'Type here' })
+  const summon = () => fireEvent.keyDown(document.body, { key: 'j', ctrlKey: true })
+  const field = () => {
+    if (!screen.queryByRole('textbox', { name: 'Type here' })) summon()
+    return screen.getByRole('textbox', { name: 'Type here' })
+  }
+
+  it('stays out of the way until it is called for', () => {
+    mount()
+    expect(screen.queryByRole('textbox', { name: 'Type here' })).toBeNull()
+    summon()
+    expect(screen.getByRole('textbox', { name: 'Type here' })).toBeTruthy()
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(screen.queryByRole('textbox', { name: 'Type here' })).toBeNull()
+  })
 
   it('takes the placeholder and target from the key window', async () => {
     const { desk } = mount()
     expect(field().getAttribute('placeholder')).toBe('Ask anything…')
     expect(screen.getByText('Chat')).toBeTruthy()
+    fireEvent.keyDown(document.body, { key: 'Escape' })
     act(() => desk.open('rides'))
     expect(field().getAttribute('placeholder')).toBe('Filter rides…')
     expect(screen.getByText('Rides')).toBeTruthy()

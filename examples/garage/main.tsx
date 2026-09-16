@@ -2,7 +2,7 @@ import { StrictMode, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
-import { createDesk, DeskCommands, focusedId, formatShortcut, syncWithLocation } from '../../src/core/index.js'
+import { createDesk, DeskCommands, focusedId, formatShortcut, InputCommands, syncWithLocation } from '../../src/core/index.js'
 import type { Desk } from '../../src/core/index.js'
 import {
   Alert,
@@ -476,7 +476,9 @@ function Settings() {
 }
 
 const SHORTCUTS: readonly { readonly keys: string; readonly does: string }[] = [
+  { keys: 'mod+k', does: 'Search the garage' },
   { keys: 'mod+comma', does: 'Settings' },
+  { keys: 'mod+j', does: 'Type to the window in front' },
   { keys: 'mod+e', does: 'Export rides, from the Rides window' },
   { keys: 'alt+]', does: 'Next window' },
   { keys: 'alt+[', does: 'Previous window' },
@@ -1092,8 +1094,11 @@ function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupA
             renderWindow={id => (isKnown(id) ? body(id) : null)}
             empty={<div className="empty"><h2>Nothing open</h2><p>Pick something from the dock.</p></div>}
           />
-          <div className="bottomstack">
-          {touring && <TourBar tour={TOUR} onFinish={() => setTouring(false)} onStop={() => setTouring(false)} />}
+          {touring && (
+            <div className="bottomstack">
+              <TourBar tour={TOUR} onFinish={() => setTouring(false)} onStop={() => setTouring(false)} />
+            </div>
+          )}
           <InputBar
             onSubmit={text => {
               // Nobody in front took it, so it becomes a question for the mechanic.
@@ -1102,8 +1107,8 @@ function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupA
             }}
             fallbackPlaceholder="Ask the mechanic…"
             fallbackTarget="Chat"
+            shortcut={null}
           />
-          </div>
           <Dock entries={entries} label="Garage dock" />
           <SearchPalette
             open={searching}
@@ -1145,6 +1150,7 @@ function GarageMenuBar({
         menuAction('About Garage', () => desk.open('about')),
         menuSeparator(),
         menuCommand('Search…', SearchCommand, { shortcut: 'mod+k' }),
+        menuCommand('Type to the window in front…', InputCommands.open, { shortcut: 'mod+j' }),
         menuSeparator(),
         menuAction('Run setup again…', onSetupAgain),
         menuCommand('Settings…', Commands.settings, { shortcut: 'mod+comma' }),

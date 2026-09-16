@@ -82,6 +82,8 @@ export function createBus(): Bus {
 /* ── Typed input: text with no target, which goes to the key window ── */
 
 export const InputCommands = {
+  /** Brings up the bar. A menu item can perform this, as a shortcut does. */
+  open: 'desk.input.open',
   /** Sent with the text. A window that takes typed input answers this. */
   submit: 'desk.input.submit',
   /** Asks the chain how the bar should present itself for the key window. */

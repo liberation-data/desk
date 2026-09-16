@@ -11,9 +11,10 @@ npm install @liberation-data/desk
 The first window takes the stage. The second splits it. Everything after that floats, cascading down and
 right from the last. A user can float any tile or tile any floating window; `tileAll()` tidies the lot.
 
-Nobody has to arrange anything, and nobody is stopped from arranging. Drag a floating window against the
-left or right edge and it tiles there, with a preview of where it will land; tile it and float it again and
-it returns to where it last sat.
+Nobody has to arrange anything, and nobody is stopped from arranging. Every window moves: drag a tile by its
+title bar and it lifts out into a floating window where it stood. Drag one against the left or right edge and
+it tiles there, with a preview of where it will land; tile it and float it again and it returns to where it
+last sat. Two tiles share a split you can drag, double-click to even up, or nudge with the arrow keys.
 
 ## Use it
 
@@ -157,8 +158,10 @@ useWindowInput(setFilter, { placeholder: 'Filter rides by name…', target: 'Rid
 <InputBar onSubmit={askTheAssistant} fallbackPlaceholder="Ask anything…" fallbackTarget="Chat" />
 ```
 
-The bar asks the responder chain how to present itself, so its placeholder and the *goes to* line follow the
-key window, and a window that registers nothing lets the fallback have the text.
+The bar is **summoned** (⌘J by default) and opens over the middle of the screen, the way Spotlight does;
+Escape dismisses it, and sending closes it. `mode="inline"` puts it wherever you like instead. Either way it
+asks the responder chain how to present itself, so its placeholder and the *goes to* line follow the key
+window, and a window that registers nothing lets the fallback have the text.
 
 Windows tell each other what happened rather than calling each other:
 

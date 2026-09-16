@@ -102,6 +102,25 @@
   font-family: var(--desk-font);
 }
 
+.desk-split {
+  grid-row: 1 / -1;
+  grid-column: 2;
+  align-self: stretch;
+  width: 7px;
+  margin: 0 calc(var(--desk-gap) / -2 + 1px);
+  border-radius: 4px;
+  cursor: col-resize;
+  touch-action: none;
+  background: transparent;
+  transition: background .15s var(--desk-ease);
+}
+
+.desk-split:hover,
+.desk-split:focus-visible {
+  background: color-mix(in srgb, var(--desk-accent) 45%, transparent);
+  outline: none;
+}
+
 .desk-window {
   box-sizing: border-box;
   min-width: 0;
@@ -156,7 +175,7 @@
   user-select: none;
 }
 
-.desk-window[data-mode="floating"] .desk-titlebar {
+.desk-titlebar[data-draggable] {
   cursor: grab;
   touch-action: none;
 }
@@ -1154,6 +1173,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .desk-inputbar,
+  .desk-inputbar-scrim,
   .desk-popover,
   .desk-sheet,
   .desk-alert,
@@ -1350,6 +1371,22 @@
 }
 
 /* ── Input bar: one place to type, which reaches the key window ── */
+
+.desk-inputbar-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1450;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  padding: var(--desk-space-4);
+  background: rgb(0 0 0 / 30%);
+  animation: desk-fade .14s var(--desk-ease);
+}
+
+.desk-inputbar[data-mode="summoned"] {
+  animation: desk-alert-in .16s var(--desk-ease);
+}
 
 .desk-inputbar {
   box-sizing: border-box;

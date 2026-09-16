@@ -1,11 +1,13 @@
-import { useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { perform } from '../core/commands.js'
 import { createBus, InputCommands } from '../core/events.js'
 import type { Bus, DeskEvent, EventHandler, InputDescription, SubscribeOptions } from '../core/events.js'
 import type { WindowId } from '../core/types.js'
-import { useCommand } from './commands.js'
+import { useCommand, useShortcuts } from './commands.js'
 import { Composer } from './conversation.js'
+import { useFocusTrap, useLayer } from './layers.js'
 import { BusContext, useDesk, useDeskState, useWindowId } from './context.js'
 
 /** Supplies a bus of your own, or shares one across several desks. A desk already has one. */
@@ -66,33 +68,60 @@ export interface InputBarProps {
   readonly fallbackPlaceholder?: string
   readonly fallbackTarget?: string
   readonly label?: string
+  /**
+   * `summoned` (the default) stays out of the way until called for, then opens
+   * over the middle of the screen. `inline` is always there, wherever you put it.
+   */
+  readonly mode?: 'summoned' | 'inline'
+  /** Summons the bar. Default `mod+j`; `null` binds nothing (a menu item may own the key). */
+  readonly shortcut?: string | null
   readonly className?: string
 }
 
 /** One place to type, which reaches whichever window you are working in. */
-export function InputBar({ onSubmit, fallbackPlaceholder = 'Type here…', fallbackTarget, label = 'Type here', className }: InputBarProps) {
+export function InputBar({
+  onSubmit,
+  fallbackPlaceholder = 'Type here…',
+  fallbackTarget,
+  label = 'Type here',
+  mode = 'summoned',
+  shortcut = 'mod+j',
+  className,
+}: InputBarProps) {
   const desk = useDesk()
   const state = useDeskState()
   const [value, setValue] = useState('')
+  const [open, setOpen] = useState(mode === 'inline')
   const [description, setDescription] = useState<InputDescription>({})
+  const panel = useRef<HTMLDivElement>(null)
   const id = useId()
 
-  // Re-ask whenever the key window changes: the bar belongs to whoever is in front.
+  const summoned = mode === 'summoned'
+  useCommand(InputCommands.open, () => setOpen(true), { at: 'app' })
+  useShortcuts(useMemo(() => (shortcut && summoned ? { [shortcut]: InputCommands.open } : {}), [shortcut, summoned]))
+  useLayer(id, summoned && open, () => setOpen(false))
+  useFocusTrap(panel, summoned && open)
+
+  // Re-ask whenever the key window changes, or the bar is summoned: it belongs to whoever is in front.
   const key: WindowId | null = state.stack.at(-1) ?? null
   useEffect(() => {
+    if (!open) return
     const answer: InputDescription = {}
     perform(desk, InputCommands.describe, answer)
     setDescription(answer)
-  }, [desk, key, id])
+  }, [desk, key, open, id])
+
+  if (!open) return null
 
   const submit = (text: string) => {
     if (!perform(desk, InputCommands.submit, text)) onSubmit(text)
     setValue('')
+    if (summoned) setOpen(false)
   }
 
   const target = description.target ?? fallbackTarget
-  return (
-    <div className={['desk-inputbar', className].filter(Boolean).join(' ')}>
+  const bar = (
+    <div ref={panel} className={['desk-inputbar', className].filter(Boolean).join(' ')} data-mode={mode}>
       <Composer
         value={value}
         onChange={setValue}
@@ -108,5 +137,13 @@ export function InputBar({ onSubmit, fallbackPlaceholder = 'Type here…', fallb
         </span>
       )}
     </div>
+  )
+
+  if (!summoned) return bar
+  return createPortal(
+    <div className="desk-inputbar-scrim" onPointerDown={event => event.target === event.currentTarget && setOpen(false)}>
+      {bar}
+    </div>,
+    document.body,
   )
 }
