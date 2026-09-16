@@ -22,6 +22,7 @@ import {
   menuSeparator,
   Popover,
   PopUpButton,
+  RadioGroup,
   SearchCommand,
   SearchPalette,
   SegmentedControl,
@@ -575,55 +576,213 @@ const TOUR: Tour = {
 }
 
 /*
- * First run. The appliance is set up once, in one pane, with the same controls
- * the rest of the app uses — no separate design for the first five minutes.
+ * First run, in the manner of a setup assistant: one pane, one question at a
+ * time, the whole screen given over to it. Ported from the published design and
+ * built entirely out of the toolkit's own Wizard and controls.
  */
-function Setup({ onDone }: { readonly onDone: (rider: string) => void }) {
+
+interface Profile {
+  readonly rider: string
+  readonly home: string
+  readonly bikes: readonly string[]
+  readonly music: string
+}
+
+const BIKE_CHOICES = [
+  { id: 'Road', label: 'Road', note: 'Long days and bunch rides' },
+  { id: 'Gravel', label: 'Gravel', note: 'Commutes and dirt roads' },
+  { id: 'MTB', label: 'Mountain', note: 'Trails and technical descents' },
+]
+
+const MUSIC_OPTIONS = [
+  { value: 'tempo', label: 'Tempo', description: 'Steady 160–170 bpm for efforts' },
+  { value: 'long', label: 'Long and steady', description: 'Three hours without a spike' },
+  { value: 'quiet', label: 'No music', description: 'Just the road' },
+] as const
+
+/** A row of the checking list: waiting, working, or done. */
+function CheckRow({ state, name, detail }: { readonly state: 'waiting' | 'working' | 'done'; readonly name: string; readonly detail?: string }) {
+  return (
+    <div className="crow">
+      <span className={`cmark ${state}`} aria-hidden="true">{state === 'done' ? '✓' : ''}</span>
+      <span className="ctext">
+        <span className="cname">{name}</span>
+        {detail && <span className="cdetail">{detail}</span>}
+      </span>
+    </div>
+  )
+}
+
+/** A choice that needs an icon and a line of explanation: bigger than a radio, smaller than a page. */
+function ChoiceCard({
+  chosen,
+  icon,
+  name,
+  tag,
+  description,
+  disabled,
+  onChoose,
+}: {
+  readonly chosen: boolean
+  readonly icon: keyof typeof PATHS
+  readonly name: string
+  readonly tag?: ReactNode
+  readonly description: ReactNode
+  readonly disabled?: boolean
+  readonly onChoose: () => void
+}) {
+  return (
+    <button type="button" role="radio" aria-checked={chosen} className="choice" data-chosen={chosen || undefined} disabled={disabled} onClick={onChoose}>
+      <span className="choice-radio" aria-hidden="true" />
+      <span className="choice-icon" aria-hidden="true"><Icon name={icon} /></span>
+      <span className="choice-text">
+        <span className="choice-name">{name}{tag}</span>
+        <span className="choice-note">{description}</span>
+      </span>
+    </button>
+  )
+}
+
+function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) => void }) {
   const [index, setIndex] = useState(0)
+  const [workshop, setWorkshop] = useState<0 | 1 | 2>(0)
   const [rider, setRider] = useState('')
-  const [units, setUnits] = useState<'metric' | 'imperial'>('metric')
+  const [home, setHome] = useState('')
+  const [bikes, setBikes] = useState<string[]>(['Road'])
+  const [music, setMusic] = useState<(typeof MUSIC_OPTIONS)[number]['value']>('tempo')
   const [key, setKey] = useState('')
-  const [keyState, setKeyState] = useState<'idle' | 'checking' | 'ok' | 'skipped'>('idle')
-  const [done, setDone] = useState(0)
+  const [keyState, setKeyState] = useState<'idle' | 'checking' | 'ok' | 'bad' | 'skipped'>('idle')
+  const [maps, setMaps] = useState<'online' | 'offline' | 'none'>('online')
+  const [jobs, setJobs] = useState(0)
+  const [imported, setImported] = useState(0)
+  const [start, setStart] = useState('rides')
 
-  const JOBS = ['Save your name', 'Store the weather key', 'Read the bikes', 'Count the wear']
+  const firstName = rider.trim().split(/\s+/)[0] || 'Jasper'
+  const named = rider.trim().split(/\s+/).length >= 2
 
-  const check = () => {
+  const checkKey = () => {
     setKeyState('checking')
-    setTimeout(() => setKeyState('ok'), 900)
+    setTimeout(() => setKeyState(key.trim().length >= 6 ? 'ok' : 'bad'), 900)
   }
+
+  const FINISHING = [
+    { name: `Save the profile for ${rider.trim() || 'you'}`, detail: 'Kept on this machine' },
+    {
+      name: keyState === 'ok' ? 'Store the weather key' : 'Skip the weather service',
+      detail: keyState === 'ok' ? 'Never leaves the garage' : 'Add one from Settings later',
+    },
+    { name: `Set up ${bikes.length} ${bikes.length === 1 ? 'bike' : 'bikes'}`, detail: bikes.join(', ') },
+    {
+      name: maps === 'none' ? 'Skip the maps' : 'Import your rides',
+      detail: maps === 'none' ? '' : `${imported} of 24, so the wear counts are right`,
+    },
+  ]
 
   const steps: WizardStep[] = [
     {
       id: 'welcome',
       name: 'Welcome',
-      glyph: <Icon name="bike" />,
       title: 'Welcome to the garage',
-      description: 'A log of your rides, your bikes and what they need next. Setting up takes a minute, and nothing here leaves this machine.',
+      description: 'A log of your rides, your bikes and what they need next — all of it on this machine. Setting up takes about a minute.',
       continueLabel: 'Get started',
+      body: (
+        <div className="welcome">
+          <p className="mark" aria-hidden="true">
+            <span className="chev">‹‹</span>
+            <span className="mark-word">garage</span>
+            <span className="chev right">››</span>
+          </p>
+          <div className="facts">
+            <span className="fact">Your rides stay here</span>
+            <span className="fact">Works without a weather key</span>
+            <span className="fact">Change anything later</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'workshop',
+      name: 'Workshop',
+      glyph: <Icon name="wrench" />,
+      title: 'Looking at your workshop',
+      description: 'The garage reads what is already on this machine, so you do not type in what it can find.',
+      complete: workshop === 2,
+      onEnter: () => {
+        setWorkshop(0)
+        setTimeout(() => setWorkshop(1), 700)
+        setTimeout(() => setWorkshop(2), 1500)
+      },
+      body: (
+        <div className="checklist">
+          <CheckRow
+            state={workshop >= 1 ? 'done' : 'working'}
+            name="Ride log found"
+            detail={workshop >= 1 ? '24 rides, back to March' : 'Reading ~/Documents/rides…'}
+          />
+          <CheckRow
+            state={workshop === 2 ? 'done' : workshop === 1 ? 'working' : 'waiting'}
+            name="Sensors paired"
+            detail={workshop === 2 ? 'Power meter and two speed sensors' : 'Looking…'}
+          />
+        </div>
+      ),
     },
     {
       id: 'rider',
       name: 'Rider',
       glyph: <Icon name="ride" />,
       title: 'Who is riding?',
-      description: 'Used on exported rides, and to tell your rides apart from anyone else you ride with.',
-      complete: rider.trim().length > 1,
+      description: 'Your rides are logged against this name, and a bunch ride can name several people.',
+      complete: named && home.trim().length > 1,
       body: (
-        <>
-          <TextField label="Your name" value={rider} onChange={e => setRider(e.target.value)} placeholder="Jasper Blues" />
-          <div style={{ marginTop: 'var(--desk-space-3)' }}>
-            <PopUpButton
-              label="Distance"
-              options={[
-                { value: 'metric', label: 'Kilometres and metres' },
-                { value: 'imperial', label: 'Miles and feet' },
-              ]}
-              value={units}
-              onChange={setUnits}
-            />
+        <div className="setup-form">
+          <TextField label="Your name" value={rider} onChange={e => setRider(e.target.value)} placeholder="Jasper Blues" autoComplete="name" />
+          {/* Shows the matching problem rather than describing it. */}
+          <div className="match">
+            <span className="match-q">When a ride log says “{firstName}”, is that you?</span>
+            <div className="match-row">
+              <span className="lamp warn" />
+              <span className="match-who">{firstName}</span>
+              <span className="match-res">could be anyone in the bunch</span>
+            </div>
+            <div className="match-row">
+              <span className={`lamp ${named ? 'good' : 'warn'}`} />
+              <span className="match-who">{named ? rider.trim() : 'First Last'}</span>
+              <span className="match-res">{named ? 'is one rider: you' : 'add your surname so the log can tell'}</span>
+            </div>
           </div>
-        </>
+          <TextField
+            label="Where you ride from"
+            value={home}
+            onChange={e => setHome(e.target.value)}
+            placeholder="Melbourne"
+            help="Used for the weather, and to suggest routes from your door."
+          />
+        </div>
+      ),
+    },
+    {
+      id: 'bikes',
+      name: 'Bikes',
+      glyph: <Icon name="bike" />,
+      title: 'What do you ride?',
+      description: 'Wear is counted per bike, so the garage needs to know what is in it. You can add more later.',
+      complete: bikes.length > 0,
+      body: (
+        <div className="setup-form">
+          {BIKE_CHOICES.map(bike => (
+            <Checkbox
+              key={bike.id}
+              checked={bikes.includes(bike.id)}
+              onChange={on => setBikes(on ? [...bikes, bike.id] : bikes.filter(b => b !== bike.id))}
+              label={bike.label}
+              description={bike.note}
+            />
+          ))}
+          <div className="setup-space">
+            <RadioGroup label="Playlist for long efforts" options={MUSIC_OPTIONS} value={music} onChange={setMusic} />
+          </div>
+        </div>
       ),
     },
     {
@@ -631,70 +790,167 @@ function Setup({ onDone }: { readonly onDone: (rider: string) => void }) {
       name: 'Weather',
       glyph: <Icon name="weather" />,
       title: 'Connect a weather service',
-      description: 'So the garage can tell you which day suits the long ride. Everything else works without it.',
+      description: 'So the garage can say which day suits the long ride. Everything else works without it.',
       complete: keyState === 'ok',
-      skip: { label: 'Set up later', onSkip: () => { setKeyState('skipped'); setIndex(3) } },
-      continueLabel: keyState === 'checking' ? 'Checking…' : keyState === 'ok' ? 'Continue' : 'Connect',
+      skip: { label: 'Set up later', onSkip: () => { setKeyState('skipped'); setIndex(5) } },
       body: (
-        <>
+        <div className="setup-form">
           <TextField
             label="Service key"
+            type="password"
             value={key}
             onChange={e => {
               setKey(e.target.value)
               setKeyState('idle')
             }}
-            type="password"
             placeholder="wx-…"
-            help={keyState === 'ok' ? 'Connected. This stays on this machine.' : 'Paste the key from your weather account.'}
+            autoComplete="off"
           />
-          {keyState !== 'ok' && (
-            <div className="actions">
-              <Button intent="default" disabled={key.trim().length < 4 || keyState === 'checking'} onClick={check}>
-                {keyState === 'checking' ? 'Checking…' : 'Check the key'}
-              </Button>
+          <div className="detect">
+            {keyState === 'checking' && <span className="small">Checking the key with the service…</span>}
+            {keyState === 'ok' && <span className="chip ok">Connected — the key stays here</span>}
+            {keyState === 'bad' && <span className="chip bad">That key was not accepted</span>}
+            {(keyState === 'idle' || keyState === 'skipped') && (
+              <Button size="small" disabled={key.trim().length < 3} onClick={checkKey}>Check the key</Button>
+            )}
+          </div>
+          <div className="columns">
+            <div className="column">
+              <h3>Works without it</h3>
+              <p>Rides, bikes, parts and wear, routes, notes and the mechanic.</p>
             </div>
-          )}
-        </>
+            <div className="column">
+              <h3>Needs it</h3>
+              <p>The three-day forecast, and picking a day for the long ride.</p>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'maps',
+      name: 'Maps',
+      glyph: <Icon name="map" />,
+      title: 'Where the maps come from',
+      description: 'Routes are drawn on a map. It can come down as you ride, or live on this machine for the days you have no signal.',
+      body: (
+        <div className="choices" role="radiogroup" aria-label="Map source">
+          <ChoiceCard
+            chosen={maps === 'online'}
+            icon="route"
+            name="As you go"
+            description="Nothing to download. Needs a connection when you open a route."
+            onChoose={() => setMaps('online')}
+          />
+          <ChoiceCard
+            chosen={maps === 'offline'}
+            icon="map"
+            name="On this machine"
+            tag={<span className="chip"> ~1.1 GB</span>}
+            description="Your state, downloaded once. Works with no signal at all."
+            onChoose={() => setMaps('offline')}
+          />
+          <ChoiceCard
+            chosen={maps === 'none'}
+            icon="gear"
+            name="Not now"
+            description="Routes stay as numbers until you turn maps on in Settings."
+            onChoose={() => setMaps('none')}
+          />
+        </div>
       ),
     },
     {
       id: 'finishing',
       name: 'Finishing',
       glyph: <Icon name="gear" />,
-      title: done >= JOBS.length ? 'All set' : 'Setting up your garage',
+      title: jobs >= FINISHING.length ? 'All set' : 'Setting up your garage',
       description: 'Nothing you have entered is sent anywhere.',
       working: true,
-      complete: done >= JOBS.length,
+      complete: jobs >= FINISHING.length,
       onEnter: () => {
-        setDone(0)
-        JOBS.forEach((_, i) => setTimeout(() => setDone(i + 1), 500 * (i + 1)))
+        setJobs(0)
+        setImported(0)
+        const at = (ms: number, run: () => void) => setTimeout(run, ms)
+        at(600, () => setJobs(1))
+        at(1200, () => setJobs(2))
+        at(1800, () => setJobs(3))
+        if (maps === 'none') at(2300, () => setJobs(4))
+        else {
+          for (let i = 1; i <= 24; i++) at(1800 + i * 40, () => setImported(i))
+          at(1800 + 24 * 40 + 300, () => setJobs(4))
+        }
       },
       body: (
-        <ul className="joblist">
-          {JOBS.map((job, i) => (
-            <li key={job} data-state={i < done ? 'done' : i === done ? 'now' : 'waiting'}>
-              <span aria-hidden="true">{i < done ? '✓' : i === done ? '…' : '○'}</span>
-              {job}
-              {job.includes('weather') && keyState === 'skipped' && <span className="small"> — skipped</span>}
-            </li>
-          ))}
-        </ul>
+        <div className="setup-form">
+          <div className="bar" role="presentation"><i style={{ width: `${(jobs / FINISHING.length) * 100}%` }} /></div>
+          <div className="checklist">
+            {FINISHING.map((job, i) => (
+              <CheckRow
+                key={job.name}
+                state={i < jobs ? 'done' : i === jobs ? 'working' : 'waiting'}
+                name={job.name}
+                {...(job.detail ? { detail: job.detail } : {})}
+              />
+            ))}
+          </div>
+        </div>
       ),
     },
     {
       id: 'ready',
       name: 'Ready',
-      glyph: <Icon name="wrench" />,
-      title: `Ready to ride${rider.trim() ? `, ${rider.trim().split(' ')[0]}` : ''}`,
-      description: 'Start where it suits: the dock holds everything, and ⌘K searches the lot.',
+      glyph: <Icon name="bike" />,
+      title: `Ready to ride${named ? `, ${firstName}` : ''}`,
+      description: 'Pick where to start. Everything else is in the dock, and ⌘K searches the lot.',
       continueLabel: 'Open the garage',
+      body: (
+        <div className="choices" role="radiogroup" aria-label="Where to start">
+          <ChoiceCard
+            chosen={start === 'rides'}
+            icon="ride"
+            name="Look at your rides"
+            tag={maps === 'none' ? undefined : <span className="chip"> 24 imported</span>}
+            description="Sort them, filter by bike, and send one to the map."
+            onChoose={() => setStart('rides')}
+          />
+          <ChoiceCard
+            chosen={start === 'parts'}
+            icon="chain"
+            name="Check what is worn"
+            description="Wear counted from the rides each bike has done."
+            onChoose={() => setStart('parts')}
+          />
+          <ChoiceCard
+            chosen={start === 'weather'}
+            icon="weather"
+            name="Pick a day to ride"
+            tag={keyState === 'ok' ? undefined : <span className="chip"> needs a key</span>}
+            description={keyState === 'ok' ? 'The next three days, from your door.' : 'Add a weather key from Settings first.'}
+            disabled={keyState !== 'ok'}
+            onChoose={() => setStart('weather')}
+          />
+          <ChoiceCard
+            chosen={start === 'chat'}
+            icon="chat"
+            name="Ask the mechanic"
+            description="What needs doing first, and which bike wore it out."
+            onChoose={() => setStart('chat')}
+          />
+        </div>
+      ),
     },
   ]
 
   return (
     <div className="setup">
-      <Wizard steps={steps} index={index} onIndexChange={setIndex} onFinish={() => onDone(rider.trim())} label="Garage setup" />
+      <Wizard
+        steps={steps}
+        index={index}
+        onIndexChange={setIndex}
+        onFinish={() => onDone({ rider: rider.trim(), home: home.trim(), bikes, music }, start)}
+        label="Garage setup"
+      />
       <p className="setup-note">A sample flow. Nothing is saved, and no key is sent anywhere.</p>
     </div>
   )
@@ -965,7 +1221,18 @@ if (!location.hash) {
 function App() {
   // The sample starts at first run unless a link already names windows to open.
   const [setup, setSetup] = useState(!location.hash)
-  if (setup) return <Setup onDone={() => setSetup(false)} />
+  if (setup) {
+    return (
+      <Setup
+        onDone={(_profile, start) => {
+          desk.closeAll()
+          desk.open(start)
+          desk.open('service')
+          setSetup(false)
+        }}
+      />
+    )
+  }
   return <Garage desk={desk} onSetupAgain={() => setSetup(true)} />
 }
 
