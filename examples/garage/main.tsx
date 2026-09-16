@@ -7,6 +7,7 @@ import type { Desk } from '../../src/core/index.js'
 import {
   Alert,
   Button,
+  Composer,
   Desktop,
   DeskProvider,
   Dock,
@@ -20,6 +21,7 @@ import {
   Popover,
   SegmentedControl,
   Sheet,
+  Thread,
   TextField,
   ToastProvider,
   Toggle,
@@ -28,7 +30,7 @@ import {
   useDeskState,
   windowMenuItems,
 } from '../../src/react/index.js'
-import type { DockEntry, DockItem, Menu, SegmentedOption } from '../../src/react/index.js'
+import type { DockEntry, DockItem, Menu, Message as MessageT, SegmentedOption } from '../../src/react/index.js'
 import '../../src/desk.css'
 import './garage.css'
 
@@ -53,6 +55,7 @@ const PATHS = {
   gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
   keys: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
+  chat: '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.6-.7L3 21l1.9-4.9A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/>',
 } as const
 
 const Icon = ({ name }: { readonly name: keyof typeof PATHS }) => (
@@ -415,6 +418,50 @@ function About() {
   )
 }
 
+/*
+ * A mechanic you can ask about the data in the other windows. The answers here
+ * are canned: the toolkit's conversation control holds no transport of its own.
+ */
+const ANSWERS: readonly { readonly match: RegExp; readonly reply: string }[] = [
+  { match: /chain|wear|part/i, reply: 'The road chain is at 2,860 of 3,000 km — closest to the end of its life. Rear pads on the gravel bike are at 1,720 of 2,000.' },
+  { match: /sunday|weekend|ride|weather/i, reply: 'Sunday looks best: 23°, calm. The Dandenongs loop is 92 km with 1,640 m of climbing, and you have done it in 3:41.' },
+  { match: /km|distance|far/i, reply: 'You have ridden 231 km over five rides this fortnight, with 2,878 m of climbing.' },
+]
+
+function Chat() {
+  const [messages, setMessages] = useState<MessageT[]>([
+    { id: 'hello', from: 'mechanic', authorName: 'Mechanic', body: 'Ask about the bikes, the rides, or what needs doing.', at: '08:30' },
+  ])
+  const [draft, setDraft] = useState('')
+  const [thinking, setThinking] = useState(false)
+
+  const send = (text: string) => {
+    const stamp = new Date()
+    setMessages(list => [...list, { id: `you-${stamp.getTime()}`, from: 'me', body: text, at: stamp }])
+    setDraft('')
+    setThinking(true)
+    setTimeout(() => {
+      const answer = ANSWERS.find(a => a.match.test(text))?.reply ?? 'This sample only knows about bikes, parts, rides and the weather.'
+      setMessages(list => [...list, { id: `mechanic-${Date.now()}`, from: 'mechanic', authorName: 'Mechanic', body: answer, at: new Date() }])
+      setThinking(false)
+    }, 900)
+  }
+
+  return (
+    <div className="chat">
+      <Thread messages={messages} typing={thinking} label="Chat with the mechanic" />
+      <Composer
+        value={draft}
+        onChange={setDraft}
+        onSubmit={send}
+        placeholder="Ask about the bikes…"
+        busy={thinking}
+        onStop={() => setThinking(false)}
+      />
+    </div>
+  )
+}
+
 /* ── Shell ── */
 
 interface Surface { readonly title: string; readonly icon: keyof typeof PATHS; readonly description: string }
@@ -422,6 +469,7 @@ const SURFACES = {
   rides: { title: 'Rides', icon: 'ride', description: 'Every ride, newest first' },
   service: { title: 'Service', icon: 'wrench', description: 'What the bikes need' },
   map: { title: 'Map', icon: 'map', description: 'The last ride, drawn' },
+  chat: { title: 'Chat', icon: 'chat', description: 'Ask about the bikes' },
   bikes: { title: 'Bikes', icon: 'bike', description: 'The whole stable' },
   parts: { title: 'Parts & wear', icon: 'chain', description: 'How worn each part is' },
   routes: { title: 'Routes', icon: 'route', description: 'Saved loops' },
@@ -461,6 +509,7 @@ function Garage({ desk }: { readonly desk: Desk }) {
     dockItem(item('rides')),
     dockItem(item('service', due ? { badge: due } : {})),
     dockItem(item('map')),
+    dockItem(item('chat')),
     dockSeparator('sep-stacks'),
     dockStack({ id: 'garage', label: 'Garage', items: [item('bikes'), item('parts'), item('service', due ? { badge: due } : {})] }),
     dockStack({ id: 'plan', label: 'Plan', items: [item('routes'), item('weather'), item('calendar')] }),
@@ -475,6 +524,7 @@ function Garage({ desk }: { readonly desk: Desk }) {
       case 'rides': return <Rides />
       case 'service': return <Service steps={steps} setSteps={setSteps} />
       case 'map': return <MapView />
+      case 'chat': return <Chat />
       case 'bikes': return <Bikes />
       case 'parts': return <Parts />
       case 'routes': return <Routes />

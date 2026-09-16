@@ -88,6 +88,22 @@ tab stop whose arrow keys move the selection past disabled options. A toggle is 
 apply at once — a checkbox is for one that waits for Save. A text field always has a label (`labelHidden`
 keeps it for screen readers), and an `error` marks it invalid and replaces the help text.
 
+## Conversation
+
+```tsx
+import { Composer, Thread } from '@liberation-data/desk/react'
+
+<Thread messages={messages} me="me" typing={thinking} onRetry={resend} />
+<Composer value={draft} onChange={setDraft} onSubmit={send} busy={thinking} onStop={cancel} />
+```
+
+Presentational only: no transport, and no opinion about who is answering. The thread groups a run of
+messages from one author, marks yours apart, shows `sending` and `failed` states with Retry, and follows the
+conversation only while you are at the end of it — scroll back and new messages become a *2 new messages*
+button instead of yanking you away. The composer grows with the text, sends on Enter, keeps Shift+Enter for
+a new line, never sends mid-composition in an input method, and turns Send into Stop while an answer is
+arriving.
+
 ## Overlays
 
 Least interrupting to most (see [HIG.md](HIG.md) §7):
