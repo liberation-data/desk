@@ -209,6 +209,7 @@ window; `lazyWindow` retries its import on reload, unlike `React.lazy`, which ca
 <Pane label?={string} header?={ReactNode} footer?={ReactNode} bodyRef?={Ref} onScroll?={fn}>{scrolling content}</Pane>
 <Toolbar label?={string} trailing?={ReactNode}>{controls}</Toolbar>   // className="desk-grow" takes spare room
 <InfoTip label={string} placement?={'below'|'above'} align?={'start'|'end'}>{explanation}</InfoTip>
+// the (i) wears --desk-info (the title bar's green) so it is seen; retint it there, not in the selector.
 ```
 
 A pane fills its window and scrolls only its middle, so the window never scrolls and the toolbar stays put.

@@ -12,6 +12,7 @@
   --desk-accent: #5b57f5;
   --desk-close: #ef6b63;
   --desk-mode: #34c47a;
+  --desk-info: #34c47a;
   --desk-radius: 12px;
   --desk-gap: 12px;
   --desk-padding: 12px;
@@ -62,6 +63,7 @@
     --desk-dock-glass: rgb(11 18 32 / 62%);
     --desk-dock-icon: linear-gradient(160deg, #1a2338, #0e1526);
     --desk-ok: #3ecf8e;
+    --desk-info: #3ecf8e;
     --desk-warn: #fbbf24;
     --desk-bad: #f87171;
     --desk-field-bg: rgb(0 0 0 / 35%);
@@ -80,6 +82,7 @@
   --desk-dock-glass: rgb(11 18 32 / 62%);
   --desk-dock-icon: linear-gradient(160deg, #1a2338, #0e1526);
   --desk-ok: #3ecf8e;
+  --desk-info: #3ecf8e;
   --desk-warn: #fbbf24;
   --desk-bad: #f87171;
   --desk-field-bg: rgb(0 0 0 / 35%);
@@ -2776,10 +2779,12 @@
   width: 18px;
   height: 18px;
   padding: 0;
-  border: 1px solid var(--desk-rule);
+  /* The title bar's own green, the one the zoom control wears: a muted grey (i) sat in a muted
+     trailing edge and went unseen, which defeats the point of having one place to ask. */
+  border: 1px solid color-mix(in srgb, var(--desk-info) 55%, transparent);
   border-radius: 50%;
-  background: none;
-  color: var(--desk-muted);
+  background: color-mix(in srgb, var(--desk-info) 14%, transparent);
+  color: var(--desk-info);
   font-family: var(--desk-font);
   font-size: 11px;
   font-style: italic;
@@ -2790,12 +2795,12 @@
 
 .desk-infotip:hover,
 .desk-infotip[data-open] {
-  border-color: var(--desk-accent);
-  color: var(--desk-accent);
+  border-color: var(--desk-info);
+  background: color-mix(in srgb, var(--desk-info) 26%, transparent);
 }
 
 .desk-infotip:focus-visible {
-  outline: 2px solid var(--desk-accent);
+  outline: 2px solid var(--desk-info);
   outline-offset: 2px;
 }
 
