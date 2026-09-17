@@ -350,6 +350,10 @@ sends on Enter, keeps Shift+Enter for a new line, and never sends mid-compositio
 <TourBar tour={{ id, name, steps }} onFinish? onStop? />
 interface TourStep { window?: string; point?: string; caption: ReactNode; yourTurn?: boolean }
 
+const tasks = useTasks(Task[]): { items: TaskProgress[]; running; done; failed; start(); restart() }
+interface Task { id; name: ReactNode; detail?: ReactNode; run: (report: (detail: ReactNode) => void) => unknown }
+<Checklist items={TaskProgress[]} onRetry? progress?={true} label? />   // a failed row shows its error and Try again
+
 <Wizard steps={WizardStep[]} index onIndexChange onFinish label? />
 interface WizardStep { id; name; title; description?; body?; glyph?; complete?; continueLabel?;
                        skip?: { label, onSkip }; working?; onEnter?;
@@ -359,7 +363,9 @@ interface WizardStep { id; name; title; description?; body?; glyph?; complete?; 
 A tour step opens its window and points at `point` (a `data-tour` name or a selector). A wizard step offers
 Continue only when `complete`, and `working` steps offer no Back. `onContinue` runs before moving on: Continue
 shows `busyLabel` (default "Working…") and is disabled; a thrown Error's message is shown in the step and the
-step stays; returning `false` stays silently. Pressing again while it runs does nothing.
+step stays; returning `false` stays silently. Pressing again while it runs does nothing. Tasks run in order and
+stop at the first that throws; `start()` runs whatever is not done (the retry), `restart()` runs them all again.
+For a waiting step: `working: !tasks.failed, complete: tasks.done, onEnter: tasks.restart`.
 
 ## Styling
 

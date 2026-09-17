@@ -127,8 +127,23 @@ One pane, one question at a time, Back and Continue where the eye already is. `c
 a step cannot be passed until it is answered; `skip` is the quiet way past a step that can wait; `working`
 is a step with nothing to do but wait, which offers no Back. `onContinue` is the work Continue does before
 moving on — create the account, check the key: while it runs Continue shows `busyLabel` and nothing can be
-pressed twice; throw to stay on the step with the message shown in it, or return `false` to stay quietly. Focus moves to each step's heading as it
-arrives, so it is announced — and only when the step changes, so a field in the pane keeps what is typed.
+pressed twice; throw to stay on the step with the message shown in it, or return `false` to stay quietly.
+Focus moves to each step's heading as it arrives, so it is announced — and only when the step changes, so a
+field in the pane keeps what is typed.
+
+```tsx
+const setup = useTasks([
+  { id: 'realm', name: 'Install the ledger realm', run: () => install('ledger') },
+  { id: 'docs', name: 'Read your documents', run: async report => { for await (const n of ingest()) report(`${n} of 40`) } },
+])
+
+{ id: 'finishing', name: 'Finishing', title: 'Setting up', working: !setup.failed, complete: setup.done,
+  onEnter: setup.restart, body: <Checklist items={setup.items} onRetry={setup.start} /> }
+```
+
+The jobs a setup does while someone watches run in order. Each says how it is getting on (`report`), and one
+that throws stops the rest and shows why, with **Try again** picking up from the task that failed rather than
+from the top. `working: !setup.failed` gives the step its Back again once something has gone wrong.
 
 ## Tours
 
