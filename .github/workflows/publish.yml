@@ -8,6 +8,9 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,8 +21,7 @@ jobs:
       - run: npm ci
       - name: Tag matches package.json
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
-      # prepublishOnly runs typecheck, tests and build.
-      # Add --provenance once the repository is public; npm refuses provenance from a private repo.
-      - run: npm publish --access public
+      # prepublishOnly runs typecheck, tests and build. Provenance needs the repository to be public.
+      - run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
