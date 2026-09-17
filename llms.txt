@@ -350,11 +350,14 @@ interface TourStep { window?: string; point?: string; caption: ReactNode; yourTu
 
 <Wizard steps={WizardStep[]} index onIndexChange onFinish label? />
 interface WizardStep { id; name; title; description?; body?; glyph?; complete?; continueLabel?;
-                       skip?: { label, onSkip }; working?; onEnter? }
+                       skip?: { label, onSkip }; working?; onEnter?;
+                       onContinue?: () => unknown | Promise<unknown>; busyLabel? }
 ```
 
 A tour step opens its window and points at `point` (a `data-tour` name or a selector). A wizard step offers
-Continue only when `complete`, and `working` steps offer no Back.
+Continue only when `complete`, and `working` steps offer no Back. `onContinue` runs before moving on: Continue
+shows `busyLabel` (default "Working…") and is disabled; a thrown Error's message is shown in the step and the
+step stays; returning `false` stays silently. Pressing again while it runs does nothing.
 
 ## Styling
 

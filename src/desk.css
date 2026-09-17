@@ -2195,6 +2195,15 @@
   text-align: left;
 }
 
+.desk-wizard-error {
+  margin: var(--desk-space-3) 0 0;
+  padding: var(--desk-space-2) var(--desk-space-3);
+  border-radius: var(--desk-control-radius);
+  background: color-mix(in srgb, var(--desk-bad) 14%, transparent);
+  color: var(--desk-ink);
+  font-size: 13px;
+}
+
 .desk-wizard-foot {
   flex: none;
   display: flex;

@@ -665,7 +665,7 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
   const [bikes, setBikes] = useState<string[]>(['Road', 'Gravel'])
   const [music, setMusic] = useState<(typeof MUSIC_OPTIONS)[number]['value']>('tempo')
   const [key, setKey] = useState('wx-sample-key')
-  const [keyState, setKeyState] = useState<'idle' | 'checking' | 'ok' | 'bad' | 'skipped'>('idle')
+  const [keyState, setKeyState] = useState<'idle' | 'ok' | 'skipped'>('idle')
   const [maps, setMaps] = useState<'online' | 'offline' | 'none'>('online')
   const [jobs, setJobs] = useState(0)
   const [imported, setImported] = useState(0)
@@ -674,9 +674,11 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
   const firstName = rider.trim().split(/\s+/)[0] || 'Jasper'
   const named = rider.trim().split(/\s+/).length >= 2
 
-  const checkKey = () => {
-    setKeyState('checking')
-    setTimeout(() => setKeyState(key.trim() ? 'ok' : 'bad'), 900)
+  // Continue checks the key with the service before moving on; a key it refuses keeps the person here, told why.
+  const checkKey = async () => {
+    await new Promise(resolve => setTimeout(resolve, 900))
+    if (!key.trim().startsWith('wx-')) throw new Error('The service did not accept that key. Its keys start with wx-.')
+    setKeyState('ok')
   }
 
   const FINISHING = [
@@ -805,8 +807,10 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
       glyph: <Icon name="weather" />,
       title: 'Connect a weather service',
       description: 'So the garage can say which day suits the long ride. Everything else works without it.',
-      // Anything typed is enough to move on; checking it is offered, not demanded.
-      complete: keyState === 'ok' || key.trim().length > 0,
+      complete: key.trim().length > 0,
+      continueLabel: 'Connect',
+      busyLabel: 'Checking the key…',
+      onContinue: checkKey,
       skip: { label: 'Set up later', onSkip: () => { setKeyState('skipped'); setIndex(5) } },
       body: (
         <div className="setup-form">
@@ -820,16 +824,8 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
             }}
             placeholder="wx-…"
             autoComplete="off"
-            help="Any key will do here: this is a sample."
+            help="Any key starting with wx- will do: this is a sample. The key stays here."
           />
-          <div className="detect">
-            {keyState === 'checking' && <span className="small">Checking the key with the service…</span>}
-            {keyState === 'ok' && <span className="chip ok">Connected — the key stays here</span>}
-            {keyState === 'bad' && <span className="chip bad">That key was not accepted</span>}
-            {(keyState === 'idle' || keyState === 'skipped') && (
-              <Button size="small" disabled={key.trim().length < 3} onClick={checkKey}>Check the key</Button>
-            )}
-          </div>
           <div className="columns">
             <div className="column">
               <h3>Works without it</h3>

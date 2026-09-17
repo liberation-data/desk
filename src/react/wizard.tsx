@@ -29,6 +29,14 @@ export interface WizardStep {
   /** Nothing to do but wait: no Back, and Continue waits for `complete`. */
   readonly working?: boolean
   readonly onEnter?: () => void
+  /**
+   * Work Continue does before moving on: create the account, check the key, install the realm.
+   * While it runs, Continue says so and nothing can be pressed twice. Throw to stay on the step
+   * and show why, in the step; return `false` to stay without a message.
+   */
+  readonly onContinue?: () => unknown
+  /** Continue's label while `onContinue` runs. Default: "Working…". */
+  readonly busyLabel?: string
 }
 
 export interface WizardProps {
@@ -47,11 +55,18 @@ export function Wizard({ steps, index, onIndexChange, onFinish, label = 'Setup',
   const heading = useRef<HTMLHeadingElement>(null)
   const entered = useRef<(() => void) | undefined>(undefined)
   entered.current = step?.onEnter
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  // The step a running `onContinue` belongs to: if the person has gone back meanwhile, its result is stale.
+  const running = useRef<number | null>(null)
 
   // Only when the step changes: a step whose body has a field re-renders on every
   // keystroke, and moving focus to the heading then would eat what was being typed.
   useEffect(() => {
     setDirection(index >= previous.current ? 'forward' : 'back')
+    setBusy(false)
+    setError(null)
+    running.current = null
     previous.current = index
     entered.current?.()
     // Focus the new step's heading, so a screen reader announces it and the
@@ -65,6 +80,26 @@ export function Wizard({ steps, index, onIndexChange, onFinish, label = 'Setup',
   const canContinue = step.complete ?? true
   const go = (to: number) => (to >= steps.length ? onFinish() : onIndexChange(Math.max(0, to)))
 
+  const next = async () => {
+    if (!step.onContinue) return go(index + 1)
+    if (running.current !== null) return
+    running.current = index
+    setBusy(true)
+    setError(null)
+    try {
+      const result = await step.onContinue()
+      if (running.current !== index) return
+      running.current = null
+      setBusy(false)
+      if (result !== false) go(index + 1)
+    } catch (failure) {
+      if (running.current !== index) return
+      running.current = null
+      setBusy(false)
+      setError(failure instanceof Error ? failure.message : String(failure))
+    }
+  }
+
   return (
     <section className={['desk-wizard', className].filter(Boolean).join(' ')} aria-label={label}>
       <div className="desk-wizard-content" data-direction={direction} key={step.id}>
@@ -72,6 +107,11 @@ export function Wizard({ steps, index, onIndexChange, onFinish, label = 'Setup',
         <h1 ref={heading} tabIndex={-1} className="desk-wizard-title">{step.title}</h1>
         {step.description && <p className="desk-wizard-description">{step.description}</p>}
         {step.body}
+        {error && (
+          <p className="desk-wizard-error" role="alert">
+            {error}
+          </p>
+        )}
       </div>
       <footer className="desk-wizard-foot">
         <ol className="desk-wizard-steps" aria-label="Progress">
@@ -91,13 +131,17 @@ export function Wizard({ steps, index, onIndexChange, onFinish, label = 'Setup',
         </span>
         <div className="desk-wizard-actions">
           {step.skip && (
-            <Button intent="quiet" onClick={step.skip.onSkip}>
+            <Button intent="quiet" disabled={busy} onClick={step.skip.onSkip}>
               {step.skip.label}
             </Button>
           )}
-          {index > 0 && !step.working && <Button onClick={() => go(index - 1)}>Back</Button>}
-          <Button intent="default" disabled={!canContinue} onClick={() => go(index + 1)}>
-            {step.continueLabel ?? (last ? 'Done' : 'Continue')}
+          {index > 0 && !step.working && (
+            <Button disabled={busy} onClick={() => go(index - 1)}>
+              Back
+            </Button>
+          )}
+          <Button intent="default" disabled={!canContinue || busy} aria-busy={busy || undefined} onClick={() => void next()}>
+            {busy ? (step.busyLabel ?? 'Working…') : (step.continueLabel ?? (last ? 'Done' : 'Continue'))}
           </Button>
         </div>
       </footer>

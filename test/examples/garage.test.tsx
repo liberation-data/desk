@@ -20,7 +20,7 @@ beforeEach(() => {
   window.location.hash = ''
 })
 
-const continueButton = () => screen.getByRole('button', { name: /Continue|Get started|Open the garage/ })
+const continueButton = () => screen.getByRole('button', { name: /Continue|Get started|Open the garage|Connect/ })
 const dock = () => screen.getByRole('toolbar', { name: 'Garage dock' })
 
 /** Through setup and onto the desktop. */
@@ -31,9 +31,8 @@ async function arrive(user: ReturnType<typeof userEvent.setup>) {
   await user.click(continueButton()) // Workshop
   await user.click(continueButton()) // Rider — prefilled
   await user.click(continueButton()) // Bikes
-  await user.click(screen.getByRole('button', { name: 'Check the key' }))
-  await vi.waitFor(() => expect(screen.getByText(/Connected/)).toBeTruthy(), { timeout: 4000 })
-  await user.click(continueButton()) // Weather
+  await user.click(continueButton()) // Weather: checks the key before moving on
+  await vi.waitFor(() => expect(screen.getByRole('heading', { name: 'Where the maps come from' })).toBeTruthy(), { timeout: 4000 })
   await user.click(continueButton()) // Maps
   await vi.waitFor(() => expect(screen.getByRole('heading', { name: 'All set' })).toBeTruthy(), { timeout: 4000 })
   await user.click(continueButton()) // Finishing
@@ -51,6 +50,23 @@ describe('the garage sample', () => {
     expect(dock()).toBeTruthy()
     expect(screen.getByRole('menubar')).toBeTruthy()
     expect(document.querySelector('[data-desk-window="rides"]')).toBeTruthy()
+  })
+
+  it('keeps a weather key the service refuses on its step, and says why', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(continueButton()) // Welcome
+    await vi.waitFor(() => expect(continueButton()).toHaveProperty('disabled', false), { timeout: 4000 })
+    await user.click(continueButton()) // Workshop
+    await user.click(continueButton()) // Rider
+    await user.click(continueButton()) // Bikes
+    const field = screen.getByLabelText('Service key')
+    await user.clear(field)
+    await user.type(field, 'not-a-key')
+    await user.click(screen.getByRole('button', { name: 'Connect' }))
+    expect(screen.getByRole('button', { name: 'Checking the key…' })).toBeTruthy()
+    await vi.waitFor(() => expect(screen.getByRole('alert').textContent).toContain('did not accept'), { timeout: 4000 })
+    expect(screen.getByRole('heading', { name: 'Connect a weather service' })).toBeTruthy()
   })
 
   it('opens every window in the dock without falling over', async () => {

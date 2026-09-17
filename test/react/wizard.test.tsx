@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -127,5 +127,56 @@ describe('Wizard', () => {
     fireEvent.click(continueButton())
     expect(document.activeElement).toBe(heading())
     expect(heading().textContent).toBe('Who is riding?')
+  })
+})
+
+describe('Continue that does work', () => {
+  function Account({ create }: { readonly create: () => Promise<unknown> }) {
+    const [index, setIndex] = useState(0)
+    const steps: WizardStep[] = [
+      { id: 'account', name: 'Account', title: 'Create your account', continueLabel: 'Create account', busyLabel: 'Creating…', onContinue: create },
+      { id: 'ready', name: 'Ready', title: 'Ready' },
+    ]
+    return <Wizard steps={steps} index={index} onIndexChange={setIndex} onFinish={() => {}} />
+  }
+
+  const deferred = () => {
+    let resolve!: (value?: unknown) => void
+    let reject!: (error: Error) => void
+    const promise = new Promise((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  it('says it is working, and cannot be pressed twice, until the work is done', async () => {
+    const work = deferred()
+    const create = vi.fn(() => work.promise)
+    render(<Account create={create} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+    const busy = screen.getByRole('button', { name: 'Creating…' })
+    expect(busy).toHaveProperty('disabled', true)
+    fireEvent.click(busy)
+    expect(create).toHaveBeenCalledOnce()
+    await act(async () => work.resolve())
+    expect(heading().textContent).toBe('Ready')
+  })
+
+  it('stays on the step and says why when the work fails', async () => {
+    const work = deferred()
+    render(<Account create={() => work.promise} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+    await act(async () => work.reject(new Error('That name is taken. Try another.')))
+    expect(heading().textContent).toBe('Create your account')
+    expect(screen.getByRole('alert').textContent).toBe('That name is taken. Try another.')
+    expect(screen.getByRole('button', { name: 'Create account' })).toHaveProperty('disabled', false)
+  })
+
+  it('stays without a message when the work returns false', async () => {
+    render(<Account create={async () => false} />)
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Create account' })))
+    expect(heading().textContent).toBe('Create your account')
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 })

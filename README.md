@@ -112,8 +112,9 @@ keeps it for screen readers), and an `error` marks it invalid and replaces the h
 const steps: WizardStep[] = [
   { id: 'welcome', name: 'Welcome', title: 'Welcome to the garage', continueLabel: 'Get started' },
   { id: 'rider', name: 'Rider', title: 'Who is riding?', complete: name.length > 1, body: <TextField … /> },
-  { id: 'weather', name: 'Weather', title: 'Connect a weather service',
-    skip: { label: 'Set up later', onSkip: skipWeather }, complete: checked },
+  { id: 'weather', name: 'Weather', title: 'Connect a weather service', complete: key.length > 0,
+    continueLabel: 'Connect', busyLabel: 'Checking the key…', onContinue: checkKey,
+    skip: { label: 'Set up later', onSkip: skipWeather } },
   { id: 'finishing', name: 'Finishing', title: 'Setting up', working: true, complete: done, onEnter: install },
 ]
 
@@ -122,7 +123,9 @@ const steps: WizardStep[] = [
 
 One pane, one question at a time, Back and Continue where the eye already is. `complete` gates Continue, so
 a step cannot be passed until it is answered; `skip` is the quiet way past a step that can wait; `working`
-is a step with nothing to do but wait, which offers no Back. Focus moves to each step's heading as it
+is a step with nothing to do but wait, which offers no Back. `onContinue` is the work Continue does before
+moving on — create the account, check the key: while it runs Continue shows `busyLabel` and nothing can be
+pressed twice; throw to stay on the step with the message shown in it, or return `false` to stay quietly. Focus moves to each step's heading as it
 arrives, so it is announced — and only when the step changes, so a field in the pane keeps what is typed.
 
 ## Tours
