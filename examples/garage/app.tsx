@@ -15,6 +15,7 @@ import {
   AppFrame,
   Button,
   Checkbox,
+  Checklist,
   ChoiceGroup,
   Composer,
   Desktop,
@@ -43,6 +44,7 @@ import {
   Toggle,
   TourBar,
   useCommand,
+  useTasks,
   useDesk,
   useDragSource,
   useDropTarget,
@@ -614,22 +616,8 @@ const MUSIC_OPTIONS = [
   { value: 'quiet', label: 'No music', description: 'Just the road' },
 ] as const
 
-/** A row of the checking list: waiting, working, or done. */
-function CheckRow({ state, name, detail }: { readonly state: 'waiting' | 'working' | 'done'; readonly name: string; readonly detail?: string }) {
-  return (
-    <div className="crow">
-      <span className={`cmark ${state}`} aria-hidden="true">{state === 'done' ? '✓' : ''}</span>
-      <span className="ctext">
-        <span className="cname">{name}</span>
-        {detail && <span className="cdetail">{detail}</span>}
-      </span>
-    </div>
-  )
-}
-
 function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) => void }) {
   const [index, setIndex] = useState(0)
-  const [workshop, setWorkshop] = useState<0 | 1 | 2>(0)
   // A sample: the fields come filled in so the flow can be walked through quickly.
   const [rider, setRider] = useState('Jasper Blues')
   const [home, setHome] = useState('Melbourne')
@@ -638,8 +626,6 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
   const [key, setKey] = useState('wx-sample-key')
   const [keyState, setKeyState] = useState<'idle' | 'ok' | 'skipped'>('idle')
   const [maps, setMaps] = useState<'online' | 'offline' | 'none'>('online')
-  const [jobs, setJobs] = useState(0)
-  const [imported, setImported] = useState(0)
   const [start, setStart] = useState<'rides' | 'parts' | 'weather' | 'chat'>('rides')
 
   const firstName = rider.trim().split(/\s+/)[0] || 'Jasper'
@@ -652,18 +638,34 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
     setKeyState('ok')
   }
 
-  const FINISHING = [
-    { name: `Save the profile for ${rider.trim() || 'you'}`, detail: 'Kept on this machine' },
-    {
-      name: keyState === 'ok' ? 'Store the weather key' : 'Skip the weather service',
-      detail: keyState === 'ok' ? 'Never leaves the garage' : 'Add one from Settings later',
-    },
-    { name: `Set up ${bikes.length} ${bikes.length === 1 ? 'bike' : 'bikes'}`, detail: bikes.join(', ') },
-    {
-      name: maps === 'none' ? 'Skip the maps' : 'Import your rides',
-      detail: maps === 'none' ? '' : `${imported} of 24, so the wear counts are right`,
-    },
-  ]
+  const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+  // What the garage finds on this machine, so nobody types in what it can read.
+  const workshop = useTasks([
+    { id: 'log', name: 'Ride log', detail: 'Reading ~/Documents/rides…', run: async (report: (detail: string) => void) => { await pause(700); report('24 rides, back to March') } },
+    { id: 'sensors', name: 'Sensors', detail: 'Looking…', run: async (report: (detail: string) => void) => { await pause(800); report('Power meter and two speed sensors') } },
+  ])
+
+  const finishing = useTasks([
+    { id: 'profile', name: `Save the profile for ${rider.trim() || 'you'}`, detail: 'Kept on this machine', run: () => pause(600) },
+    keyState === 'ok'
+      ? { id: 'key', name: 'Store the weather key', detail: 'Never leaves the garage', run: () => pause(600) }
+      : { id: 'key', name: 'Skip the weather service', detail: 'Add one from Settings later', run: () => pause(300) },
+    { id: 'bikes', name: `Set up ${bikes.length} ${bikes.length === 1 ? 'bike' : 'bikes'}`, detail: bikes.join(', '), run: () => pause(600) },
+    maps === 'none'
+      ? { id: 'rides', name: 'Skip the maps', run: () => pause(300) }
+      : {
+          id: 'rides',
+          name: 'Import your rides',
+          detail: 'So the wear counts are right',
+          run: async (report: (detail: string) => void) => {
+            for (let i = 1; i <= 24; i++) {
+              await pause(40)
+              report(`${i} of 24, so the wear counts are right`)
+            }
+          },
+        },
+  ])
 
   const steps: WizardStep[] = [
     {
@@ -693,26 +695,10 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
       glyph: <Icon name="wrench" />,
       title: 'Looking at your workshop',
       description: 'The garage reads what is already on this machine, so you do not type in what it can find.',
-      complete: workshop === 2,
-      onEnter: () => {
-        setWorkshop(0)
-        setTimeout(() => setWorkshop(1), 700)
-        setTimeout(() => setWorkshop(2), 1500)
-      },
-      body: (
-        <div className="checklist">
-          <CheckRow
-            state={workshop >= 1 ? 'done' : 'working'}
-            name="Ride log found"
-            detail={workshop >= 1 ? '24 rides, back to March' : 'Reading ~/Documents/rides…'}
-          />
-          <CheckRow
-            state={workshop === 2 ? 'done' : workshop === 1 ? 'working' : 'waiting'}
-            name="Sensors paired"
-            detail={workshop === 2 ? 'Power meter and two speed sensors' : 'Looking…'}
-          />
-        </div>
-      ),
+      working: !workshop.failed,
+      complete: workshop.done,
+      onEnter: workshop.restart,
+      body: <Checklist items={workshop.items} onRetry={workshop.start} progress={false} label="What was found" />,
     },
     {
       id: 'rider',
@@ -834,38 +820,12 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
       id: 'finishing',
       name: 'Finishing',
       glyph: <Icon name="gear" />,
-      title: jobs >= FINISHING.length ? 'All set' : 'Setting up your garage',
+      title: finishing.done ? 'All set' : 'Setting up your garage',
       description: 'Nothing you have entered is sent anywhere.',
-      working: true,
-      complete: jobs >= FINISHING.length,
-      onEnter: () => {
-        setJobs(0)
-        setImported(0)
-        const at = (ms: number, run: () => void) => setTimeout(run, ms)
-        at(600, () => setJobs(1))
-        at(1200, () => setJobs(2))
-        at(1800, () => setJobs(3))
-        if (maps === 'none') at(2300, () => setJobs(4))
-        else {
-          for (let i = 1; i <= 24; i++) at(1800 + i * 40, () => setImported(i))
-          at(1800 + 24 * 40 + 300, () => setJobs(4))
-        }
-      },
-      body: (
-        <div className="setup-form">
-          <div className="bar" role="presentation"><i style={{ width: `${(jobs / FINISHING.length) * 100}%` }} /></div>
-          <div className="checklist">
-            {FINISHING.map((job, i) => (
-              <CheckRow
-                key={job.name}
-                state={i < jobs ? 'done' : i === jobs ? 'working' : 'waiting'}
-                name={job.name}
-                {...(job.detail ? { detail: job.detail } : {})}
-              />
-            ))}
-          </div>
-        </div>
-      ),
+      working: !finishing.failed,
+      complete: finishing.done,
+      onEnter: finishing.restart,
+      body: <Checklist items={finishing.items} onRetry={finishing.start} label="Setting up your garage" />,
     },
     {
       id: 'ready',
