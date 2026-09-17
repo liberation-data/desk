@@ -355,6 +355,24 @@ own their shortcuts, as in AppKit — a command item's `shortcut` is shown and b
 the bar, arrow keys move between menus and items (skipping separators and disabled items), a letter jumps
 to an item, Enter chooses, Escape closes.
 
+
+### Context menus
+
+```tsx
+function RideRow({ ride }) {
+  const { target, menu } = useContextMenu({
+    label: `Actions for ${ride.name}`,
+    items: () => [menuAction('Open', () => open(ride)), menuSeparator(), menuCommand('Export', 'rides.export')],
+  })
+  return <><button {...target} onClick={() => open(ride)}>{ride.name}</button>{menu}</>
+}
+```
+
+A right-click opens the menu where the pointer is; the Menu key or Shift+F10 opens it at the item, with the
+first item ready. Items are the menu bar's, so a command asks the responder chain whether it is enabled and
+runs from the item that was right-clicked. It closes on Escape, a click elsewhere, scrolling or resizing, and
+gives focus back. The HIG's rule stands: nothing lives only in a context menu.
+
 ## Commands and the responder chain
 
 Some commands name no target — Copy, Close, Find. They go to whoever is responsible, the way AppKit's

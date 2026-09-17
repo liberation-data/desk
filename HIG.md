@@ -241,7 +241,8 @@ open.
 - Show the keyboard shortcut on the trailing side.
 - A checkmark shows a state that the item toggles.
 - Context menus hold commands for the thing under the pointer and duplicate commands found elsewhere.
-  Never put a command only in a context menu.
+  Never put a command only in a context menu. They open from the keyboard too (the Menu key or Shift+F10),
+  and give focus back to the item when they close.
 
 ### Standard shortcuts
 

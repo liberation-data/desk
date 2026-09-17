@@ -32,6 +32,9 @@ export function DeskProvider({ desk, options, children }: DeskProviderProps) {
   )
 }
 
+/** The desk above, or null outside one: for parts that work on a desk and off one, like a context menu. */
+export const useOptionalDesk = (): Desk | null => useContext(DeskContext)
+
 export function useDesk(): Desk {
   const desk = useContext(DeskContext)
   if (!desk) throw new Error('useDesk must be used inside a <DeskProvider>')

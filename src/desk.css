@@ -658,6 +658,13 @@
   height: 15px;
 }
 
+/* A context menu is the same menu, opened where the pointer is rather than under a title. */
+.desk-context-menu {
+  position: fixed;
+  z-index: 1300;
+  outline: none;
+}
+
 .desk-menubar-slot[data-align="end"] .desk-menu {
   left: auto;
   right: 0;

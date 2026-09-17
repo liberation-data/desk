@@ -218,6 +218,10 @@ menuCommand(label, command, { shortcut?, checked?, detail?, args? })
 menuAction(label, onSelect, { disabled?, shortcut?, checked?, detail? })
 menuSeparator(); menuHeader(label)
 windowMenuItems(state, focus, title): MenuItem[]
+
+const { target, menu, open } = useContextMenu({ label, items: () => MenuItem[], disabled? })
+// spread `target` (onContextMenu, onKeyDown) on the element; render `menu` anywhere (portal).
+// Right-click opens at the pointer; Menu key / Shift+F10 at the element. Commands run from that element.
 ```
 
 Command items are enabled via `canPerform` as the menu opens, and menus bind their own shortcuts. Opening a

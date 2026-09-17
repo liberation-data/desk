@@ -4,6 +4,7 @@ import { canPerform, perform } from '../core/commands.js'
 import type { CommandId } from '../core/commands.js'
 import { focusedId } from '../core/desk.js'
 import { bindShortcuts, formatShortcut, isApplePlatform } from '../core/shortcuts.js'
+import type { Desk } from '../core/desk.js'
 import type { DeskState, WindowId } from '../core/types.js'
 import { useDesk } from './context.js'
 
@@ -79,11 +80,13 @@ export interface MenuBarProps {
   readonly className?: string
 }
 
-interface Resolved {
+/** A menu item as it stands when the menu opens: whether it can be chosen, and whether it is checked. */
+export interface ResolvedMenuItem {
   readonly item: MenuItem
   readonly enabled: boolean
   readonly checked: boolean | undefined
 }
+type Resolved = ResolvedMenuItem
 
 interface OpenMenu {
   readonly id: string
@@ -93,7 +96,39 @@ interface OpenMenu {
 }
 
 const read = (flag: Flag | undefined) => (typeof flag === 'function' ? flag() : flag)
-const selectable = (r: Resolved) => r.enabled && (r.item.type === 'command' || r.item.type === 'action')
+
+/** Can this item be moved to and chosen: an enabled command or action, not a separator or header. */
+export const selectable = (r: Resolved) => r.enabled && (r.item.type === 'command' || r.item.type === 'action')
+
+/** Items as they stand now: commands ask the responder chain whether anything would handle them. */
+export const resolveMenuItems = (desk: Desk | null, items: readonly MenuItem[]): Resolved[] =>
+  items.map(item => ({
+    item,
+    enabled:
+      item.type === 'command' ? canPerform(desk, item.command)
+      : item.type === 'action' ? !read(item.disabled)
+      : false,
+    checked: item.type === 'command' || item.type === 'action' ? read(item.checked) : undefined,
+  }))
+
+/** The next selectable item from `from`, wrapping; -1 when there is none. */
+export const stepMenu = (items: readonly Resolved[], from: number, delta: 1 | -1) => {
+  for (let i = 1; i <= items.length; i++) {
+    const index = (from + delta * i + items.length * 2) % items.length
+    if (items[index] && selectable(items[index])) return index
+  }
+  return -1
+}
+
+/** The next selectable item whose label starts with `letter`, after `from`; -1 when there is none. */
+export const typeAhead = (items: readonly Resolved[], from: number, letter: string) => {
+  for (let i = 1; i <= items.length; i++) {
+    const index = (from + i) % items.length
+    const r = items[index]
+    if (r && selectable(r) && 'label' in r.item && r.item.label.toLowerCase().startsWith(letter.toLowerCase())) return index
+  }
+  return -1
+}
 
 export function MenuBar({ menus, status = [], leading, trailing, label = 'Menu bar', shortcuts = true, className }: MenuBarProps) {
   const desk = useDesk()
@@ -107,23 +142,8 @@ export function MenuBar({ menus, status = [], leading, trailing, label = 'Menu b
   const baseId = useId()
   const apple = useMemo(isApplePlatform, [])
 
-  const resolve = (menu: Menu): Resolved[] =>
-    (typeof menu.items === 'function' ? menu.items() : menu.items).map(item => ({
-      item,
-      enabled:
-        item.type === 'command' ? canPerform(desk, item.command)
-        : item.type === 'action' ? !read(item.disabled)
-        : false,
-      checked: item.type === 'command' || item.type === 'action' ? read(item.checked) : undefined,
-    }))
-
-  const step = (items: readonly Resolved[], from: number, delta: 1 | -1) => {
-    for (let i = 1; i <= items.length; i++) {
-      const index = (from + delta * i + items.length * 2) % items.length
-      if (items[index] && selectable(items[index])) return index
-    }
-    return -1
-  }
+  const resolve = (menu: Menu): Resolved[] => resolveMenuItems(desk, typeof menu.items === 'function' ? menu.items() : menu.items)
+  const step = stepMenu
 
   const openMenu = (index: number, via: OpenMenu['via'], active: 'first' | 'last' | 'none' = 'first') => {
     const menu = all[(index + all.length) % all.length]
@@ -178,17 +198,10 @@ export function MenuBar({ menus, status = [], leading, trailing, label = 'Menu b
           case 'Tab': close(false); return false
           default: {
             if (event.key.length !== 1 || event.metaKey || event.ctrlKey || event.altKey) return false
-            const letter = event.key.toLowerCase()
-            const start = open.active
-            for (let i = 1; i <= open.items.length; i++) {
-              const index = (start + i) % open.items.length
-              const r = open.items[index]
-              if (r && selectable(r) && 'label' in r.item && r.item.label.toLowerCase().startsWith(letter)) {
-                setOpen({ ...open, active: index })
-                return true
-              }
-            }
-            return false
+            const index = typeAhead(open.items, open.active, event.key)
+            if (index < 0) return false
+            setOpen({ ...open, active: index })
+            return true
           }
         }
       })()
