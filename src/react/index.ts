@@ -37,6 +37,8 @@ export type {
   ToggleProps,
 } from './controls.js'
 export { Checklist, useTasks } from './tasks.js'
+export { localSetupStore, useSetupProgress } from './setupProgress.js'
+export type { SetupProgress, SetupProgressOptions, SetupRecord, SetupStore } from './setupProgress.js'
 export type { ChecklistProps, Task, TaskProgress, Tasks, TaskState } from './tasks.js'
 export { PopUpButton } from './popup.js'
 export type { PopUpButtonProps, PopUpOption } from './popup.js'

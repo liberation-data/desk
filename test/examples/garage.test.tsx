@@ -18,6 +18,7 @@ beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn()
   vi.stubGlobal('matchMedia', (query: string) => ({ matches: false, media: query, addEventListener: () => {}, removeEventListener: () => {} }))
   window.location.hash = ''
+  localStorage.clear()
 })
 
 const continueButton = () => screen.getByRole('button', { name: /Continue|Get started|Open the garage|Connect/ })
@@ -26,7 +27,7 @@ const dock = () => screen.getByRole('toolbar', { name: 'Garage dock' })
 /** Through setup and onto the desktop. */
 async function arrive(user: ReturnType<typeof userEvent.setup>) {
   render(<App />)
-  await user.click(continueButton()) // Welcome
+  await user.click(await screen.findByRole('button', { name: /Get started|Continue/ })) // Welcome
   await vi.waitFor(() => expect(continueButton()).toHaveProperty("disabled", false), { timeout: 4000 }) // the workshop check
   await user.click(continueButton()) // Workshop
   await user.click(continueButton()) // Rider — prefilled
@@ -52,6 +53,26 @@ describe('the garage sample', () => {
     expect(document.querySelector('[data-desk-window="rides"]')?.hasAttribute('data-focused')).toBe(true)
   })
 
+  it('resumes setup where it was after a reload, and skips it once finished', async () => {
+    const user = userEvent.setup()
+    const first = render(<App />)
+    await user.click(await screen.findByRole('button', { name: /Get started|Continue/ })) // Welcome
+    await vi.waitFor(() => expect(continueButton()).toHaveProperty('disabled', false), { timeout: 4000 })
+    await user.click(continueButton()) // Workshop
+    first.unmount()
+
+    const second = render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Who is riding?' })).toBeTruthy()
+    second.unmount()
+    cleanup()
+    localStorage.clear()
+
+    await arrive(userEvent.setup())
+    cleanup()
+    render(<App />)
+    expect(await screen.findByRole('menubar')).toBeTruthy()
+  })
+
   it('offers the tour on arrival, and does not start it unasked', async () => {
     const user = userEvent.setup()
     await arrive(user)
@@ -64,7 +85,7 @@ describe('the garage sample', () => {
   it('keeps a weather key the service refuses on its step, and says why', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.click(continueButton()) // Welcome
+    await user.click(await screen.findByRole('button', { name: /Get started|Continue/ })) // Welcome
     await vi.waitFor(() => expect(continueButton()).toHaveProperty('disabled', false), { timeout: 4000 })
     await user.click(continueButton()) // Workshop
     await user.click(continueButton()) // Rider

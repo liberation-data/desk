@@ -44,6 +44,7 @@ import {
   Toggle,
   TourBar,
   useCommand,
+  useSetupProgress,
   useTasks,
   useDesk,
   useDragSource,
@@ -59,7 +60,7 @@ import {
   windowResults,
   Wizard,
 } from '../../src/react/index.js'
-import type { Column, DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption, Sort, Tour, WizardStep } from '../../src/react/index.js'
+import type { Column, DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption, SetupProgress, Sort, Tour, WizardStep } from '../../src/react/index.js'
 import '../../src/desk.css'
 import './garage.css'
 
@@ -618,17 +619,39 @@ const MUSIC_OPTIONS = [
   { value: 'quiet', label: 'No music', description: 'Just the road' },
 ] as const
 
-function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) => void }) {
-  const [index, setIndex] = useState(0)
-  // A sample: the fields come filled in so the flow can be walked through quickly.
-  const [rider, setRider] = useState('Jasper Blues')
-  const [home, setHome] = useState('Melbourne')
-  const [bikes, setBikes] = useState<string[]>(['Road', 'Gravel'])
-  const [music, setMusic] = useState<(typeof MUSIC_OPTIONS)[number]['value']>('tempo')
+/** What setup remembers across a reload. Not the weather key: that is never written down here. */
+interface SetupAnswers {
+  readonly rider: string
+  readonly home: string
+  readonly bikes: readonly string[]
+  readonly music: (typeof MUSIC_OPTIONS)[number]['value']
+  readonly keyState: 'idle' | 'ok' | 'skipped'
+  readonly maps: 'online' | 'offline' | 'none'
+  readonly start: 'rides' | 'parts' | 'weather' | 'chat'
+}
+
+// A sample: the fields come filled in so the flow can be walked through quickly.
+const FIRST_ANSWERS: SetupAnswers = {
+  rider: 'Jasper Blues',
+  home: 'Melbourne',
+  bikes: ['Road', 'Gravel'],
+  music: 'tempo',
+  keyState: 'idle',
+  maps: 'online',
+  start: 'rides',
+}
+
+function Setup({ progress, onDone }: { readonly progress: SetupProgress<SetupAnswers>; readonly onDone: (profile: Profile, start: string) => void }) {
+  const { index, setIndex, answers, answer } = progress
+  const { rider, home, bikes, music, keyState, maps, start } = answers
+  const setRider = (value: string) => answer({ rider: value })
+  const setHome = (value: string) => answer({ home: value })
+  const setBikes = (value: readonly string[]) => answer({ bikes: value })
+  const setMusic = (value: SetupAnswers['music']) => answer({ music: value })
+  const setKeyState = (value: SetupAnswers['keyState']) => answer({ keyState: value })
+  const setMaps = (value: SetupAnswers['maps']) => answer({ maps: value })
+  const setStart = (value: SetupAnswers['start']) => answer({ start: value })
   const [key, setKey] = useState('wx-sample-key')
-  const [keyState, setKeyState] = useState<'idle' | 'ok' | 'skipped'>('idle')
-  const [maps, setMaps] = useState<'online' | 'offline' | 'none'>('online')
-  const [start, setStart] = useState<'rides' | 'parts' | 'weather' | 'chat'>('rides')
 
   const firstName = rider.trim().split(/\s+/)[0] || 'Jasper'
   const named = rider.trim().split(/\s+/).length >= 2
@@ -866,7 +889,7 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
         steps={steps}
         index={index}
         onIndexChange={setIndex}
-        onFinish={() => onDone({ rider: rider.trim(), home: home.trim(), bikes, music }, start)}
+        onFinish={() => onDone({ rider: rider.trim(), home: home.trim(), bikes: [...bikes], music }, start)}
         label="Garage setup"
       />
       <p className="setup-note">A sample flow. Nothing is saved, and no key is sent anywhere.</p>
@@ -1210,22 +1233,36 @@ export const desk = createDesk()
 
 export function App() {
   // The sample starts at first run unless a link already names windows to open.
-  const [setup, setSetup] = useState(!location.hash)
+  // Setup is remembered: a reload resumes it where it was, and a finished one is not shown again.
+  const progress = useSetupProgress({ key: 'garage', initial: FIRST_ANSWERS })
+  // A link that names windows goes straight to them.
+  const [linked, setLinked] = useState(() => Boolean(location.hash))
   const [firstRun, setFirstRun] = useState(false)
-  if (setup) {
+  if (!progress.loaded) return null
+  if (!progress.finished && !linked) {
     return (
       <Setup
+        progress={progress}
         onDone={(_profile, start) => {
           desk.closeAll()
           // Windows open layered, so the one the person chose opens last and is the one in front.
           desk.open('service')
           desk.open(start)
           setFirstRun(true)
-          setSetup(false)
+          progress.finish()
         }}
       />
     )
   }
-  return <Garage desk={desk} firstRun={firstRun} onSetupAgain={() => setSetup(true)} />
+  return (
+    <Garage
+      desk={desk}
+      firstRun={firstRun}
+      onSetupAgain={() => {
+        setLinked(false)
+        progress.reset()
+      }}
+    />
+  )
 }
 

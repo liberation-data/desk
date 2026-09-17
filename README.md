@@ -145,6 +145,17 @@ The jobs a setup does while someone watches run in order. Each says how it is ge
 that throws stops the rest and shows why, with **Try again** picking up from the task that failed rather than
 from the top. `working: !setup.failed` gives the step its Back again once something has gone wrong.
 
+```tsx
+const progress = useSetupProgress({ key: 'worlds', initial: { name: '', realm: null }, store: serverStore })
+if (!progress.loaded) return null
+if (!progress.finished) return <Wizard index={progress.index} onIndexChange={progress.setIndex} onFinish={progress.finish} … />
+```
+
+Setup is remembered: closing the tab on step four resumes on step four, and a finished setup is not shown
+again until `reset()` ("Set up again"). The store is the app's to choose — this browser's local storage by
+default, or a `SetupStore` with `load`, `save` and `clear` that talks to a server. Keep answers to what a
+person would mind retyping; never a password or a key.
+
 ## Tours
 
 ```tsx

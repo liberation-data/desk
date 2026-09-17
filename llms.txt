@@ -355,6 +355,11 @@ const tasks = useTasks(Task[]): { items: TaskProgress[]; running; done; failed; 
 interface Task { id; name: ReactNode; detail?: ReactNode; run: (report: (detail: ReactNode) => void) => unknown }
 <Checklist items={TaskProgress[]} onRetry? progress?={true} label? />   // a failed row shows its error and Try again
 
+const setup = useSetupProgress({ key, initial: Answers, store?: SetupStore })
+  // { loaded, index, setIndex, answers, answer(patch), finished, finish(), reset() }
+interface SetupStore<A> { load(): SetupRecord<A> | undefined | Promise<…>; save(record): void | Promise<void>; clear() }
+localSetupStore(key)   // the default: localStorage under `desk.setup.<key>`; never put secrets in answers
+
 <Wizard steps={WizardStep[]} index onIndexChange onFinish label? />
 interface WizardStep { id; name; title; description?; body?; glyph?; complete?; continueLabel?;
                        skip?: { label, onSkip }; working?; onEnter?;
