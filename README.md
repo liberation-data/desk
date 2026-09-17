@@ -18,6 +18,19 @@ Drag a window by its title bar to free it where it sits. Drop it against the lef
 that half. Resize from the sides, the bottom or the corner. Double-click the title bar, or press the green
 control, to fill the desk and back.
 
+Give the desk somewhere to keep layouts and windows come back the way they were left:
+
+```ts
+const desk = createDesk({ layouts: localLayoutStore('rides') })
+```
+
+A window you made small and moved to a corner opens small and in the corner next time; one you zoomed opens
+filling the desk. It is remembered per kind of window, so `query#2` opens where `query` was left. If the desk
+has shrunk since, the window is moved back on and made smaller, and opens filled if it would be too small to
+use. Another window of a kind already open steps down and to the right of it, wrapping to the top-left at the
+edge. Arrange and a frame passed to `open` are not remembered. `LayoutStore` is two synchronous functions,
+`load(type)` and `save(type, layout)`, for keeping layouts somewhere other than this browser.
+
 ## Use it
 
 ```tsx
@@ -488,7 +501,7 @@ npm install
 npm test            # vitest
 npm run typecheck
 npm run example     # the Garage sample in examples/garage
-npm run size        # the gzipped budget: core 10 KiB, react 46, css 10
+npm run size        # the gzipped budget: core 11 KiB, react 46, css 10
 npm run check       # everything CI runs
 npm run check:browser   # the generated-app bridge in real Chrome, against a running sample
 npm run build       # dist/

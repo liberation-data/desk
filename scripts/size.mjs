@@ -8,7 +8,7 @@ import { gzipSync } from 'node:zlib'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
-const BUDGETS = { core: 10, react: 46, css: 10 } // KiB gzipped
+const BUDGETS = { core: 11, react: 46, css: 10 } // KiB gzipped
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {

@@ -1,3 +1,5 @@
+import type { LayoutStore } from './layouts.js'
+
 export type WindowId = string
 
 export interface Frame {
@@ -40,6 +42,8 @@ export interface DeskOptions {
   /** Reports the stage's size, so floating windows open inside it. */
   readonly stage?: () => Size
   readonly initial?: DeskState
+  /** Remembers how each kind of window was left, and opens it that way again. */
+  readonly layouts?: LayoutStore
 }
 
 export interface OpenOptions {

@@ -161,7 +161,8 @@ describe('the garage sample', () => {
     await user.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Garage' }))
     await user.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: /Search/ }))
     await user.type(screen.getByRole('combobox', { name: 'Search' }), 'chain')
-    expect(screen.getAllByRole('option').length).toBeGreaterThan(0)
+    // Results arrive after the typing, not with it: search may be async.
+    expect((await screen.findAllByRole('option')).length).toBeGreaterThan(0)
   })
 
   it('runs setup again from the menu', async () => {

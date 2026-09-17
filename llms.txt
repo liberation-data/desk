@@ -46,7 +46,12 @@ Rules that are easy to get wrong:
 
 ```ts
 createDesk(options?: DeskOptions): Desk
-interface DeskOptions { cascade?: Partial<CascadeOptions>; stage?: () => Size; initial?: DeskState }
+interface DeskOptions { cascade?: Partial<CascadeOptions>; stage?: () => Size; initial?: DeskState; layouts?: LayoutStore }
+// layouts: remembers each window type's last mode/frame (saved by float/fill/zoom, not placeAll or open frames);
+// open() without mode/frame restores it, fitted to the stage (fills if too small); more instances step +x,+y.
+localLayoutStore(key): LayoutStore   // localStorage 'desk.layouts.<key>'
+interface LayoutStore { load(type): SavedLayout | undefined; save(type, layout: SavedLayout): void }
+fitFrame(frame, stage, min?): Frame | null; stepFrom(frame, open: Frame[], stage, step, margin): Frame
 
 interface Desk {
   getState(): DeskState
@@ -418,5 +423,5 @@ in the accessibility tree.
 - A `DeskProvider` already carries an event bus; `BusProvider` is only for supplying or sharing one.
 - `renderWindow` must be stable (module scope or `useCallback`) for the memoisation to hold.
 - `parse`/`syncWithLocation` warn once when no `isKnown` is given: unknown ids from a URL are then trusted.
-- `npm run size` enforces a gzipped budget: core 10 KiB, react 46 KiB, css 10 KiB.
+- `npm run size` enforces a gzipped budget: core 11 KiB, react 46 KiB, css 10 KiB.
 - The package is ESM only, with `"sideEffects": ["**/*.css"]`.

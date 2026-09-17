@@ -8,6 +8,7 @@ import type {
   Size,
   WindowId,
 } from './types.js'
+import { fitFrame, stepFrom } from './layouts.js'
 
 export interface Desk {
   getState(): DeskState
@@ -106,6 +107,7 @@ export function createDesk(options: DeskOptions = {}): Desk {
   let stage = options.stage ?? (() => DEFAULT_STAGE)
   let state = normalise(options.initial ?? EMPTY)
   const listeners = new Set<(state: DeskState) => void>()
+  const layouts = options.layouts
 
   const commit = (next: DeskState) => {
     if (next === state) return
@@ -142,6 +144,7 @@ export function createDesk(options: DeskOptions = {}): Desk {
     if (window.mode === 'floating' && !frame) return
     const next = frame ?? fits(remembered.get(id)) ?? nextFrame(state)
     if (frame) remembered.set(id, frame)
+    layouts?.save(windowType(id), { mode: 'floating', frame: next })
     commit(toFront(replace(state, { id, mode: 'floating', frame: next }), id))
   }
 
@@ -149,6 +152,7 @@ export function createDesk(options: DeskOptions = {}): Desk {
     const window = find(id)
     if (!window || window.mode === 'filled') return
     remembered.set(id, window.frame)
+    layouts?.save(windowType(id), { mode: 'filled' })
     commit(toFront(replace(state, { id, mode: 'filled' }), id))
   }
 
@@ -167,8 +171,19 @@ export function createDesk(options: DeskOptions = {}): Desk {
         commit(toFront(state, id))
         return
       }
-      const mode = opts.mode ?? (opts.frame ? 'floating' : 'filled')
-      const window: DeskWindow = mode === 'filled' ? { id, mode } : { id, mode, frame: opts.frame ?? nextFrame(state) }
+      const saved = opts.mode || opts.frame ? undefined : layouts?.load(windowType(id))
+      const kept = saved?.mode === 'floating' ? fitFrame(saved.frame, stage()) : null
+      const mode = opts.mode ?? (opts.frame || kept ? 'floating' : 'filled')
+      const frame = () => {
+        if (opts.frame) return opts.frame
+        if (!kept) return nextFrame(state)
+        const siblings = state.stack.flatMap(other => {
+          const w = find(other)
+          return w?.mode === 'floating' && windowType(w.id) === windowType(id) ? [w.frame] : []
+        })
+        return stepFrom(kept, siblings, stage(), cascade.step, cascade.margin)
+      }
+      const window: DeskWindow = mode === 'filled' ? { id, mode } : { id, mode, frame: frame() }
       commit({ windows: [...state.windows, window], stack: [...state.stack, id] })
     },
 

@@ -29,6 +29,8 @@ export { bindShortcuts, formatShortcut, isApplePlatform, isInstalledApp, matches
 export type { Keymap, Shortcut, ShortcutOptions } from './shortcuts.js'
 export { parse, serialize, syncWithLocation } from './location.js'
 export { isTitleCase, titleCase } from './titles.js'
+export { fitFrame, localLayoutStore, stepFrom } from './layouts.js'
+export type { LayoutStore, SavedLayout } from './layouts.js'
 export type { LocationEnv, LocationOptions } from './location.js'
 export type {
   CascadeOptions,
