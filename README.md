@@ -373,6 +373,24 @@ first item ready. Items are the menu bar's, so a command asks the responder chai
 runs from the item that was right-clicked. It closes on Escape, a click elsewhere, scrolling or resizing, and
 gives focus back. The HIG's rule stands: nothing lives only in a context menu.
 
+### Icon view
+
+```tsx
+<IconView
+  label="Apps"
+  items={apps.map(app => ({ id: app.id, label: app.name, subtitle: app.scope, icon: <AppIcon app={app} /> }))}
+  onOpen={app => desk.open(`app#${app.id}`)}
+  contextMenu={app => [menuAction('Open', () => desk.open(`app#${app.id}`))]}
+  drag={{ type: 'app', payload: app => app }}
+  empty="No apps yet."
+/>
+```
+
+A Finder's icons, in rows that follow the window's width. A click selects and a double-click opens;
+`openOn="single"` opens on one click, for a launcher. Arrows move through the grid (up and down by however
+many fit in a row), Home and End go to the ends, typing a name jumps to it, Return opens, and the Menu key
+opens the item's context menu. With `drag`, an icon can be carried to a drop target such as the dock.
+
 ## Commands and the responder chain
 
 Some commands name no target — Copy, Close, Find. They go to whoever is responsible, the way AppKit's

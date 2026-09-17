@@ -2555,3 +2555,113 @@
   border: 0;
   background: var(--desk-surface);
 }
+
+/* Icon view: a Finder's icons, in rows that follow the window's width. */
+.desk-icon-view {
+  list-style: none;
+  margin: 0;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  align-content: start;
+  gap: 8px;
+}
+
+.desk-icon-cell {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: default;
+  user-select: none;
+  outline: none;
+}
+
+.desk-icon-cell[aria-disabled="true"] {
+  opacity: .45;
+}
+
+.desk-icon-cell:focus-visible {
+  box-shadow: 0 0 0 2px var(--desk-accent);
+}
+
+.desk-icon-glyph {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: 1px solid var(--desk-rule);
+  background: var(--desk-dock-icon);
+  color: var(--desk-ink);
+}
+
+.desk-icon-glyph > svg,
+.desk-icon-glyph > img {
+  width: 55%;
+  height: 55%;
+  object-fit: contain;
+}
+
+.desk-icon-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--desk-accent);
+  color: #fff;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.desk-icon-label {
+  max-width: 100%;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.desk-icon-subtitle {
+  max-width: 100%;
+  font-size: 11px;
+  color: var(--desk-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desk-icon-cell[aria-selected="true"] .desk-icon-glyph {
+  background: color-mix(in srgb, var(--desk-accent) 16%, transparent);
+}
+
+.desk-icon-cell[aria-selected="true"] .desk-icon-label {
+  background: var(--desk-accent);
+  color: #fff;
+}
+
+.desk-icon-view-empty {
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  color: var(--desk-muted);
+  text-align: center;
+}
+
+.desk-icon-drag {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+}

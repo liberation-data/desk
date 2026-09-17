@@ -222,6 +222,11 @@ windowMenuItems(state, focus, title): MenuItem[]
 const { target, menu, open } = useContextMenu({ label, items: () => MenuItem[], disabled? })
 // spread `target` (onContextMenu, onKeyDown) on the element; render `menu` anywhere (portal).
 // Right-click opens at the pointer; Menu key / Shift+F10 at the element. Commands run from that element.
+
+<IconView label items={{id, label, icon, subtitle?, badge?, disabled?}[]} onOpen={item => …}
+  openOn?="double"|"single" selected? onSelectionChange? contextMenu?={item => MenuItem[]}
+  drag?={{ type, payload: item => unknown }} empty? className? />
+// click selects, double-click / Return opens (single: click opens); arrows, Home/End, type-ahead. Needs a DeskProvider.
 ```
 
 Command items are enabled via `canPerform` as the menu opens, and menus bind their own shortcuts. Opening a
