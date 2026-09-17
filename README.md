@@ -104,7 +104,9 @@ Each control carries its own behaviour and accessibility; the look comes only fr
 style props on purpose. `intent="default"` marks the one action a view leads with. A segmented control is one
 tab stop whose arrow keys move the selection past disabled options. A toggle is a `switch` for settings that
 apply at once — a checkbox is for one that waits for Save. A text field always has a label (`labelHidden`
-keeps it for screen readers), and an `error` marks it invalid and replaces the help text.
+keeps it for screen readers), and an `error` marks it invalid and replaces the help text. A choice group
+is the handful of cards a setup step turns on — an icon, a label, a line of why — with native radios
+underneath, so it is one tab stop and the arrow keys move the choice.
 
 ## Setup assistant
 

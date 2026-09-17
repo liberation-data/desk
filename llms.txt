@@ -298,6 +298,8 @@ SearchCommand = 'desk.search'                          // a menu item can open i
 <Slider value onChange label min? max? step? disabled? format?={(v) => string} />
 <TextField label labelHidden? help? error? … />                             // error marks it invalid
 <RadioGroup options={{value,label,description?,disabled?}[]} value onChange label labelHidden? />
+<ChoiceGroup options={{value,label,description?,icon?,tag?,disabled?}[]} value onChange label labelHidden? />
+                                                  // cards for a setup step; native radios, arrow keys move the choice
 <PopUpButton value={T|null} onChange options={{value,label,description?,icon?,disabled?}[]}
              label labelHidden? placeholder? disabled? size? />
 ```

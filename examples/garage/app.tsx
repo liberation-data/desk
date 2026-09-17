@@ -15,6 +15,7 @@ import {
   AppFrame,
   Button,
   Checkbox,
+  ChoiceGroup,
   Composer,
   Desktop,
   DeskShell,
@@ -626,36 +627,6 @@ function CheckRow({ state, name, detail }: { readonly state: 'waiting' | 'workin
   )
 }
 
-/** A choice that needs an icon and a line of explanation: bigger than a radio, smaller than a page. */
-function ChoiceCard({
-  chosen,
-  icon,
-  name,
-  tag,
-  description,
-  disabled,
-  onChoose,
-}: {
-  readonly chosen: boolean
-  readonly icon: keyof typeof PATHS
-  readonly name: string
-  readonly tag?: ReactNode
-  readonly description: ReactNode
-  readonly disabled?: boolean
-  readonly onChoose: () => void
-}) {
-  return (
-    <button type="button" role="radio" aria-checked={chosen} className="choice" data-chosen={chosen || undefined} disabled={disabled} onClick={onChoose}>
-      <span className="choice-radio" aria-hidden="true" />
-      <span className="choice-icon" aria-hidden="true"><Icon name={icon} /></span>
-      <span className="choice-text">
-        <span className="choice-name">{name}{tag}</span>
-        <span className="choice-note">{description}</span>
-      </span>
-    </button>
-  )
-}
-
 function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) => void }) {
   const [index, setIndex] = useState(0)
   const [workshop, setWorkshop] = useState<0 | 1 | 2>(0)
@@ -669,7 +640,7 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
   const [maps, setMaps] = useState<'online' | 'offline' | 'none'>('online')
   const [jobs, setJobs] = useState(0)
   const [imported, setImported] = useState(0)
-  const [start, setStart] = useState('rides')
+  const [start, setStart] = useState<'rides' | 'parts' | 'weather' | 'chat'>('rides')
 
   const firstName = rider.trim().split(/\s+/)[0] || 'Jasper'
   const named = rider.trim().split(/\s+/).length >= 2
@@ -846,30 +817,17 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
       title: 'Where the maps come from',
       description: 'Routes are drawn on a map. It can come down as you ride, or live on this machine for the days you have no signal.',
       body: (
-        <div className="choices" role="radiogroup" aria-label="Map source">
-          <ChoiceCard
-            chosen={maps === 'online'}
-            icon="route"
-            name="As you go"
-            description="Nothing to download. Needs a connection when you open a route."
-            onChoose={() => setMaps('online')}
-          />
-          <ChoiceCard
-            chosen={maps === 'offline'}
-            icon="map"
-            name="On this machine"
-            tag={<span className="chip"> ~1.1 GB</span>}
-            description="Your state, downloaded once. Works with no signal at all."
-            onChoose={() => setMaps('offline')}
-          />
-          <ChoiceCard
-            chosen={maps === 'none'}
-            icon="gear"
-            name="Not now"
-            description="Routes stay as numbers until you turn maps on in Settings."
-            onChoose={() => setMaps('none')}
-          />
-        </div>
+        <ChoiceGroup
+          label="Map source"
+          labelHidden
+          value={maps}
+          onChange={setMaps}
+          options={[
+            { value: 'online', icon: <Icon name="route" />, label: 'As you go', description: 'Nothing to download. Needs a connection when you open a route.' },
+            { value: 'offline', icon: <Icon name="map" />, label: 'On this machine', tag: '~1.1 GB', description: 'Your state, downloaded once. Works with no signal at all.' },
+            { value: 'none', icon: <Icon name="gear" />, label: 'Not now', description: 'Routes stay as numbers until you turn maps on in Settings.' },
+          ]}
+        />
       ),
     },
     {
@@ -917,39 +875,25 @@ function Setup({ onDone }: { readonly onDone: (profile: Profile, start: string) 
       description: 'Pick where to start. Everything else is in the dock, and ⌘K searches the lot.',
       continueLabel: 'Open the garage',
       body: (
-        <div className="choices" role="radiogroup" aria-label="Where to start">
-          <ChoiceCard
-            chosen={start === 'rides'}
-            icon="ride"
-            name="Look at your rides"
-            tag={maps === 'none' ? undefined : <span className="chip"> 24 imported</span>}
-            description="Sort them, filter by bike, and send one to the map."
-            onChoose={() => setStart('rides')}
-          />
-          <ChoiceCard
-            chosen={start === 'parts'}
-            icon="chain"
-            name="Check what is worn"
-            description="Wear counted from the rides each bike has done."
-            onChoose={() => setStart('parts')}
-          />
-          <ChoiceCard
-            chosen={start === 'weather'}
-            icon="weather"
-            name="Pick a day to ride"
-            tag={keyState === 'ok' ? undefined : <span className="chip"> needs a key</span>}
-            description={keyState === 'ok' ? 'The next three days, from your door.' : 'Add a weather key from Settings first.'}
-            disabled={keyState !== 'ok'}
-            onChoose={() => setStart('weather')}
-          />
-          <ChoiceCard
-            chosen={start === 'chat'}
-            icon="chat"
-            name="Ask the mechanic"
-            description="What needs doing first, and which bike wore it out."
-            onChoose={() => setStart('chat')}
-          />
-        </div>
+        <ChoiceGroup
+          label="Where to start"
+          labelHidden
+          value={start}
+          onChange={setStart}
+          options={[
+            { value: 'rides', icon: <Icon name="ride" />, label: 'Look at your rides', ...(maps === 'none' ? {} : { tag: '24 imported' }), description: 'Sort them, filter by bike, and send one to the map.' },
+            { value: 'parts', icon: <Icon name="chain" />, label: 'Check what is worn', description: 'Wear counted from the rides each bike has done.' },
+            {
+              value: 'weather',
+              icon: <Icon name="weather" />,
+              label: 'Pick a day to ride',
+              ...(keyState === 'ok' ? {} : { tag: 'needs a key' }),
+              description: keyState === 'ok' ? 'The next three days, from your door.' : 'Add a weather key from Settings first.',
+              disabled: keyState !== 'ok',
+            },
+            { value: 'chat', icon: <Icon name="chat" />, label: 'Ask the mechanic', description: 'What needs doing first, and which bike wore it out.' },
+          ]}
+        />
       ),
     },
   ]

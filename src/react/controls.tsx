@@ -232,6 +232,63 @@ export function RadioGroup<T extends string>({ options, value, onChange, label, 
   )
 }
 
+export interface ChoiceOption<T extends string> {
+  readonly value: T
+  readonly label: string
+  readonly description?: ReactNode
+  /** Decorative, beside the label. */
+  readonly icon?: ReactNode
+  /** A short aside after the label: a size, "needs a key". */
+  readonly tag?: ReactNode
+  readonly disabled?: boolean
+}
+
+export interface ChoiceGroupProps<T extends string> {
+  readonly options: readonly ChoiceOption<T>[]
+  readonly value: T | null
+  readonly onChange: (value: T) => void
+  readonly label: string
+  readonly labelHidden?: boolean
+}
+
+/**
+ * The few choices a setup step turns on, as cards: bigger than a radio, smaller than a page.
+ * Native radios underneath, so the group is one tab stop and the arrow keys move the choice.
+ */
+export function ChoiceGroup<T extends string>({ options, value, onChange, label, labelHidden }: ChoiceGroupProps<T>) {
+  const name = useId()
+  return (
+    <fieldset className="desk-choices">
+      <legend className="desk-label" data-hidden={labelHidden || undefined}>{label}</legend>
+      {options.map(option => {
+        const id = `${name}-${option.value}`
+        const chosen = option.value === value
+        return (
+          <label key={option.value} htmlFor={id} className="desk-choice" data-chosen={chosen || undefined} data-disabled={option.disabled || undefined}>
+            <input
+              id={id}
+              type="radio"
+              name={name}
+              className="desk-choice-input"
+              value={option.value}
+              checked={chosen}
+              disabled={option.disabled}
+              aria-describedby={option.description ? `${id}-description` : undefined}
+              onChange={() => onChange(option.value)}
+            />
+            <span className="desk-choice-mark" aria-hidden="true" />
+            {option.icon && <span className="desk-choice-icon" aria-hidden="true">{option.icon}</span>}
+            <span className="desk-choice-text">
+              <span className="desk-choice-label">{option.label}{option.tag && <span className="desk-choice-tag">{option.tag}</span>}</span>
+              {option.description && <span id={`${id}-description`} className="desk-help">{option.description}</span>}
+            </span>
+          </label>
+        )
+      })}
+    </fieldset>
+  )
+}
+
 export interface SliderProps {
   readonly value: number
   readonly onChange: (value: number) => void

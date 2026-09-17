@@ -21,11 +21,13 @@ export { Desktop } from './Desktop.js'
 export type { DeskLayout, DesktopProps } from './Desktop.js'
 export { lazyWindow } from './windowBoundary.js'
 export type { WindowFailed, WindowLoading } from './windowBoundary.js'
-export { Button, Checkbox, RadioGroup, SegmentedControl, Slider, TextField, Toggle } from './controls.js'
+export { Button, Checkbox, ChoiceGroup, RadioGroup, SegmentedControl, Slider, TextField, Toggle } from './controls.js'
 export type {
   ButtonIntent,
   ButtonProps,
   CheckboxProps,
+  ChoiceGroupProps,
+  ChoiceOption,
   RadioGroupProps,
   RadioOption,
   SegmentedControlProps,

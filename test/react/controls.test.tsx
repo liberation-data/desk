@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Button, SegmentedControl, TextField, Toggle } from '../../src/react/index.js'
+import { Button, ChoiceGroup, SegmentedControl, TextField, Toggle } from '../../src/react/index.js'
 
 afterEach(cleanup)
 
@@ -130,5 +130,51 @@ describe('TextField', () => {
     render(<TextField label="Rider name" onChange={onChange} />)
     await user.type(screen.getByRole('textbox'), 'Jasper')
     expect(onChange).toHaveBeenCalledTimes(6)
+  })
+})
+
+describe('ChoiceGroup', () => {
+  function Maps({ onChange = () => {} }: { readonly onChange?: (value: string) => void }) {
+    const [value, setValue] = useState<'online' | 'offline' | 'none'>('online')
+    return (
+      <ChoiceGroup
+        label="Map source"
+        value={value}
+        onChange={next => {
+          setValue(next)
+          onChange(next)
+        }}
+        options={[
+          { value: 'online', label: 'As you go', description: 'Nothing to download.' },
+          { value: 'offline', label: 'On this machine', tag: '~1.1 GB', description: 'Works with no signal.' },
+          { value: 'none', label: 'Not now', disabled: true },
+        ]}
+      />
+    )
+  }
+
+  it('is a group of radios, one of them chosen, named by its label', () => {
+    render(<Maps />)
+    const group = screen.getByRole('group', { name: 'Map source' })
+    const radios = within(group).getAllByRole('radio')
+    expect(radios).toHaveLength(3)
+    expect(new Set(radios.map(r => r.getAttribute('name'))).size).toBe(1)
+    expect(screen.getByRole('radio', { name: /As you go/ })).toHaveProperty('checked', true)
+    expect(screen.getByRole('radio', { name: /On this machine/ }).getAttribute('aria-describedby')).toBeTruthy()
+  })
+
+  it('chooses a card when it is pressed anywhere', () => {
+    const onChange = vi.fn()
+    render(<Maps onChange={onChange} />)
+    fireEvent.click(screen.getByText('Works with no signal.'))
+    expect(onChange).toHaveBeenCalledWith('offline')
+    expect(screen.getByRole('radio', { name: /On this machine/ })).toHaveProperty('checked', true)
+  })
+
+  it('does not choose a disabled card', () => {
+    const onChange = vi.fn()
+    render(<Maps onChange={onChange} />)
+    fireEvent.click(screen.getByText('Not now'))
+    expect(onChange).not.toHaveBeenCalled()
   })
 })
