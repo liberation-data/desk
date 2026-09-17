@@ -316,7 +316,54 @@ From least to most interrupting — use the least that works:
 
 ---
 
-## 8. Inputs
+## 8. First run
+
+The first few minutes decide whether someone stays. Most people will not read a manual, and nobody should
+reach an empty desktop without knowing what to do next.
+
+### Ask only what cannot wait
+
+- Ask for what the app cannot start without. Everything else waits until it is needed, and says where it
+  will be: "Add one from Settings later".
+- **Read before you ask.** Find what is already there — files, connections, earlier answers — and show what
+  was found rather than asking someone to type it.
+- **Say why a question is asked,** at the moment it is asked. Better still, show the reason: why a full name
+  matters is clearer as a first name that could be anyone beside a full name that is one person.
+- Fill in what can be guessed, and let it be changed.
+
+### One question at a time
+
+- A setup assistant (`Wizard`) takes the whole pane, one step at a time, with Back and Continue where the eye
+  already is. The progress row says how far there is to go.
+- A step that can wait offers a quiet way past it ("Set up later"), never a hidden one.
+- **Checking happens on Continue.** A key, an address or an account is checked when Continue is pressed;
+  Continue says what it is doing ("Checking the key…"), cannot be pressed twice, and a refusal keeps the
+  person on the step with a message that says what to do — not an error on the next step.
+- Choices that need explaining are cards (`ChoiceGroup`): an icon, a name, a line of why.
+
+### Show the work
+
+- Work the setup does while someone waits is a checklist (`Checklist`), in order, each line saying how it is
+  getting on in words a person uses: "12 of 24 rides", not a percentage alone.
+- **A failure stops and says why,** in that line, with Try again that picks up where it stopped. Back comes
+  back, so a wrong earlier answer can be fixed.
+- Say what is not happening, when people worry about it: "Nothing you have entered is sent anywhere."
+
+### Hand over
+
+- **Setup ends in the app, not on a summary.** The last step asks where to start, in the person's terms
+  ("Look at your rides"), and opens that window in front.
+- **Offer a short tour on arrival,** and start it only if they say so. A tour opens the real windows and
+  points at the real controls; where it asks the person to do something, it waits until they have, then
+  moves on.
+- Setup is remembered. Closing the tab resumes where it was; a finished setup is not shown again, and can
+  be run again from a menu.
+- What is still left to do has a home that stays visible — a badge, a menu bar item — not a step that had
+  to be finished before the app would open.
+
+---
+
+## 9. Inputs
 
 ### Keyboard
 
@@ -340,7 +387,7 @@ From least to most interrupting — use the least that works:
 
 ---
 
-## 9. Checklist for a new component
+## 10. Checklist for a new component
 
 - [ ] Uses only tokens for colour, space, type, radius and motion.
 - [ ] Works in light and dark, with 4.5:1 text contrast in both.

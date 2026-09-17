@@ -807,7 +807,7 @@
   width: var(--desk-control-height);
 }
 
-/* A finger needs 44px even when the drawn control is smaller (HIG.md §8). */
+/* A finger needs 44px even when the drawn control is smaller (HIG.md §9). */
 @media (pointer: coarse) {
   .desk-button::after,
   .desk-toggle::after {

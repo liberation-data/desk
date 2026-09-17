@@ -148,8 +148,54 @@ that window is key, and `<InputBar>` falls back to the app when no window wants 
 | It is done, and nobody needs stopping | `toast.show(…)` |
 | Teaching the app itself | `<TourBar>` |
 | First run | `<Wizard>` |
+| Choices a setup step needs explained | `<ChoiceGroup>` |
+| Work a setup does while someone waits | `useTasks` and `<Checklist>` |
 
 The [HIG](../HIG.md) has the reasoning; §7 is the ladder from least interrupting to most.
+
+### First run, end to end
+
+The pieces fit together like this, and HIG §8 says why each one is there:
+
+```tsx
+function App() {
+  const progress = useSetupProgress({ key: 'worlds', initial: { start: 'realms' } })
+  const [arrived, setArrived] = useState(false)
+  const install = useTasks([{ id: 'realm', name: 'Install the starter realm', run: installStarter }])
+  if (!progress.loaded) return null
+
+  if (!progress.finished) {
+    const steps: WizardStep[] = [
+      { id: 'account', name: 'Account', title: 'Create your account', onContinue: createAccount, busyLabel: 'Creating…', body: <AccountFields /> },
+      { id: 'install', name: 'Install', title: 'Getting ready', working: !install.failed, complete: install.done,
+        onEnter: install.restart, body: <Checklist items={install.items} onRetry={install.start} /> },
+      { id: 'start', name: 'Start', title: 'Where to start', continueLabel: 'Open',
+        body: <ChoiceGroup label="Where to start" value={progress.answers.start} onChange={start => progress.answer({ start })} options={STARTS} /> },
+    ]
+    const finish = () => {
+      desk.open(progress.answers.start)
+      setArrived(true)
+      progress.finish()
+    }
+    return <Wizard steps={steps} index={progress.index} onIndexChange={progress.setIndex} onFinish={finish} />
+  }
+
+  return (
+    <DeskShell desk={desk}>
+      <MenuBar … />
+      <Desktop … />
+      {arrived && <TourBar tour={FIRST_LOOK} offer onStop={() => setArrived(false)} onFinish={() => setArrived(false)} />}
+    </DeskShell>
+  )
+}
+```
+
+- `onContinue` creates the account; a refusal stays on the step with the reason.
+- `useTasks` installs what the app needs; a failure says why, and Try again resumes.
+- The chosen window opens last, so it is the one in front.
+- The tour is offered once, on arrival; a step with `until` waits for the person to do it.
+- `useSetupProgress` resumes a half-finished setup and skips a finished one. Pass a `store` to keep it on
+  your server instead of in the browser.
 
 ## 8. Making it yours
 

@@ -400,6 +400,9 @@ in the accessibility tree.
 - React 19 is a peer dependency; the core entry point imports no React and touches no DOM except through
   the command helpers.
 - Focus follows the key window when it changes, but never on first render.
+- First run (HIG §8): check on Continue with `onContinue`, not on the next step; show waiting work with
+  `useTasks` + `Checklist`; open the chosen window last so it is in front; offer the tour (`offer`) once on
+  arrival; remember progress with `useSetupProgress`, and never put passwords or keys in its answers.
 - A `DeskProvider` already carries an event bus; `BusProvider` is only for supplying or sharing one.
 - `renderWindow` must be stable (module scope or `useCallback`) for the memoisation to hold.
 - `parse`/`syncWithLocation` warn once when no `isKnown` is given: unknown ids from a URL are then trusted.
