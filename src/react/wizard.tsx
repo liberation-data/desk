@@ -30,7 +30,7 @@ export interface WizardStep {
   readonly working?: boolean
   readonly onEnter?: () => void
   /**
-   * Work Continue does before moving on: create the account, check the key, install the realm.
+   * Work Continue does before moving on: create the account, check the key, download the maps.
    * While it runs, Continue says so and nothing can be pressed twice. Throw to stay on the step
    * and show why, in the step; return `false` to stay without a message.
    */

@@ -1,6 +1,6 @@
 /*
  * App and window names are names, so they are written in title case: Ride Card,
- * Parts & Wear, What Next. It is not applied for you, because a window showing one
+ * Parts & Wear, Service History. It is not applied for you, because a window showing one
  * document takes that document's own name, as written. Use `titleCase` where a name
  * is defined, and `isTitleCase` in a test over the names an app defines.
  */

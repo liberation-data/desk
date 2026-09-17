@@ -24,10 +24,10 @@ function deferred() {
   return { promise, resolve, reject }
 }
 
-const Studio = () => <p>Query studio</p>
+const Studio = () => <p>Route planner</p>
 
 function Broken(): React.JSX.Element {
-  throw new Error('the realm is not installed')
+  throw new Error('the map tiles are missing')
 }
 
 function mount(renderWindow: (id: string) => React.ReactNode, extra: { loading?: WindowLoading; failed?: WindowFailed } = {}): Desk {
@@ -51,7 +51,7 @@ describe('a window whose code loads when it opens', () => {
     act(() => desk.open('query'))
     expect(within(windowBody('query')).getByRole('status').textContent).toBe('Loading…')
     await act(async () => load.resolve({ default: Studio }))
-    expect(within(windowBody('query')).getByText('Query studio')).toBeTruthy()
+    expect(within(windowBody('query')).getByText('Route planner')).toBeTruthy()
   })
 
   it('does not load until it is opened', () => {
@@ -83,7 +83,7 @@ describe('a window that cannot open', () => {
     })
     const alert = within(windowBody('broken')).getByRole('alert')
     expect(alert.textContent).toContain('This window could not open')
-    expect(alert.textContent).toContain('the realm is not installed')
+    expect(alert.textContent).toContain('the map tiles are missing')
     expect(screen.getByText('notes content')).toBeTruthy()
     expect(screen.getByText('menu bar')).toBeTruthy()
   })
@@ -99,7 +99,7 @@ describe('a window that cannot open', () => {
     await act(async () => desk.open('query'))
     expect(within(windowBody('query')).getByRole('alert').textContent).toContain('the network dropped')
     await act(async () => fireEvent.click(within(windowBody('query')).getByRole('button', { name: 'Reload' })))
-    expect(within(windowBody('query')).getByText('Query studio')).toBeTruthy()
+    expect(within(windowBody('query')).getByText('Route planner')).toBeTruthy()
     expect(attempts).toBe(2)
   })
 
@@ -122,6 +122,6 @@ describe('the app’s own wording', () => {
       desk.open('broken')
     })
     expect(screen.getByText('Opening query…')).toBeTruthy()
-    expect(screen.getByText('broken: the realm is not installed')).toBeTruthy()
+    expect(screen.getByText('broken: the map tiles are missing')).toBeTruthy()
   })
 })

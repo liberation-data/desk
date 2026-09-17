@@ -39,18 +39,18 @@ describe('useTasks and Checklist', () => {
     render(
       <Setup
         tasks={[
-          { id: 'install', name: 'Install the realm', run: () => install.promise },
-          { id: 'read', name: 'Read the documents', detail: 'Waiting for the realm', run: () => read.promise },
+          { id: 'install', name: 'Save the profile', run: () => install.promise },
+          { id: 'read', name: 'Import the rides', detail: 'Waiting for the profile', run: () => read.promise },
         ]}
       />,
     )
-    expect(row('Install the realm').dataset.state).toBe('waiting')
+    expect(row('Save the profile').dataset.state).toBe('waiting')
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
-    expect(row('Install the realm').dataset.state).toBe('working')
-    expect(row('Read the documents').dataset.state).toBe('waiting')
+    expect(row('Save the profile').dataset.state).toBe('working')
+    expect(row('Import the rides').dataset.state).toBe('waiting')
     await act(async () => install.open())
-    expect(row('Install the realm').dataset.state).toBe('done')
-    expect(row('Read the documents').dataset.state).toBe('working')
+    expect(row('Save the profile').dataset.state).toBe('done')
+    expect(row('Import the rides').dataset.state).toBe('working')
     expect(screen.getByRole('progressbar', { name: 'Setting up' }).getAttribute('aria-valuenow')).toBe('1')
     await act(async () => read.open())
     expect(screen.getByText('all done')).toBeTruthy()
@@ -85,13 +85,13 @@ describe('useTasks and Checklist', () => {
     render(
       <Setup
         tasks={[
-          { id: 'install', name: 'Install the realm', run: () => void (installs += 1) },
+          { id: 'install', name: 'Save the profile', run: () => void (installs += 1) },
           {
             id: 'read',
-            name: 'Read the documents',
+            name: 'Import the rides',
             run: () => {
               reads += 1
-              if (reads === 1) throw new Error('The folder could not be opened. Check it still exists.')
+              if (reads === 1) throw new Error('The ride log could not be opened. Check it still exists.')
             },
           },
           { id: 'watch', name: 'Watch for new ones', run: () => {} },
@@ -99,12 +99,12 @@ describe('useTasks and Checklist', () => {
       />,
     )
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Start' })))
-    expect(row('Read the documents').dataset.state).toBe('failed')
-    expect(within(row('Read the documents')).getByRole('alert').textContent).toContain('could not be opened')
+    expect(row('Import the rides').dataset.state).toBe('failed')
+    expect(within(row('Import the rides')).getByRole('alert').textContent).toContain('could not be opened')
     expect(row('Watch for new ones').dataset.state).toBe('waiting')
     expect(screen.getByText('stopped')).toBeTruthy()
 
-    await act(async () => fireEvent.click(within(row('Read the documents')).getByRole('button', { name: 'Try again' })))
+    await act(async () => fireEvent.click(within(row('Import the rides')).getByRole('button', { name: 'Try again' })))
     expect(screen.getByText('all done')).toBeTruthy()
     expect(installs).toBe(1)
     expect(reads).toBe(2)
@@ -112,7 +112,7 @@ describe('useTasks and Checklist', () => {
 
   it('runs everything again on restart', async () => {
     let installs = 0
-    render(<Setup tasks={[{ id: 'install', name: 'Install the realm', run: () => void (installs += 1) }]} />)
+    render(<Setup tasks={[{ id: 'install', name: 'Save the profile', run: () => void (installs += 1) }]} />)
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Start' })))
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Restart' })))
     expect(installs).toBe(2)

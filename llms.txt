@@ -127,7 +127,7 @@ matchesShortcut(event, shortcut, apple?): boolean
 formatShortcut('mod+comma', apple?): string        // '⌘,' or 'Ctrl+,'
 isApplePlatform(): boolean
 isInstalledApp(): boolean                          // gate ⌘W / ⌘` on this; never take ⌘T or ⌘N
-titleCase('what next'): string                    // 'What Next' — app and window names; a document keeps its own name
+titleCase('ride card'): string                    // 'Ride Card' — app and window names; a document keeps its own name
 isTitleCase(name): boolean                         // for a test over the names an app defines
 ```
 
@@ -189,7 +189,7 @@ useWindowId(): string | null                        // inside a window's content
 ### Loading and failing, per window
 
 ```tsx
-const QueryStudio = lazyWindow(() => import('./apps/QueryStudio'))   // use in renderWindow
+const RoutePlanner = lazyWindow(() => import('./apps/RoutePlanner'))   // use in renderWindow
 ```
 
 Every window has its own Suspense and error boundary: one window loading or throwing never blanks another,
@@ -406,5 +406,5 @@ in the accessibility tree.
 - A `DeskProvider` already carries an event bus; `BusProvider` is only for supplying or sharing one.
 - `renderWindow` must be stable (module scope or `useCallback`) for the memoisation to hold.
 - `parse`/`syncWithLocation` warn once when no `isKnown` is given: unknown ids from a URL are then trusted.
-- `npm run size` enforces a gzipped budget: core 9 KiB, react 46 KiB, css 9 KiB.
+- `npm run size` enforces a gzipped budget: core 10 KiB, react 46 KiB, css 10 KiB.
 - The package is ESM only, with `"sideEffects": ["**/*.css"]`.

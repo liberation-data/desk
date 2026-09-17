@@ -159,9 +159,9 @@ The pieces fit together like this, and HIG §8 says why each one is there:
 
 ```tsx
 function App() {
-  const progress = useSetupProgress({ key: 'worlds', initial: { start: 'realms' } })
+  const progress = useSetupProgress({ key: 'garage', initial: { start: 'rides' } })
   const [arrived, setArrived] = useState(false)
-  const install = useTasks([{ id: 'realm', name: 'Install the starter realm', run: installStarter }])
+  const install = useTasks([{ id: 'rides', name: 'Import your rides', run: importRides }])
   if (!progress.loaded) return null
 
   if (!progress.finished) {
@@ -241,7 +241,7 @@ when a test cares where a floating window lands.
   `{ at: 'app' }`.
 - **Keep `renderWindow` stable** — module scope, or `useCallback`. Window content is memoised on it, so an
   inline arrow function gives that up.
-- **Load big windows lazily.** `lazyWindow(() => import('./QueryStudio'))` keeps a window's code out of the
+- **Load big windows lazily.** `lazyWindow(() => import('./RoutePlanner'))` keeps a window's code out of the
   first load, and each window already has its own loading and error state, so one slow or broken window
   never takes the desk down with it.
 - **A search that returns a promise is fine;** a slower answer to an older query never overtakes a newer one.

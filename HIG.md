@@ -124,7 +124,7 @@ Colour has **roles**, not names. Components use roles; a theme assigns colours t
 
 - Name things the way people who use the app name them, not the way the code does.
 - Buttons say what happens: **Delete ride**, not **OK**. A confirmation repeats the verb.
-- **App and window names are names, in title case:** Ride Card, Parts & Wear, What Next. Short articles,
+- **App and window names are names, in title case:** Ride Card, Parts & Wear, Service History. Short articles,
   conjunctions and prepositions stay lower case inside a name. A window that shows one document takes the
   document's own name, as written: **Dandenongs loop**. `titleCase` and `isTitleCase` help.
 - Sentence case for everything else — headings, buttons, menu items, labels.

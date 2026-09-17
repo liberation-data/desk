@@ -3,8 +3,8 @@ import type { ReactNode } from 'react'
 import { Button } from './controls.js'
 
 /*
- * The jobs a setup does while the person watches: install the realm, read the
- * documents, store the key. They run in order, each says how it is getting on,
+ * The jobs a setup does while the person watches: save the profile, import the
+ * rides, store the key. They run in order, each says how it is getting on,
  * and one that fails stops the rest and says why — with a retry that picks up
  * where it stopped, not from the top.
  */

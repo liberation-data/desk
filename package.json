@@ -1,7 +1,7 @@
 {
   "name": "@liberation-data/desk",
-  "version": "0.0.1",
-  "description": "A desktop for the web: windows that tile first and float when asked, for React.",
+  "version": "0.1.0",
+  "description": "A desktop for the web, for React: windows, a dock, menus and commands, controls, tours and setup assistants.",
   "license": "Apache-2.0",
   "author": "Jasper Blues",
   "repository": {

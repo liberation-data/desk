@@ -3,8 +3,8 @@ import { isTitleCase, titleCase } from '../../src/core/index.js'
 
 describe('titleCase', () => {
   it('capitalises each word of a name', () => {
-    expect(titleCase('what next')).toBe('What Next')
-    expect(titleCase('realm store')).toBe('Realm Store')
+    expect(titleCase('service history')).toBe('Service History')
+    expect(titleCase('route planner')).toBe('Route Planner')
   })
 
   it('keeps short joining words lower case, except at either end', () => {

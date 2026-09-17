@@ -90,7 +90,7 @@ export function WindowBoundary({
 /**
  * A window whose code loads when it is first opened.
  *
- *   const QueryStudio = lazyWindow(() => import('./apps/QueryStudio'))
+ *   const RoutePlanner = lazyWindow(() => import('./apps/RoutePlanner'))
  *
  * Unlike `React.lazy`, a load that fails is not remembered: Reload in the window
  * tries the import again, so a dropped connection is not permanent.

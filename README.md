@@ -47,7 +47,7 @@ Two windows onto the same thing are the same kind with different ids: `desk.open
 A window's code can wait until the window opens, and each window loads and fails on its own:
 
 ```tsx
-const QueryStudio = lazyWindow(() => import('./apps/QueryStudio'))
+const RoutePlanner = lazyWindow(() => import('./apps/RoutePlanner'))
 ```
 
 While it loads, that window says so and the rest of the desk carries on; if it cannot open, that window says
@@ -133,8 +133,8 @@ field in the pane keeps what is typed.
 
 ```tsx
 const setup = useTasks([
-  { id: 'realm', name: 'Install the ledger realm', run: () => install('ledger') },
-  { id: 'docs', name: 'Read your documents', run: async report => { for await (const n of ingest()) report(`${n} of 40`) } },
+  { id: 'profile', name: 'Save your profile', run: () => saveProfile(profile) },
+  { id: 'rides', name: 'Import your rides', run: async report => { for await (const n of importRides()) report(`${n} of 24`) } },
 ])
 
 { id: 'finishing', name: 'Finishing', title: 'Setting up', working: !setup.failed, complete: setup.done,
@@ -146,7 +146,7 @@ that throws stops the rest and shows why, with **Try again** picking up from the
 from the top. `working: !setup.failed` gives the step its Back again once something has gone wrong.
 
 ```tsx
-const progress = useSetupProgress({ key: 'worlds', initial: { name: '', realm: null }, store: serverStore })
+const progress = useSetupProgress({ key: 'garage', initial: { rider: '', bikes: [] }, store: serverStore })
 if (!progress.loaded) return null
 if (!progress.finished) return <Wizard index={progress.index} onIndexChange={progress.setIndex} onFinish={progress.finish} … />
 ```
@@ -425,7 +425,7 @@ npm install
 npm test            # vitest
 npm run typecheck
 npm run example     # the Garage sample in examples/garage
-npm run size        # the gzipped budget: core 9 KiB, react 46, css 9
+npm run size        # the gzipped budget: core 10 KiB, react 46, css 10
 npm run check       # everything CI runs
 npm run check:browser   # the generated-app bridge in real Chrome, against a running sample
 npm run build       # dist/
