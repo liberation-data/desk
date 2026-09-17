@@ -192,6 +192,14 @@ the stage.
 - A title is the name of the thing, not the app: **Dandenongs loop**, not **Garage — Map**.
 - A title bar may hold at most one or two window-wide actions on its trailing side. Anything more belongs
   in a toolbar inside the window.
+- The trailing side may also carry, in this order: a **note** saying what this window is looking at — the
+  request behind it, the file it is editing — and an **(i)** holding what the window is. Both are quiet, and
+  the note is cut before the title is when the window is narrow.
+- An (i) is for explanation only, and always in the same corner, so somebody who wonders what they are
+  looking at knows where to ask without hunting. A warning never goes behind one: put it in the window,
+  where it will be read.
+- A window that opens with a paragraph makes everyone read it to reach what they came for. Put the
+  paragraph behind the (i) and lead with the work.
 
 ### Opening and closing
 

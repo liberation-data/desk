@@ -80,6 +80,11 @@ when focus moves, so scroll positions, carets and iframes survive.
 />
 ```
 
+`info` puts an (i) at the end of the title bar, holding what this window is. Every window that has one
+keeps it in the same place, so somebody who wonders what they are looking at always knows where to ask;
+a window with nothing to explain has none. Explanation only, as with `InfoTip` — a warning belongs in the
+window itself.
+
 `note` puts a quiet line on the trailing side of a window's title bar: the request behind it, the file being
 edited, how many rows were found. It is text, not a control — the title names the window, the note says what
 this one is looking at, and in a narrow window the note is cut before the title is. Return null for a window

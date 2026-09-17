@@ -4,6 +4,7 @@ import { addCommandHandler, addDeskCommands, DeskCommands, STAGE_ATTRIBUTE, WIND
 import { focusedId } from '../core/desk.js'
 import type { DeskWindow, Frame, WindowId } from '../core/types.js'
 import { arrangement } from './arrange.js'
+import { InfoTip } from './infoTip.js'
 import { useDesk, useDeskState, WindowContext } from './context.js'
 import { WindowBoundary } from './windowBoundary.js'
 import type { WindowFailed, WindowLoading } from './windowBoundary.js'
@@ -19,6 +20,12 @@ export interface DesktopProps {
    * gives way to the actions and disappears before the title does when the window is narrow.
    */
   readonly note?: (id: WindowId) => ReactNode
+  /**
+   * What this window is, behind an (i) at the end of its title bar — the same place in every window,
+   * so a person who wonders what they are looking at always knows where to ask. Explanation only: a
+   * warning, or anything that changes what someone is about to do, belongs in the window itself.
+   */
+  readonly info?: (id: WindowId) => ReactNode
   /** Window-wide controls on the trailing side of the title bar. One or two; more belongs in a toolbar. */
   readonly actions?: (id: WindowId) => ReactNode
   /** Shown when no window is open. */
@@ -76,7 +83,7 @@ const halfFrame = (stage: HTMLElement, side: 'start' | 'end'): Frame => {
   return { x: side === 'start' ? area.x : area.x + width + area.gap, y: area.y, width, height: area.height }
 }
 
-export function Desktop({ renderWindow, title, note, actions, empty, loading, failed, layout = 'auto', className }: DesktopProps) {
+export function Desktop({ renderWindow, title, note, info, actions, empty, loading, failed, layout = 'auto', className }: DesktopProps) {
   const desk = useDesk()
   const state = useDeskState()
   const stage = useRef<HTMLDivElement>(null)
@@ -157,6 +164,7 @@ export function Desktop({ renderWindow, title, note, actions, empty, loading, fa
           hidden={mode === 'fullscreen' && window.id !== focused}
           title={title(window.id)}
           note={note?.(window.id)}
+          info={info?.(window.id)}
           actions={actions?.(window.id)}
         >
           {/* Memoised on the id and the render function: moving or focusing a window
@@ -192,6 +200,7 @@ interface WindowViewProps {
   readonly focused: boolean
   readonly title: ReactNode
   readonly note?: ReactNode
+  readonly info?: ReactNode
   readonly actions?: ReactNode
   readonly children: ReactNode
 }
@@ -218,7 +227,7 @@ function reshape(gesture: Gesture, origin: Frame, dx: number, dy: number): Frame
   }
 }
 
-function WindowView({ window, layout, hidden, depth, focused, title, note, actions, children }: WindowViewProps) {
+function WindowView({ window, layout, hidden, depth, focused, title, note, info, actions, children }: WindowViewProps) {
   const desk = useDesk()
   // While dragging, the frame lives here and commits once on release, so a drag
   // re-renders one window rather than notifying every subscriber per pixel.
@@ -340,6 +349,15 @@ function WindowView({ window, layout, hidden, depth, focused, title, note, actio
             {title}
           </h2>
           {note != null && note !== false && <p className="desk-window-note">{note}</p>}
+          {info != null && info !== false && (
+            <InfoTip
+              className="desk-window-info"
+              label={typeof title === 'string' ? `About ${title}` : 'About this window'}
+              align="end"
+            >
+              {info}
+            </InfoTip>
+          )}
           {actions && <div className="desk-window-actions">{actions}</div>}
         </header>
         <div className="desk-body">{children}</div>

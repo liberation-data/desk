@@ -142,6 +142,9 @@ that window is key, and `<InputBar>` falls back to the app when no window wants 
 | A setting that waits for Save | `<Checkbox>` |
 | Rows people sort and choose from | `<Table>` |
 | The places inside a window | `<Sidebar>` |
+| What a window is, for whoever asks | `<Desktop info>` (an (i) in the title bar) |
+| What a view would explain if asked | `<InfoTip>` |
+| Controls that stay while content scrolls | `<Pane>` and `<Toolbar>` |
 | A small task tied to one control | `<Popover>` |
 | A task belonging to one window | `<Sheet>` |
 | The app cannot continue until this is decided | `<Alert>` |

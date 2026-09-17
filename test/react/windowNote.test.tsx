@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createDesk } from '../../src/core/index.js'
 import { DeskProvider, Desktop } from '../../src/react/index.js'
@@ -38,5 +38,24 @@ describe('a window note', () => {
   it('does not take the window’s name from what reads it', () => {
     mount(() => 'GET /api/v1/admin/logs')
     expect(screen.getByRole('region', { name: 'logs' })).toBeTruthy()
+  })
+})
+
+describe('a window’s (i)', () => {
+  it('explains the window from the same place in every title bar, named after it', () => {
+    const desk = createDesk()
+    render(
+      <DeskProvider desk={desk}>
+        <Desktop title={id => id} info={id => (id === 'logs' ? <p>This process only.</p> : null)} renderWindow={id => <p>{id}</p>} />
+      </DeskProvider>,
+    )
+    act(() => {
+      desk.open('logs')
+      desk.open('rides')
+    })
+    // Only the window with something to explain has one.
+    expect(document.querySelectorAll('.desk-window-info')).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: 'About logs' }))
+    expect(screen.getByRole('dialog', { name: 'About logs' }).textContent).toBe('This process only.')
   })
 })

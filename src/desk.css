@@ -229,6 +229,20 @@
   color: var(--desk-muted);
 }
 
+/* The note gives up the spare room; the (i) keeps its place at the end of the bar. */
+.desk-window-note + .desk-window-info {
+  margin-left: var(--desk-space-2);
+}
+
+.desk-window-info {
+  margin-left: auto;
+}
+
+.desk-window-note ~ .desk-window-info {
+  margin-left: var(--desk-space-2);
+}
+
+.desk-window-info + .desk-window-actions,
 .desk-window-note + .desk-window-actions {
   margin-left: var(--desk-space-1);
 }
