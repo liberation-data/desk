@@ -13,6 +13,12 @@ export type DeskLayout = 'desktop' | 'fullscreen'
 export interface DesktopProps {
   readonly renderWindow: (id: WindowId) => ReactNode
   readonly title: (id: WindowId) => ReactNode
+  /**
+   * A quiet line on the trailing side of the title bar, saying what this window is looking at: the
+   * request behind it, the file it is editing, how many rows it found. Text, not a control — it
+   * gives way to the actions and disappears before the title does when the window is narrow.
+   */
+  readonly note?: (id: WindowId) => ReactNode
   /** Window-wide controls on the trailing side of the title bar. One or two; more belongs in a toolbar. */
   readonly actions?: (id: WindowId) => ReactNode
   /** Shown when no window is open. */
@@ -70,7 +76,7 @@ const halfFrame = (stage: HTMLElement, side: 'start' | 'end'): Frame => {
   return { x: side === 'start' ? area.x : area.x + width + area.gap, y: area.y, width, height: area.height }
 }
 
-export function Desktop({ renderWindow, title, actions, empty, loading, failed, layout = 'auto', className }: DesktopProps) {
+export function Desktop({ renderWindow, title, note, actions, empty, loading, failed, layout = 'auto', className }: DesktopProps) {
   const desk = useDesk()
   const state = useDeskState()
   const stage = useRef<HTMLDivElement>(null)
@@ -150,6 +156,7 @@ export function Desktop({ renderWindow, title, actions, empty, loading, failed, 
           // One window at a time: the rest stay mounted, keeping their state, and simply wait offstage.
           hidden={mode === 'fullscreen' && window.id !== focused}
           title={title(window.id)}
+          note={note?.(window.id)}
           actions={actions?.(window.id)}
         >
           {/* Memoised on the id and the render function: moving or focusing a window
@@ -184,6 +191,7 @@ interface WindowViewProps {
   readonly depth: number
   readonly focused: boolean
   readonly title: ReactNode
+  readonly note?: ReactNode
   readonly actions?: ReactNode
   readonly children: ReactNode
 }
@@ -210,7 +218,7 @@ function reshape(gesture: Gesture, origin: Frame, dx: number, dy: number): Frame
   }
 }
 
-function WindowView({ window, layout, hidden, depth, focused, title, actions, children }: WindowViewProps) {
+function WindowView({ window, layout, hidden, depth, focused, title, note, actions, children }: WindowViewProps) {
   const desk = useDesk()
   // While dragging, the frame lives here and commits once on release, so a drag
   // re-renders one window rather than notifying every subscriber per pixel.
@@ -331,6 +339,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, actions, ch
           <h2 id={titleId} className="desk-title">
             {title}
           </h2>
+          {note != null && note !== false && <p className="desk-window-note">{note}</p>}
           {actions && <div className="desk-window-actions">{actions}</div>}
         </header>
         <div className="desk-body">{children}</div>

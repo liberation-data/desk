@@ -216,6 +216,23 @@
   color: var(--desk-muted);
 }
 
+.desk-window-note {
+  margin: 0 0 0 auto;
+  min-width: 0;
+  /* The title is what the window IS; the note is what it is looking at. In a narrow window the note
+     gives up its room first, and is cut before the title is. */
+  flex: 0 999 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--desk-muted);
+}
+
+.desk-window-note + .desk-window-actions {
+  margin-left: var(--desk-space-1);
+}
+
 .desk-window-actions {
   margin-left: auto;
   display: flex;
