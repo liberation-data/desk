@@ -1,6 +1,10 @@
 name: Publish
 
-# Push a tag like v0.1.0 whose version matches package.json.
+# Push a tag like v0.2.0 whose version matches package.json.
+#
+# Publishes with npm trusted publishing: npm is told, in the package's settings,
+# that this repository's publish.yml may publish it, and GitHub proves that on
+# each run. There is no token to store or rotate, and provenance is automatic.
 on:
   push:
     tags: ['v*']
@@ -18,10 +22,18 @@ jobs:
           node-version: 24
           cache: npm
           registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@latest
       - run: npm ci
       - name: Tag matches package.json
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
-      # prepublishOnly runs typecheck, tests and build. Provenance needs the repository to be public.
-      - run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Not published already
+        id: published
+        run: |
+          if npm view "$(node -p "require('./package.json').name")@$(node -p "require('./package.json').version")" version >/dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "This version is already on npm; nothing to publish."
+          fi
+      # prepublishOnly runs typecheck, tests and build.
+      - if: steps.published.outputs.already != 'true'
+        run: npm publish --access public
