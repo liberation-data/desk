@@ -3,6 +3,11 @@ import type { KeyboardEvent, ReactNode } from 'react'
 import { focusedId, instancesOf, windowType } from '../core/desk.js'
 import type { DeskState, WindowId } from '../core/types.js'
 import { useDesk, useDeskState } from './context.js'
+import { useContextMenu } from './contextMenu.js'
+import { useDragSource, useDropTarget } from './dnd.js'
+import type { Accepts, Drag } from './dnd.js'
+import { accepted } from './dragContext.js'
+import type { MenuItem } from './MenuBar.js'
 
 export interface DockItem {
   readonly id: string
@@ -16,6 +21,26 @@ export interface DockItem {
   /** Replaces the default of opening the item's window. */
   readonly onSelect?: () => void
   readonly disabled?: boolean
+  /** What a right-click (or the Menu key) offers for this item: Open, Remove from Dock. */
+  readonly contextMenu?: () => readonly MenuItem[]
+  /** Can be dragged along the dock to a new place, when the dock has `pins.onMove`. */
+  readonly movable?: boolean
+}
+
+/** The drag type of an item carried along the dock; its payload is the item's id. */
+export const DOCK_ITEM = 'desk.dock-item'
+
+/*
+ * Keeping things in the dock. The dock does not store what is kept: the app does, where it keeps its
+ * other preferences, and passes the kept items back as entries. The dock reports what the person did:
+ * dropped something on it, or carried a kept item to a new place. `before` is the id of the item it
+ * landed on, which it goes in front of, or null for the end.
+ */
+export interface DockPins {
+  /** The drag types that can be kept by dropping them on the dock. */
+  readonly accepts: Accepts
+  readonly onPin: (drag: Drag, before: string | null) => void
+  readonly onMove?: (id: string, before: string | null) => void
 }
 
 export interface DockStack {
@@ -41,6 +66,7 @@ export interface DockProps {
   /** `overlay` floats the dock over the bottom of its positioned parent; `inline` leaves layout to you. */
   readonly placement?: 'overlay' | 'inline'
   readonly className?: string
+  readonly pins?: DockPins
 }
 
 const windowOf = (item: DockItem) => item.window ?? item.id
@@ -75,9 +101,14 @@ function roveFocus(event: KeyboardEvent<HTMLElement>, keys: { next: string[]; pr
   target.focus()
 }
 
-export function Dock({ entries, label = 'Dock', placement = 'overlay', className }: DockProps) {
+export function Dock({ entries, label = 'Dock', placement = 'overlay', className, pins }: DockProps) {
   const [openStack, setOpenStack] = useState<string | null>(null)
   const firstFocusable = entries.find(e => e.type !== 'separator')?.id
+  const { dropProps } = useDropTarget({
+    accepts: pinAccepts(pins),
+    onDrop: drag => deliver(pins, drag, null),
+    disabled: !pins,
+  })
 
   return (
     <div
@@ -86,6 +117,7 @@ export function Dock({ entries, label = 'Dock', placement = 'overlay', className
       aria-orientation="horizontal"
       className={['desk-dock', className].filter(Boolean).join(' ')}
       data-placement={placement}
+      {...dropProps}
       onKeyDown={event => {
         if ((event.target as HTMLElement).closest('.desk-stack')) return
         roveFocus(event, { next: ['ArrowRight'], previous: ['ArrowLeft'] })
@@ -94,7 +126,7 @@ export function Dock({ entries, label = 'Dock', placement = 'overlay', className
       {entries.map(entry => {
         if (entry.type === 'separator') return <span key={entry.id} className="desk-dock-separator" role="separator" />
         if (entry.type === 'item')
-          return <DockButton key={entry.id} item={entry} tabIndex={entry.id === firstFocusable ? 0 : -1} />
+          return <DockButton key={entry.id} item={entry} tabIndex={entry.id === firstFocusable ? 0 : -1} pins={pins} />
         return (
           <StackButton
             key={entry.id}
@@ -113,10 +145,35 @@ function Badge({ children }: { readonly children: ReactNode }) {
   return <span className="desk-dock-badge">{children}</span>
 }
 
-function DockButton({ item, tabIndex }: { readonly item: DockItem; readonly tabIndex: number }) {
+// A kept item can be carried along the dock as well as whatever the app lets it keep.
+const pinAccepts = (pins: DockPins | undefined): Accepts => type =>
+  Boolean(pins) && ((type === DOCK_ITEM && Boolean(pins?.onMove)) || (type !== DOCK_ITEM && accepted(pins!.accepts, type)))
+
+function deliver(pins: DockPins | undefined, drag: Drag, before: string | null) {
+  if (!pins) return
+  if (drag.type === DOCK_ITEM) {
+    const id = drag.payload as string
+    if (id !== before) pins.onMove?.(id, before)
+  } else pins.onPin(drag, before)
+}
+
+interface DockButtonProps {
+  readonly item: DockItem
+  readonly tabIndex: number
+  readonly pins: DockPins | undefined
+}
+
+function DockButton({ item, tabIndex, pins }: DockButtonProps) {
   const desk = useDesk()
   const { running, focused } = statusOf(useDeskState(), [item])
+  const context = useContextMenu({ label: item.label, items: item.contextMenu ?? (() => []), disabled: !item.contextMenu })
+  // Only kept items take drops, so something carried lands among them and never splits the fixed ones.
+  const droppable = Boolean(pins && item.movable)
+  const { dropProps } = useDropTarget({ accepts: pinAccepts(pins), onDrop: drag => deliver(pins, drag, item.id), disabled: !droppable })
+  const source = useDragSource<string>({ type: DOCK_ITEM, disabled: !(droppable && pins?.onMove) })
+  const drag = droppable && pins?.onMove ? source.dragProps(item.id, <span className="desk-dock-icon">{item.icon}</span>) : {}
   return (
+    <>
     <button
       type="button"
       data-rove
@@ -125,8 +182,18 @@ function DockButton({ item, tabIndex }: { readonly item: DockItem; readonly tabI
       aria-label={item.label}
       data-running={running || undefined}
       data-focused={focused || undefined}
-      disabled={item.disabled}
-      onClick={() => (item.onSelect ? item.onSelect() : desk.open(windowOf(item)))}
+      // An item with a menu stays reachable while it cannot open, so it can still be removed.
+      disabled={item.disabled && !item.contextMenu}
+      aria-disabled={(item.disabled && item.contextMenu && true) || undefined}
+      {...dropProps}
+      {...drag}
+      onClick={() => {
+        if (item.disabled) return
+        if (item.onSelect) item.onSelect()
+        else desk.open(windowOf(item))
+      }}
+      onContextMenu={context.target.onContextMenu}
+      onKeyDown={context.target.onKeyDown}
     >
       <span className="desk-dock-icon" aria-hidden="true">
         {item.icon}
@@ -136,6 +203,8 @@ function DockButton({ item, tabIndex }: { readonly item: DockItem; readonly tabI
         {item.label}
       </span>
     </button>
+    {context.menu}
+    </>
   )
 }
 

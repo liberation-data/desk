@@ -89,6 +89,33 @@ The dock is one tab stop: arrow keys move along it, Enter opens, Escape folds a 
 to it. With `placement="overlay"` (the default) it floats over the bottom of its positioned parent; set
 `--desk-inset-bottom` so windows stop above it.
 
+### Keeping things in the dock
+
+```tsx
+<Dock
+  entries={[
+    ...fixed,
+    dockSeparator('kept'),
+    ...kept.map(app =>
+      dockItem({
+        id: `app#${app.id}`,
+        label: app.name,
+        icon: <AppIcon app={app} />,
+        movable: true,
+        contextMenu: () => [menuAction('Open', () => desk.open(`app#${app.id}`)), menuAction('Remove from Dock', () => unpin(app.id))],
+      }),
+    ),
+  ]}
+  pins={{ accepts: 'app', onPin: (drag, before) => pin(drag.payload, before), onMove: (id, before) => move(id, before) }}
+/>
+```
+
+The dock does not store what is kept; the app does, beside its other preferences, and passes it back as
+entries. Drop something the dock `accepts` on it to keep it: on the dock it goes at the end, on a `movable`
+item it goes in front of that one, and the fixed items are never split. A `movable` item can be carried along
+the dock to a new place. `contextMenu` gives any item a right-click menu; an item that is `disabled` but has
+a menu stays reachable, so something that can no longer open can still be removed.
+
 ## Controls
 
 ```tsx

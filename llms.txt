@@ -199,14 +199,17 @@ window; `lazyWindow` retries its import on reload, unlike `React.lazy`, which ca
 ### Dock
 
 ```tsx
-<Dock entries={DockEntry[]} label?="Dock" placement?={'overlay' | 'inline'} />
-dockItem({ id, label, icon, window?, description?, badge?, onSelect?, disabled? })
+<Dock entries={DockEntry[]} label?="Dock" placement?={'overlay' | 'inline'}
+  pins?={{ accepts, onPin: (drag, before: id | null) => void, onMove?: (id, before: id | null) => void }} />
+dockItem({ id, label, icon, window?, description?, badge?, onSelect?, disabled?, contextMenu?: () => MenuItem[], movable? })
 dockStack({ id, label, items: DockItem[], icon? })
 dockSeparator(id)
 ```
 
 An item opens `window ?? id` and shows a dot while that window is open, accent when it is key. A stack fans
 out above the dock. One tab stop; arrow keys along it; Escape folds a stack away.
+Pins: the app stores kept items and passes them back as entries. A drop on the dock keeps at the end; on a
+`movable` item, in front of it. Movable items drag along the dock (type DOCK_ITEM, payload id).
 
 ### Menu bar
 

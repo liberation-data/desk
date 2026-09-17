@@ -64,5 +64,5 @@ export type { ContextMenuOptions, ContextMenuResult, ContextMenuTargetProps } fr
 export type { Menu, MenuBarProps, MenuItem } from './MenuBar.js'
 export { IconView } from './iconView.js'
 export type { IconViewItem, IconViewProps } from './iconView.js'
-export { Dock, dockItem, dockSeparator, dockStack } from './Dock.js'
-export type { DockEntry, DockItem, DockProps, DockStack } from './Dock.js'
+export { Dock, DOCK_ITEM, dockItem, dockSeparator, dockStack } from './Dock.js'
+export type { DockEntry, DockItem, DockPins, DockProps, DockStack } from './Dock.js'

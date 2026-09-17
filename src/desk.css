@@ -372,7 +372,8 @@
   transition: transform .18s var(--desk-ease), margin .18s var(--desk-ease);
 }
 
-.desk-dock-item:disabled {
+.desk-dock-item:disabled,
+.desk-dock-item[aria-disabled="true"] {
   opacity: .45;
   cursor: not-allowed;
 }
@@ -2664,4 +2665,14 @@
   place-items: center;
   width: 40px;
   height: 40px;
+}
+
+/* Something carried to the dock: the dock lights up, and a kept item shows where it would go in front. */
+.desk-dock-item[data-desk-drop][data-ready] {
+  outline: none;
+  background: var(--desk-dock-icon);
+}
+
+.desk-dock-item[data-desk-drop][data-over] {
+  box-shadow: -6px 0 0 -2px var(--desk-accent);
 }
