@@ -1,0 +1,231 @@
+/* ── Conversation ── */
+
+.desk-thread {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  font-family: var(--desk-font);
+}
+
+.desk-thread-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--desk-space-1);
+  padding: var(--desk-space-4);
+}
+
+.desk-message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: min(80%, 60ch);
+}
+
+.desk-message[data-mine] {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+/* A new run of messages from the same person gets air; the rest stay close. */
+.desk-message[data-run-start] {
+  margin-top: var(--desk-space-3);
+}
+
+.desk-message:first-child {
+  margin-top: 0;
+}
+
+.desk-message-author {
+  margin-bottom: 2px;
+  padding: 0 var(--desk-space-1);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--desk-muted);
+}
+
+.desk-bubble {
+  padding: var(--desk-space-2) var(--desk-space-3);
+  border: 1px solid var(--desk-rule);
+  border-radius: 14px;
+  background: var(--desk-surface);
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.desk-message[data-mine] .desk-bubble {
+  border-color: transparent;
+  background: var(--desk-accent);
+  color: var(--desk-on-accent);
+  border-bottom-right-radius: 5px;
+}
+
+.desk-message:not([data-mine]) .desk-bubble {
+  border-bottom-left-radius: 5px;
+}
+
+.desk-message[data-state="sending"] .desk-bubble {
+  opacity: .6;
+}
+
+.desk-message[data-state="failed"] .desk-bubble {
+  border-color: var(--desk-bad);
+}
+
+.desk-message-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-2);
+  padding: 2px var(--desk-space-1) 0;
+  font-size: 11px;
+  color: var(--desk-muted);
+}
+
+.desk-message-foot:empty {
+  display: none;
+}
+
+.desk-message-failed {
+  color: var(--desk-bad);
+}
+
+.desk-typing {
+  align-self: flex-start;
+  margin-top: var(--desk-space-2);
+  padding: var(--desk-space-2) var(--desk-space-3);
+  border: 1px solid var(--desk-rule);
+  border-radius: 14px;
+  border-bottom-left-radius: 5px;
+  background: var(--desk-surface);
+}
+
+.desk-typing-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.desk-typing-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--desk-muted);
+  animation: desk-typing 1.2s var(--desk-ease) infinite;
+}
+
+.desk-typing-dots i:nth-child(2) {
+  animation-delay: .15s;
+}
+
+.desk-typing-dots i:nth-child(3) {
+  animation-delay: .3s;
+}
+
+@keyframes desk-typing {
+  0%, 60%, 100% {
+    opacity: .3;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+.desk-thread-jump {
+  position: absolute;
+  left: 50%;
+  bottom: var(--desk-space-3);
+  transform: translateX(-50%);
+  box-shadow: var(--desk-shadow);
+}
+
+.desk-composer {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--desk-space-2);
+  padding: var(--desk-space-3) var(--desk-space-4);
+  border-top: 1px solid var(--desk-rule);
+}
+
+.desk-composer-field {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--desk-control-height);
+  max-height: 40vh;
+  padding: var(--desk-space-2) var(--desk-space-3);
+  border: 1px solid var(--desk-rule);
+  border-radius: var(--desk-control-radius);
+  background: var(--desk-field-bg);
+  color: var(--desk-ink);
+  font-family: var(--desk-font);
+  font-size: 13.5px;
+  line-height: 20px;
+  resize: none;
+}
+
+.desk-composer-field:focus-visible {
+  outline: 2px solid var(--desk-accent);
+  outline-offset: 2px;
+}
+
+.desk-composer-field::placeholder {
+  color: var(--desk-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-typing-dots i {
+    animation: none;
+  }
+}
+
+/* ── Input bar: one place to type, which reaches the key window ── */
+
+.desk-inputbar-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1450;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  padding: var(--desk-space-4);
+  background: rgb(0 0 0 / 30%);
+  animation: desk-fade .14s var(--desk-ease);
+}
+
+.desk-inputbar[data-mode="summoned"] {
+  animation: desk-alert-in .16s var(--desk-ease);
+}
+
+.desk-inputbar {
+  box-sizing: border-box;
+  width: min(720px, 100%);
+  border: 1px solid var(--desk-rule);
+  border-radius: 14px;
+  background: var(--desk-dock-glass);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  box-shadow: var(--desk-shadow-floating);
+}
+
+.desk-inputbar .desk-composer {
+  border-top: 0;
+  padding: var(--desk-space-2);
+}
+
+.desk-inputbar-target {
+  display: block;
+  padding: 0 var(--desk-space-3) var(--desk-space-2);
+  font-family: var(--desk-font);
+  font-size: 11px;
+  color: var(--desk-muted);
+}
+
+.desk-inputbar-target b {
+  font-weight: 600;
+  color: var(--desk-ink);
+}

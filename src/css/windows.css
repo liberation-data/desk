@@ -1,0 +1,320 @@
+.desk-stage {
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  padding: var(--desk-padding);
+  padding-bottom: calc(var(--desk-padding) + var(--desk-inset-bottom));
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  gap: var(--desk-gap);
+  overflow: hidden;
+  background: var(--desk-ground);
+  color: var(--desk-ink);
+  font-family: var(--desk-font);
+}
+
+.desk-window {
+  /* Filled windows fill the stage inside its padding, layered in the order they were used. */
+  position: absolute;
+  top: var(--desk-padding);
+  right: var(--desk-padding);
+  bottom: calc(var(--desk-padding) + var(--desk-inset-bottom));
+  left: var(--desk-padding);
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--desk-surface);
+  border: 1px solid var(--desk-rule);
+  border-radius: var(--desk-radius);
+  box-shadow: var(--desk-shadow);
+  overflow: hidden;
+  transition: border-color .15s var(--desk-ease), box-shadow .15s var(--desk-ease);
+}
+
+.desk-window:focus {
+  /* The key window is already marked by its border; a ring on the whole window would be noise. */
+  outline: none;
+}
+
+.desk-window[data-focused] {
+  border-color: color-mix(in srgb, var(--desk-accent) 45%, var(--desk-rule));
+}
+
+.desk-window[data-hidden] {
+  display: none;
+}
+
+/* One window at a time: it fills the stage, and the zoom control is not offered. */
+.desk-stage[data-layout="fullscreen"] .desk-window {
+  position: static;
+  inset: auto;
+  grid-area: 1 / 1;
+}
+
+.desk-window[data-mode="floating"] {
+  right: auto;
+  bottom: auto;
+  box-shadow: var(--desk-shadow-floating);
+}
+
+.desk-window[data-dragging] {
+  transition: none;
+  user-select: none;
+}
+
+.desk-titlebar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--desk-titlebar);
+  border-bottom: 1px solid var(--desk-rule);
+  user-select: none;
+}
+
+.desk-titlebar[data-draggable] {
+  cursor: grab;
+  touch-action: none;
+}
+
+.desk-window[data-dragging] .desk-titlebar {
+  cursor: grabbing;
+}
+
+.desk-controls {
+  display: flex;
+  gap: 7px;
+}
+
+.desk-control {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  background: var(--desk-rule);
+}
+
+.desk-window[data-focused] .desk-control[data-control="close"],
+.desk-control[data-control="close"]:hover {
+  background: var(--desk-close);
+}
+
+.desk-window[data-focused] .desk-control[data-control="mode"],
+.desk-control[data-control="mode"]:hover {
+  background: var(--desk-mode);
+}
+
+.desk-control:focus-visible {
+  outline: 2px solid var(--desk-accent);
+  outline-offset: 2px;
+}
+
+.desk-title {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.desk-window:not([data-focused]) .desk-title {
+  color: var(--desk-muted);
+}
+
+.desk-window-note {
+  margin: 0 0 0 auto;
+  min-width: 0;
+  /* The title is what the window IS; the note is what it is looking at. In a narrow window the note
+     gives up its room first, and is cut before the title is. */
+  flex: 0 999 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--desk-muted);
+}
+
+/* The note gives up the spare room; the (i) keeps its place at the end of the bar. */
+.desk-window-note + .desk-window-info {
+  margin-left: var(--desk-space-2);
+}
+
+.desk-window-info {
+  margin-left: auto;
+}
+
+.desk-window-note ~ .desk-window-info {
+  margin-left: var(--desk-space-2);
+}
+
+.desk-window-info + .desk-window-actions,
+.desk-window-note + .desk-window-actions {
+  margin-left: var(--desk-space-1);
+}
+
+.desk-window-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-1);
+}
+
+.desk-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.desk-window-status {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--desk-space-2);
+  padding: var(--desk-space-4);
+  text-align: center;
+  color: var(--desk-muted);
+  font-size: 13px;
+}
+
+.desk-window-status b {
+  color: var(--desk-ink);
+  font-weight: 600;
+}
+
+.desk-window-status-detail {
+  max-width: 40ch;
+  font-size: 12px;
+}
+
+/* Edges a window resizes from. Inside the window, so nothing clips them. */
+.desk-edge {
+  position: absolute;
+  touch-action: none;
+}
+
+.desk-edge[data-edge="left"],
+.desk-edge[data-edge="right"] {
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+}
+
+.desk-edge[data-edge="left"] {
+  left: 0;
+}
+
+.desk-edge[data-edge="right"] {
+  right: 0;
+}
+
+.desk-edge[data-edge="bottom"] {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  cursor: ns-resize;
+}
+
+.desk-grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+/* Where a dragged window would land if it were dropped now. */
+.desk-stage[data-snap]::after {
+  content: "";
+  position: absolute;
+  top: var(--desk-padding);
+  bottom: calc(var(--desk-padding) + var(--desk-inset-bottom));
+  width: calc(50% - var(--desk-padding) - var(--desk-gap) / 2);
+  border: 2px solid var(--desk-accent);
+  border-radius: var(--desk-radius);
+  background: color-mix(in srgb, var(--desk-accent) 14%, transparent);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.desk-stage[data-snap="start"]::after {
+  left: var(--desk-padding);
+}
+
+.desk-stage[data-snap="end"]::after {
+  right: var(--desk-padding);
+}
+
+/* ── The inside of a window: controls that stay, content that scrolls ── */
+
+.desk-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.desk-pane-header,
+.desk-pane-footer {
+  flex: none;
+}
+
+/* The only part that scrolls, so the toolbar never leaves with the content. */
+.desk-pane-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.desk-pane-body:focus-visible {
+  outline: 2px solid var(--desk-accent);
+  outline-offset: -2px;
+}
+
+/* A window whose whole content is a pane does not scroll itself: the pane's middle does. */
+.desk-body:has(> .desk-pane) {
+  overflow: hidden;
+}
+
+.desk-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--desk-space-2);
+  /* One centre line for everything in the row, whatever each control's own height is. */
+  min-height: calc(var(--desk-control-height) + var(--desk-space-2) * 2);
+  padding: var(--desk-space-2) var(--desk-space-3);
+  border-bottom: 1px solid var(--desk-rule);
+}
+
+.desk-toolbar > *,
+.desk-toolbar-trailing > * {
+  flex: none;
+}
+
+.desk-toolbar .desk-grow {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.desk-toolbar-trailing {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-2);
+}

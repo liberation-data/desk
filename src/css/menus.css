@@ -1,0 +1,203 @@
+/* ── Menu bar ── */
+
+.desk-menubar {
+  position: relative;
+  z-index: 1100;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+  padding: 0 10px;
+  background: var(--desk-dock-glass);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-bottom: 1px solid var(--desk-rule);
+  color: var(--desk-ink);
+  font-family: var(--desk-font);
+  font-size: 13px;
+  user-select: none;
+}
+
+.desk-menubar-leading,
+.desk-menubar-trailing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+}
+
+.desk-menubar-leading {
+  font-weight: 700;
+}
+
+.desk-menubar-trailing {
+  color: var(--desk-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.desk-menubar-spacer {
+  flex: 1;
+}
+
+.desk-menubar-slot {
+  position: relative;
+}
+
+.desk-menubar-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.desk-menubar-title[data-emphasis] {
+  font-weight: 700;
+}
+
+.desk-menubar-title:hover,
+.desk-menubar-title[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--desk-ink) 12%, transparent);
+}
+
+.desk-menubar-title:focus-visible {
+  outline: 2px solid var(--desk-accent);
+  outline-offset: -2px;
+}
+
+.desk-menubar-title svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* A context menu is the same menu, opened where the pointer is rather than under a title. */
+.desk-context-menu {
+  position: fixed;
+  z-index: 1300;
+  outline: none;
+}
+
+.desk-menubar-slot[data-align="end"] .desk-menu {
+  left: auto;
+  right: 0;
+}
+
+.desk-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  box-sizing: border-box;
+  min-width: 220px;
+  max-width: min(360px, calc(100vw - 24px));
+  padding: 5px;
+  border-radius: 10px;
+  border: 1px solid var(--desk-rule);
+  /* Opaque, like every other popup. A menu sits inside the menu bar's own backdrop blur, and a nested
+     backdrop-filter does not blur what is behind the bar, so a translucent menu let window text read through. */
+  background: var(--desk-surface);
+  box-shadow: var(--desk-shadow-floating);
+  animation: desk-menu-in .12s var(--desk-ease);
+}
+
+@keyframes desk-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+.desk-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px 10px 2px 4px;
+  border-radius: 5px;
+  cursor: default;
+}
+
+.desk-menu-item[data-active] {
+  background: var(--desk-accent);
+  color: #fff;
+}
+
+.desk-menu-item[aria-disabled="true"] {
+  color: var(--desk-muted);
+  opacity: .55;
+}
+
+.desk-menu-check {
+  flex: none;
+  width: 14px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.desk-menu-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.desk-menu-detail,
+.desk-menu-shortcut {
+  flex: none;
+  color: var(--desk-muted);
+  font-size: 12px;
+}
+
+.desk-menu-shortcut {
+  margin-left: 18px;
+  font-family: var(--desk-font);
+  letter-spacing: .04em;
+}
+
+.desk-menu-item[data-active] .desk-menu-detail,
+.desk-menu-item[data-active] .desk-menu-shortcut {
+  color: rgb(255 255 255 / 80%);
+}
+
+.desk-menu-separator {
+  height: 1px;
+  margin: 5px 8px;
+  background: var(--desk-rule);
+}
+
+.desk-menu-header {
+  padding: 5px 10px 2px 24px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--desk-muted);
+}
+
+@media (max-width: 640px) {
+  .desk-stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: minmax(320px, auto);
+    overflow-y: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-window,
+  .desk-dock-item,
+  .desk-dock-tip {
+    transition: none;
+  }
+
+  .desk-stack,
+  .desk-menu {
+    animation: none;
+  }
+}

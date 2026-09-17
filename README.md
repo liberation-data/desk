@@ -540,7 +540,23 @@ replace the entry. Other hash parameters are left alone.
 ## Theming
 
 Every value in `desk.css` reads a `--desk-*` custom property. Redefine the tokens; don't override the
-selectors. Light and dark follow `prefers-color-scheme`, and `data-theme="light|dark"` on the root wins.
+selectors.
+
+`desk.css` is every part of the stylesheet. An app that draws only some of it can take the parts it
+uses instead, and ship less:
+
+```ts
+import '@liberation-data/desk/css/tokens.css'    // always: every other part reads these
+import '@liberation-data/desk/css/windows.css'   // the stage, windows, panes and toolbars
+import '@liberation-data/desk/css/dock.css'
+import '@liberation-data/desk/css/menus.css'     // menu bar and context menus
+import '@liberation-data/desk/css/controls.css'  // buttons, fields, table, sidebar, icon view
+import '@liberation-data/desk/css/overlays.css'  // popovers, sheets, alerts, toasts, the (i)
+import '@liberation-data/desk/css/conversation.css'
+import '@liberation-data/desk/css/search.css'
+import '@liberation-data/desk/css/setup.css'     // the wizard and tours
+import '@liberation-data/desk/css/apps.css'      // app frames and dragging between windows
+``` Light and dark follow `prefers-color-scheme`, and `data-theme="light|dark"` on the root wins.
 
 ## Docs
 

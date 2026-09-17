@@ -27,10 +27,11 @@
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.js"
     },
-    "./desk.css": "./dist/desk.css"
+    "./desk.css": "./dist/desk.css",
+    "./css/*": "./dist/css/*"
   },
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && cp src/desk.css dist/desk.css",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/css.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "example": "vite examples/garage",

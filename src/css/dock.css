@@ -1,0 +1,271 @@
+/* ── Dock ── */
+
+.desk-dock {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 7px 9px;
+  max-width: calc(100% - 24px);
+  border-radius: 20px;
+  background: var(--desk-dock-glass);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  border: 1px solid var(--desk-rule);
+  box-shadow: var(--desk-shadow-floating);
+  font-family: var(--desk-font);
+  color: var(--desk-ink);
+}
+
+.desk-dock[data-placement="overlay"] {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 1000;
+  transform: translateX(-50%);
+}
+
+.desk-dock-separator {
+  flex: none;
+  align-self: stretch;
+  width: 1px;
+  margin: 6px 4px;
+  background: var(--desk-rule);
+}
+
+.desk-dock-slot {
+  position: relative;
+  display: flex;
+}
+
+.desk-dock-item {
+  position: relative;
+  flex: none;
+  width: var(--desk-dock-size);
+  height: var(--desk-dock-size);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--desk-rule);
+  border-radius: calc(var(--desk-dock-size) / 4);
+  background: var(--desk-dock-icon);
+  color: var(--desk-ink);
+  cursor: pointer;
+  transition: transform .18s var(--desk-ease), margin .18s var(--desk-ease);
+}
+
+.desk-dock-item:disabled,
+.desk-dock-item[aria-disabled="true"] {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.desk-dock-item:focus-visible,
+.desk-stack-item:focus-visible {
+  outline: 2px solid var(--desk-accent);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .desk-dock-item:hover:not(:disabled) {
+    transform: translateY(-8px) scale(1.14);
+    margin: 0 5px;
+  }
+}
+
+.desk-dock-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46%;
+  height: 46%;
+}
+
+.desk-dock-icon > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.desk-dock-item[data-stack] .desk-dock-icon {
+  width: 72%;
+  height: 72%;
+}
+
+.desk-dock-preview {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+}
+
+.desk-dock-preview > span {
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--desk-ink) 10%, transparent);
+  color: var(--desk-muted);
+}
+
+.desk-dock-preview svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* A dot for "a window is open", brighter when it has focus. */
+.desk-dock-item[data-running]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--desk-muted);
+}
+
+.desk-dock-item[data-focused]::after {
+  background: var(--desk-accent);
+}
+
+.desk-dock-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  border: 2px solid var(--desk-surface);
+  background: var(--desk-badge);
+  color: var(--desk-badge-ink);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.desk-dock-tip {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--desk-rule);
+  background: var(--desk-surface);
+  color: var(--desk-ink);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s;
+}
+
+.desk-dock-item:hover .desk-dock-tip,
+.desk-dock-item:focus-visible .desk-dock-tip {
+  opacity: 1;
+}
+
+.desk-dock-item[aria-expanded="true"] .desk-dock-tip {
+  opacity: 0;
+}
+
+/* ── Stack: a dock folder, fanned out ── */
+
+.desk-stack {
+  position: absolute;
+  bottom: calc(100% + 18px);
+  left: 50%;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--desk-rule);
+  /* It carries labels, so it needs a surface behind them: glass alone let the window under it read through. */
+  background: var(--desk-surface);
+  backdrop-filter: blur(30px) saturate(160%);
+  -webkit-backdrop-filter: blur(30px) saturate(160%);
+  box-shadow: var(--desk-shadow-floating);
+  animation: desk-pop .18s var(--desk-ease);
+}
+
+@keyframes desk-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px) scale(.98);
+  }
+}
+
+.desk-stack-title {
+  margin: 0 0 8px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--desk-muted);
+}
+
+.desk-stack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  width: min(380px, calc(100vw - 56px));
+  gap: 6px;
+}
+
+.desk-stack-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 11px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
+.desk-stack-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--desk-ink) 7%, transparent);
+}
+
+.desk-stack-item .desk-dock-icon {
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid var(--desk-rule);
+  background: var(--desk-dock-icon);
+}
+
+.desk-stack-label {
+  font-size: 12px;
+  font-weight: 560;
+}
+
+.desk-stack-description {
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--desk-muted);
+}
+
+/* Something carried to the dock: the dock lights up, and a kept item shows where it would go in front. */
+.desk-dock-item[data-desk-drop][data-ready] {
+  outline: none;
+  background: var(--desk-dock-icon);
+}
+
+.desk-dock-item[data-desk-drop][data-over] {
+  box-shadow: -6px 0 0 -2px var(--desk-accent);
+}

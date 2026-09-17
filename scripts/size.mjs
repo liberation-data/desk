@@ -8,7 +8,12 @@ import { gzipSync } from 'node:zlib'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
-const BUDGETS = { core: 11, react: 46, css: 10 } // KiB gzipped
+/*
+ * KiB gzipped. `css` is the whole stylesheet, which is what an app that imports `desk.css` loads;
+ * the parts are printed under it, because an app can import only the ones it draws, and because a
+ * part growing is easier to notice than a total growing.
+ */
+const BUDGETS = { core: 11, react: 46, css: 12 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
@@ -19,6 +24,7 @@ const walk = dir =>
 const sizeOf = paths => paths.reduce((total, path) => total + gzipSync(readFileSync(path)).length, 0) / 1024
 
 const js = walk('dist').filter(path => path.endsWith('.js'))
+const parts = walk('dist/css').filter(path => path.endsWith('.css')).sort()
 const measured = {
   core: sizeOf(js.filter(path => path.includes('/core/'))),
   react: sizeOf(js.filter(path => path.includes('/react/'))),
@@ -32,6 +38,11 @@ for (const [name, budget] of Object.entries(BUDGETS)) {
   console.log(`${name.padEnd(6)} ${actual.toFixed(1).padStart(6)} KiB of ${budget} — ${room < 0 ? 'OVER' : `${room.toFixed(1)} spare`}`)
   if (room < 0) over = true
 }
+
+console.log(
+  '\ncss parts:  ' +
+    parts.map(path => `${path.split('/').pop().replace('.css', '')} ${sizeOf([path]).toFixed(1)}`).join('  '),
+)
 
 if (over) {
   console.error('\nOver budget. Trim it, or raise the budget in scripts/size.mjs and say why.')

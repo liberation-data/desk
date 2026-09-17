@@ -16,6 +16,8 @@ npm install @liberation-data/desk        # peer: react ^19
 import { createDesk }                    from '@liberation-data/desk'        // no DOM, no React
 import { Desktop, DeskProvider }         from '@liberation-data/desk/react'  // components and hooks
 import '@liberation-data/desk/desk.css'                                      // tokens and styles
+// or only the parts you draw: css/tokens.css (required) + windows|dock|menus|controls|overlays|
+// conversation|search|setup|apps.css
 ```
 
 ## The shape of an app

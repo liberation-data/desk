@@ -1,0 +1,89 @@
+/*
+ * desk — the stage and its windows. Every value reads a --desk-* token, so an
+ * app restyles the desk by redefining tokens, never by overriding selectors.
+ */
+:root {
+  --desk-ground: #eef0f4;
+  --desk-surface: #ffffff;
+  --desk-titlebar: #f6f7f9;
+  --desk-ink: #1b1f27;
+  --desk-muted: #667085;
+  --desk-rule: #dde1e8;
+  --desk-accent: #5b57f5;
+  --desk-close: #ef6b63;
+  --desk-mode: #34c47a;
+  --desk-info: #34c47a;
+  --desk-radius: 12px;
+  --desk-gap: 12px;
+  --desk-padding: 12px;
+  --desk-shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 12px 32px rgb(16 24 40 / 10%);
+  --desk-shadow-floating: 0 2px 4px rgb(16 24 40 / 8%), 0 24px 60px rgb(16 24 40 / 22%);
+  --desk-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --desk-font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* The spacing scale (HIG.md §2). Nothing between these values. */
+  --desk-space-1: 4px;
+  --desk-space-2: 8px;
+  --desk-space-3: 12px;
+  --desk-space-4: 16px;
+  --desk-space-5: 24px;
+  --desk-space-6: 32px;
+  --desk-space-7: 48px;
+
+  /* State, kept apart from the accent. */
+  --desk-ok: #2f9e68;
+  --desk-warn: #b7791f;
+  --desk-bad: #c6483f;
+
+  --desk-control-height: 28px;
+  --desk-control-height-small: 22px;
+  --desk-control-radius: 7px;
+  --desk-field-bg: #ffffff;
+  --desk-on-accent: #ffffff;
+  --desk-ease: cubic-bezier(.32, .72, 0, 1);
+  --desk-dock-size: 48px;
+  --desk-dock-glass: rgb(255 255 255 / 72%);
+  --desk-dock-icon: linear-gradient(160deg, #ffffff, #eceff5);
+  --desk-badge: #ef4444;
+  --desk-badge-ink: #ffffff;
+  /* Room the stage leaves at the bottom for an overlay dock. */
+  --desk-inset-bottom: 0px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk-ground: #07090f;
+    --desk-surface: #101828;
+    --desk-titlebar: #0b111d;
+    --desk-ink: #e6e6e6;
+    --desk-muted: #99a1af;
+    --desk-rule: #1e2939;
+    --desk-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+    --desk-shadow-floating: 0 30px 80px rgb(0 0 0 / 70%);
+    --desk-dock-glass: rgb(11 18 32 / 62%);
+    --desk-dock-icon: linear-gradient(160deg, #1a2338, #0e1526);
+    --desk-ok: #3ecf8e;
+    --desk-info: #3ecf8e;
+    --desk-warn: #fbbf24;
+    --desk-bad: #f87171;
+    --desk-field-bg: rgb(0 0 0 / 35%);
+  }
+}
+
+:root[data-theme="dark"] {
+  --desk-ground: #07090f;
+  --desk-surface: #101828;
+  --desk-titlebar: #0b111d;
+  --desk-ink: #e6e6e6;
+  --desk-muted: #99a1af;
+  --desk-rule: #1e2939;
+  --desk-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+  --desk-shadow-floating: 0 30px 80px rgb(0 0 0 / 70%);
+  --desk-dock-glass: rgb(11 18 32 / 62%);
+  --desk-dock-icon: linear-gradient(160deg, #1a2338, #0e1526);
+  --desk-ok: #3ecf8e;
+  --desk-info: #3ecf8e;
+  --desk-warn: #fbbf24;
+  --desk-bad: #f87171;
+  --desk-field-bg: rgb(0 0 0 / 35%);
+}

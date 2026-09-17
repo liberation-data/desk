@@ -61,7 +61,16 @@ import {
   Wizard,
 } from '../../src/react/index.js'
 import type { Column, DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption, SetupProgress, Sort, Tour, WizardStep } from '../../src/react/index.js'
-import '../../src/desk.css'
+import '../../src/css/tokens.css'
+import '../../src/css/windows.css'
+import '../../src/css/dock.css'
+import '../../src/css/menus.css'
+import '../../src/css/controls.css'
+import '../../src/css/overlays.css'
+import '../../src/css/conversation.css'
+import '../../src/css/search.css'
+import '../../src/css/setup.css'
+import '../../src/css/apps.css'
 import './garage.css'
 
 /*
