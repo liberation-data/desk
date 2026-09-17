@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import type { DeskEvent } from '../core/events.js'
 import type { WindowId } from '../core/types.js'
 import { Button } from './controls.js'
 import { useDesk } from './context.js'
+import { useBus } from './events.js'
 
 /*
  * A tour drives the desk: it opens the window each step is about and points at
@@ -20,11 +22,18 @@ export interface TourStep {
   readonly caption: ReactNode
   /** Hands over: the bar offers Done and Skip instead of Next. */
   readonly yourTurn?: boolean
+  /**
+   * The event that means the person has done it — `ride.selected`, or a topic and a test.
+   * The tour moves on by itself when it arrives, so nobody has to say Done.
+   */
+  readonly until?: string | { readonly topic: string; readonly when: (event: DeskEvent) => boolean }
 }
 
 export interface Tour {
   readonly id: string
   readonly name: string
+  /** What the tour shows, in a sentence: said when it is offered. */
+  readonly description?: ReactNode
   readonly steps: readonly TourStep[]
 }
 
@@ -34,6 +43,11 @@ export interface TourBarProps {
   readonly onFinish?: () => void
   /** Called when the person stops early. */
   readonly onStop?: () => void
+  /**
+   * Ask first: the bar invites the person to take the tour, and starts only if they say so.
+   * For the first time someone reaches the desktop, where nobody should be dropped without a word.
+   */
+  readonly offer?: boolean
   readonly className?: string
 }
 
@@ -49,10 +63,12 @@ function point(step: TourStep | undefined): () => void {
   return () => element.removeAttribute(POINTED)
 }
 
-export function TourBar({ tour, onFinish, onStop, className }: TourBarProps) {
+export function TourBar({ tour, onFinish, onStop, offer, className }: TourBarProps) {
   const desk = useDesk()
+  const bus = useBus()
+  const [offered, setOffered] = useState(offer ?? false)
   const [index, setIndex] = useState(0)
-  const step = tour.steps[index]
+  const step = offered ? undefined : tour.steps[index]
   const total = tour.steps.length
   const stop = useRef<() => void>(() => {})
 
@@ -82,6 +98,37 @@ export function TourBar({ tour, onFinish, onStop, className }: TourBarProps) {
     },
     [total, onFinish],
   )
+
+  // A step that waits for the person moves on when what it asked for happens.
+  const until = step?.until
+  useEffect(() => {
+    if (!until) return undefined
+    const topic = typeof until === 'string' ? until : until.topic
+    return bus.subscribe(topic, event => {
+      if (typeof until === 'string' || until.when(event)) go(index + 1)
+    })
+  }, [bus, until, go, index])
+
+  if (offered) {
+    return (
+      <div className={['desk-tour', className].filter(Boolean).join(' ')} role="region" aria-label={`Tour: ${tour.name}`}>
+        <div className="desk-tour-head">
+          <b>{tour.name}</b>
+          <span className="desk-tour-count">{total} steps</span>
+        </div>
+        {tour.description && <p className="desk-tour-caption">{tour.description}</p>}
+        <div className="desk-tour-actions">
+          <span className="desk-tour-spacer" />
+          <Button size="small" onClick={() => onStop?.()}>
+            Not now
+          </Button>
+          <Button size="small" intent="default" onClick={() => setOffered(false)}>
+            Show me
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   if (!step) return null
 
@@ -114,7 +161,11 @@ export function TourBar({ tour, onFinish, onStop, className }: TourBarProps) {
         {step.yourTurn ? (
           <>
             <Button size="small" onClick={() => go(index + 1)}>Skip</Button>
-            <Button size="small" intent="default" onClick={() => go(index + 1)}>Done</Button>
+            {!step.until && (
+              <Button size="small" intent="default" onClick={() => go(index + 1)}>
+                Done
+              </Button>
+            )}
           </>
         ) : (
           <>

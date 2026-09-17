@@ -347,8 +347,9 @@ sends on Enter, keeps Shift+Enter for a new line, and never sends mid-compositio
 ### Teaching and first run
 
 ```tsx
-<TourBar tour={{ id, name, steps }} onFinish? onStop? />
-interface TourStep { window?: string; point?: string; caption: ReactNode; yourTurn?: boolean }
+<TourBar tour={{ id, name, description?, steps }} onFinish? onStop? offer? />
+interface TourStep { window?: string; point?: string; caption: ReactNode; yourTurn?: boolean;
+                   until?: string | { topic: string; when: (event: DeskEvent) => boolean } }
 
 const tasks = useTasks(Task[]): { items: TaskProgress[]; running; done; failed; start(); restart() }
 interface Task { id; name: ReactNode; detail?: ReactNode; run: (report: (detail: ReactNode) => void) => unknown }
@@ -360,7 +361,9 @@ interface WizardStep { id; name; title; description?; body?; glyph?; complete?; 
                        onContinue?: () => unknown | Promise<unknown>; busyLabel? }
 ```
 
-A tour step opens its window and points at `point` (a `data-tour` name or a selector). A wizard step offers
+A tour step opens its window and points at `point` (a `data-tour` name or a selector). A step with `until` moves on
+when that event is published (no Done button). `offer` shows the tour's name and description with Show me / Not now
+(Not now calls onStop) and opens nothing until accepted — use it right after setup. A wizard step offers
 Continue only when `complete`, and `working` steps offer no Back. `onContinue` runs before moving on: Continue
 shows `busyLabel` (default "Working…") and is disabled; a thrown Error's message is shown in the step and the
 step stays; returning `false` stays silently. Pressing again while it runs does nothing. Tasks run in order and

@@ -44,12 +44,21 @@ describe('the garage sample', () => {
     expect(Object.values(SURFACES).map(s => s.title).filter(title => !isTitleCase(title))).toEqual([])
   })
 
-  it('walks through setup and lands on the desktop', async () => {
+  it('walks through setup and lands on the desktop, in the window chosen', async () => {
     const user = userEvent.setup()
     await arrive(user)
     expect(dock()).toBeTruthy()
     expect(screen.getByRole('menubar')).toBeTruthy()
-    expect(document.querySelector('[data-desk-window="rides"]')).toBeTruthy()
+    expect(document.querySelector('[data-desk-window="rides"]')?.hasAttribute('data-focused')).toBe(true)
+  })
+
+  it('offers the tour on arrival, and does not start it unasked', async () => {
+    const user = userEvent.setup()
+    await arrive(user)
+    const offer = screen.getByRole('region', { name: 'Tour: What needs doing' })
+    expect(within(offer).getByRole('button', { name: 'Show me' })).toBeTruthy()
+    await user.click(within(offer).getByRole('button', { name: 'Not now' }))
+    expect(screen.queryByRole('region', { name: 'Tour: What needs doing' })).toBeNull()
   })
 
   it('keeps a weather key the service refuses on its step, and says why', async () => {

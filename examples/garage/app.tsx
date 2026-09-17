@@ -583,10 +583,12 @@ function Chat({ pending, onPending }: { readonly pending: string | null; readonl
 const TOUR: Tour = {
   id: 'first-look',
   name: 'What needs doing',
+  description: 'A minute on where the jobs are, what wore out, and how to look into it.',
   steps: [
     { window: 'service', point: 'service-chain', caption: 'Service lists what the bikes need. The road chain is first.' },
     { window: 'parts', point: 'part-chain', caption: 'Wear is counted from the rides each bike has done since the part was fitted.' },
     { window: 'rides', point: 'rides-filter', caption: 'Rides can be filtered by bike, so you can see what wore that chain out.' },
+    { window: 'rides', caption: 'Choose a ride in the table.', yourTurn: true, until: 'ride.selected' },
     { window: 'chat', caption: 'Ask the mechanic which job to do first.', yourTurn: true },
   ],
 }
@@ -949,11 +951,13 @@ const item = (id: Id, extra: Partial<DockItem> = {}): DockItem => ({
   ...extra,
 })
 
-function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupAgain: () => void }) {
+function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonly firstRun: boolean; readonly onSetupAgain: () => void }) {
   const [steps, setSteps] = useState(INITIAL_SERVICE)
   const [pending, setPending] = useState<string | null>(null)
   const [searching, setSearching] = useState(false)
-  const [touring, setTouring] = useState(false)
+  // Straight after setup the tour is offered, so nobody lands on the desktop without a word.
+  const [touring, setTouring] = useState(firstRun)
+  const [offering, setOffering] = useState(firstRun)
   const due = steps.filter(s => s.state === 'todo').length
 
   useEffect(() => syncWithLocation(desk, () => {
@@ -1057,7 +1061,7 @@ function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupA
   return (
     <DeskShell desk={desk}>
       <div className="garage">
-        <GarageMenuBar desk={desk} steps={steps} touring={touring} onTour={() => setTouring(true)} onSetupAgain={onSetupAgain} />
+        <GarageMenuBar desk={desk} steps={steps} touring={touring} onTour={() => { setOffering(false); setTouring(true) }} onSetupAgain={onSetupAgain} />
         <main className="screen">
           <Desktop
             title={id => (isKnown(id) ? SURFACES[id].title : id)}
@@ -1066,7 +1070,7 @@ function Garage({ desk, onSetupAgain }: { readonly desk: Desk; readonly onSetupA
           />
           {touring && (
             <div className="bottomstack">
-              <TourBar tour={TOUR} onFinish={() => setTouring(false)} onStop={() => setTouring(false)} />
+              <TourBar tour={TOUR} offer={offering} onFinish={() => setTouring(false)} onStop={() => setTouring(false)} />
             </div>
           )}
           <InputBar
@@ -1207,18 +1211,21 @@ export const desk = createDesk()
 export function App() {
   // The sample starts at first run unless a link already names windows to open.
   const [setup, setSetup] = useState(!location.hash)
+  const [firstRun, setFirstRun] = useState(false)
   if (setup) {
     return (
       <Setup
         onDone={(_profile, start) => {
           desk.closeAll()
-          desk.open(start)
+          // Windows open layered, so the one the person chose opens last and is the one in front.
           desk.open('service')
+          desk.open(start)
+          setFirstRun(true)
           setSetup(false)
         }}
       />
     )
   }
-  return <Garage desk={desk} onSetupAgain={() => setSetup(true)} />
+  return <Garage desk={desk} firstRun={firstRun} onSetupAgain={() => setSetup(true)} />
 }
 

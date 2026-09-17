@@ -151,19 +151,24 @@ from the top. `working: !setup.failed` gives the step its Back again once someth
 const TOUR: Tour = {
   id: 'first-look',
   name: 'What needs doing',
+  description: 'A minute on where the jobs are and what wore out.',
   steps: [
     { window: 'service', point: 'service-chain', caption: 'Service lists what the bikes need.' },
+    { window: 'rides', caption: 'Choose a ride in the table.', yourTurn: true, until: 'ride.selected' },
     { window: 'chat', caption: 'Ask which job to do first.', yourTurn: true },
   ],
 }
 
-{touring && <TourBar tour={TOUR} onFinish={done} onStop={done} />}
+{touring && <TourBar tour={TOUR} offer={firstRun} onFinish={done} onStop={done} />}
 ```
 
 A tour drives the desk: each step opens the window it is about and points at the control it is talking
 about (`point` is a `data-tour` name or any selector), so the person watches the real app rather than
-reading about it. A `yourTurn` step hands over and waits, offering Done and Skip. The bar holds no content:
-the steps are the app's.
+reading about it. A `yourTurn` step hands over and waits, offering Done and Skip. Give it `until` — an event
+topic, or a topic and a test — and it moves on by itself when the person has done it, with no Done to press.
+`offer` asks first ("Show me" or "Not now") and opens nothing until the person says yes: use it the first time
+someone reaches the desktop, straight after setup, so nobody lands there without a word. The bar holds no
+content: the steps are the app's.
 
 ## Dragging between windows
 

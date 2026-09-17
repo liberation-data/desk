@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDesk, focusedId } from '../../src/core/index.js'
 import type { Desk } from '../../src/core/index.js'
-import { Desktop, DeskProvider, TourBar } from '../../src/react/index.js'
+import { Desktop, DeskProvider, TourBar, usePublish } from '../../src/react/index.js'
 import type { Tour } from '../../src/react/index.js'
 
 afterEach(cleanup)
@@ -124,5 +124,66 @@ describe('TourBar', () => {
     expect(pointed()).toBeTruthy()
     unmount()
     expect(pointed()).toBeNull()
+  })
+})
+
+describe('a tour that waits for the person', () => {
+  const WAITING: Tour = {
+    id: 'waiting',
+    name: 'Choose a ride',
+    description: 'Two steps: where rides are, and choosing one.',
+    steps: [
+      { window: 'rides', caption: 'Every ride is here.' },
+      { window: 'rides', caption: 'Choose a road ride.', yourTurn: true, until: { topic: 'ride.selected', when: e => (e.payload as { bike: string }).bike === 'Road' } },
+      { window: 'rides', caption: 'That ride is on the map now.' },
+    ],
+  }
+
+  let publish: (topic: string, payload: unknown) => void = () => {}
+  function Rides() {
+    const p = usePublish()
+    publish = p
+    return <p>rides</p>
+  }
+
+  function mountWaiting(offer = false) {
+    const desk = createDesk()
+    const onStop = vi.fn()
+    render(
+      <DeskProvider desk={desk}>
+        <Desktop title={id => id} renderWindow={() => <Rides />} />
+        <TourBar tour={WAITING} offer={offer} onStop={onStop} />
+      </DeskProvider>,
+    )
+    return { desk, onStop }
+  }
+
+  it('moves on by itself when the person does what it asked, and offers no Done', async () => {
+    mountWaiting()
+    await settle()
+    next()
+    await settle()
+    expect(screen.queryByRole('button', { name: 'Done' })).toBeNull()
+    act(() => publish('ride.selected', { bike: 'Gravel' }))
+    expect(screen.getByText('Step 2 of 3')).toBeTruthy()
+    act(() => publish('ride.selected', { bike: 'Road' }))
+    expect(screen.getByText('Step 3 of 3')).toBeTruthy()
+  })
+
+  it('asks first when offered, opening nothing until the person says so', async () => {
+    const { desk } = mountWaiting(true)
+    await settle()
+    expect(screen.getByText('Two steps: where rides are, and choosing one.')).toBeTruthy()
+    expect(desk.getState().windows).toHaveLength(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Show me' }))
+    await settle()
+    expect(screen.getByText('Step 1 of 3')).toBeTruthy()
+    expect(focusedId(desk.getState())).toBe('rides')
+  })
+
+  it('goes away when the offer is declined', async () => {
+    const { onStop } = mountWaiting(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }))
+    expect(onStop).toHaveBeenCalledOnce()
   })
 })
