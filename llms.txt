@@ -205,7 +205,7 @@ window; `lazyWindow` retries its import on reload, unlike `React.lazy`, which ca
 ### Inside a window
 
 ```tsx
-<Pane label?={string} header?={ReactNode} footer?={ReactNode}>{scrolling content}</Pane>
+<Pane label?={string} header?={ReactNode} footer?={ReactNode} bodyRef?={Ref} onScroll?={fn}>{scrolling content}</Pane>
 <Toolbar label?={string} trailing?={ReactNode}>{controls}</Toolbar>   // className="desk-grow" takes spare room
 <InfoTip label={string} placement?={'below'|'above'} align?={'start'|'end'}>{explanation}</InfoTip>
 ```

@@ -168,7 +168,8 @@ import { Button, InfoTip, Pane, Toolbar } from '@liberation-data/desk/react'
 
 A window is a fixed height, so something inside it has to give. A pane fills the window and scrolls only
 its middle: the toolbar and the footer stay where the pointer left them, and the window itself never
-scrolls. Name the pane and the scrolling part can be reached and scrolled from the keyboard.
+scrolls. Name the pane and the scrolling part can be reached and scrolled from the keyboard. `bodyRef` and `onScroll`
+hand over the scrolling element itself, for a view that follows its own tail.
 
 `Toolbar` is one aligned row — every control on the same centre line whatever its own height, `trailing`
 pushed to the end, and `className="desk-grow"` on the one item that should take the spare room.

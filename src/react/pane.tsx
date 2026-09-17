@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { Ref, UIEvent, ReactNode } from 'react'
 
 /*
  * The inside of a window: a row of controls that stays put, and content that scrolls under it.
@@ -41,15 +41,20 @@ export interface PaneProps {
   readonly children: ReactNode
   /** The scrolling part is the thing being read, so it can be named and reached by the keyboard. */
   readonly label?: string
+  /** The scrolling element itself: for reading where it sits, or sending it to the bottom. */
+  readonly bodyRef?: Ref<HTMLDivElement>
+  readonly onScroll?: (event: UIEvent<HTMLDivElement>) => void
   readonly className?: string
 }
 
-export function Pane({ header, footer, children, label, className }: PaneProps) {
+export function Pane({ header, footer, children, label, bodyRef, onScroll, className }: PaneProps) {
   return (
     <div className={['desk-pane', className].filter(Boolean).join(' ')}>
       {header != null && <div className="desk-pane-header">{header}</div>}
       <div
+        ref={bodyRef}
         className="desk-pane-body"
+        onScroll={onScroll}
         {...(label ? { role: 'region', 'aria-label': label, tabIndex: 0 } : {})}
       >
         {children}

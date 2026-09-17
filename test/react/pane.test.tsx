@@ -64,3 +64,18 @@ describe('InfoTip', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 })
+
+describe('a pane that is being watched', () => {
+  it('hands over the scrolling element, so a log can chase its own tail', () => {
+    let body: HTMLDivElement | null = null
+    const scrolled: number[] = []
+    render(
+      <Pane label="Log" bodyRef={el => { body = el }} onScroll={event => scrolled.push(event.currentTarget.scrollTop)}>
+        <p>a line</p>
+      </Pane>,
+    )
+    expect(body).toBe(screen.getByRole('region', { name: 'Log' }))
+    fireEvent.scroll(screen.getByRole('region', { name: 'Log' }))
+    expect(scrolled).toHaveLength(1)
+  })
+})
