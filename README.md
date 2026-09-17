@@ -144,6 +144,39 @@ item it goes in front of that one, and the fixed items are never split. A `movab
 the dock to a new place. `contextMenu` gives any item a right-click menu; an item that is `disabled` but has
 a menu stays reachable, so something that can no longer open can still be removed.
 
+## Inside a window: a pane
+
+```tsx
+import { Button, InfoTip, Pane, Toolbar } from '@liberation-data/desk/react'
+
+<Pane
+  label="Log"
+  header={
+    <Toolbar
+      label="Log controls"
+      trailing={<><Button onClick={pause}>Pause</Button><Button onClick={load}>Refresh</Button></>}
+    >
+      <TextField className="desk-grow" label="Filter" value={filter} onChange={…} />
+      <InfoTip label="About these logs">This process only, and nothing that survives a restart.</InfoTip>
+    </Toolbar>
+  }
+  footer={<p>{lines.length} lines</p>}
+>
+  {lines.map(line => <LogLine key={line.id} line={line} />)}
+</Pane>
+```
+
+A window is a fixed height, so something inside it has to give. A pane fills the window and scrolls only
+its middle: the toolbar and the footer stay where the pointer left them, and the window itself never
+scrolls. Name the pane and the scrolling part can be reached and scrolled from the keyboard.
+
+`Toolbar` is one aligned row — every control on the same centre line whatever its own height, `trailing`
+pushed to the end, and `className="desk-grow"` on the one item that should take the spare room.
+
+`InfoTip` is an (i) holding what the view would explain if asked, so a window does not open with a
+paragraph everyone reads once. Explanation only: a warning belongs in front of people, not behind a
+disclosure.
+
 ## Controls
 
 ```tsx

@@ -202,6 +202,18 @@ Every window has its own Suspense and error boundary: one window loading or thro
 the menu bar or the dock. A failure is logged with `console.error` and shows Reload, which remounts the
 window; `lazyWindow` retries its import on reload, unlike `React.lazy`, which caches a failed import.
 
+### Inside a window
+
+```tsx
+<Pane label?={string} header?={ReactNode} footer?={ReactNode}>{scrolling content}</Pane>
+<Toolbar label?={string} trailing?={ReactNode}>{controls}</Toolbar>   // className="desk-grow" takes spare room
+<InfoTip label={string} placement?={'below'|'above'} align?={'start'|'end'}>{explanation}</InfoTip>
+```
+
+A pane fills its window and scrolls only its middle, so the window never scrolls and the toolbar stays put.
+A named pane is a focusable region, so it scrolls from the keyboard. InfoTip is an (i) popover for
+explanation only — never a warning, which belongs in front of people.
+
 ### Dock
 
 ```tsx

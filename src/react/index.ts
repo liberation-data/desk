@@ -36,6 +36,10 @@ export type {
   TextFieldProps,
   ToggleProps,
 } from './controls.js'
+export { Pane, Toolbar } from './pane.js'
+export type { PaneProps, ToolbarProps } from './pane.js'
+export { InfoTip } from './infoTip.js'
+export type { InfoTipProps } from './infoTip.js'
 export { Checklist, useTasks } from './tasks.js'
 export { localSetupStore, useSetupProgress } from './setupProgress.js'
 export type { SetupProgress, SetupProgressOptions, SetupRecord, SetupStore } from './setupProgress.js'
