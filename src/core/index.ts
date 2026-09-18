@@ -10,7 +10,7 @@ export {
   windowType,
   EMPTY,
 } from './desk.js'
-export type { Desk } from './desk.js'
+export type { Desk, FitResult } from './desk.js'
 export {
   addCommandHandler,
   addDeskCommands,

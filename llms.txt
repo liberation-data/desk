@@ -67,6 +67,10 @@ interface Desk {
   fill(id: string): void                          // fill the desk; remembers the frame for float()
   toggleMode(id: string): void                    // zoom: fill ⇄ free
   placeAll(frames: Record<string, Frame>): void   // free windows at these frames; Arrange uses it
+  fitToStage(): FitResult                         // the desk resized: bring windows back on, restore
+                                                  // them when the room returns; <Desktop> calls it
+  // FitResult { moved, squeezed, restored }: >1 squeezed means the layout is gone, and <Desktop>
+  // then arranges for the screen there is now. Frames from the bigger screen still come back.
   restore(state: DeskState): void                 // e.g. from a URL; normalised, not trusted
   setStage(stage: () => Size): void
 }

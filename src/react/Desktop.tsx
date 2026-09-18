@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 import { addCommandHandler, addDeskCommands, DeskCommands, STAGE_ATTRIBUTE, WINDOW_ATTRIBUTE, windowElement } from '../core/commands.js'
 import { focusedId } from '../core/desk.js'
+import type { Desk } from '../core/desk.js'
 import type { DeskWindow, Frame, WindowId } from '../core/types.js'
 import { arrangement } from './arrange.js'
 import { InfoTip } from './infoTip.js'
@@ -94,6 +95,51 @@ export function Desktop({ renderWindow, title, note, info, actions, empty, loadi
     desk.setStage(() => ({ width: stage.current?.clientWidth ?? 1024, height: stage.current?.clientHeight ?? 768 }))
   }, [desk])
 
+  /*
+   * The desk changing size is not a layout decision, but it can undo one: unplug an external
+   * display and the windows you spread across it are past the edge of the laptop screen, where
+   * nothing can drag them back. They are brought in; plug the display back in and they go out
+   * again exactly as they were.
+   *
+   * Filled windows need none of this — they are whatever size the desk is — so a desk of only
+   * filled windows never commits anything here.
+   */
+  useEffect(() => {
+    const element = stage.current
+    if (!element || mode !== 'desktop') return undefined
+    let frame = 0
+    // Once per paint: dragging the browser window's edge fires this continuously.
+    const refit = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const fit = desk.fitToStage()
+        /*
+         * One window that no longer fits is brought in and made smaller, and that is enough. Two or
+         * more means the layout itself is gone: each was clamped on its own, so windows that sat
+         * side by side now sit on top of each other, and the desk is left looking like one window.
+         * At that point it is laid out the way Arrange would — which is a layout for THIS screen,
+         * while the frames from the big one are remembered and come back with it.
+         */
+        if (fit.squeezed.length > 1) arrangeNow(desk, element)
+      })
+    }
+    // The stage can change size without the window doing so — a sidebar opening beside it — so the
+    // element is watched where that can be watched, and the window is the fallback where it cannot.
+    if (typeof ResizeObserver === 'undefined') {
+      addEventListener('resize', refit)
+      return () => {
+        cancelAnimationFrame(frame)
+        removeEventListener('resize', refit)
+      }
+    }
+    const observer = new ResizeObserver(refit)
+    observer.observe(element)
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  }, [desk, mode])
+
   useEffect(() => (stage.current ? addDeskCommands(stage.current, desk) : undefined), [desk])
 
   // Arrange lays every window out once, as free windows that can be moved again straight away.
@@ -103,26 +149,7 @@ export function Desktop({ renderWindow, title, note, info, actions, empty, loadi
     return addCommandHandler(
       element,
       DeskCommands.arrange,
-      () => {
-        const { windows, stack } = desk.getState()
-        const [focused, previous] = [stack.at(-1), stack.at(-2)]
-        if (windows.length === 1) {
-          if (focused) desk.fill(focused)
-          return
-        }
-        const frames = arrangement(
-          windows.map(w => w.id),
-          focused ?? null,
-          previous ?? null,
-          arrangementArea(element),
-          { minWidth: MIN_WIDTH, minHeight: MIN_HEIGHT },
-        )
-        desk.placeAll(frames)
-        // Windows that cascade come in front of the half they cascade over; the focused window stays in front of all.
-        if (previous) desk.focus(previous)
-        windows.forEach(w => w.id !== focused && w.id !== previous && desk.focus(w.id))
-        if (focused) desk.focus(focused)
-      },
+      () => arrangeNow(desk, element),
       {
         enabled: () => {
           const { windows } = desk.getState()
@@ -206,6 +233,28 @@ interface WindowViewProps {
 }
 
 /** Moving by the title bar, or resizing from the corner or from the left, right or bottom edge. */
+/** Lays every open window out at once: what Window → Arrange does, and what a shrunken desk needs. */
+function arrangeNow(desk: Desk, element: HTMLElement) {
+  const { windows, stack } = desk.getState()
+  const [focused, previous] = [stack.at(-1), stack.at(-2)]
+  if (windows.length === 1) {
+    if (focused) desk.fill(focused)
+    return
+  }
+  const frames = arrangement(
+    windows.map(w => w.id),
+    focused ?? null,
+    previous ?? null,
+    arrangementArea(element),
+    { minWidth: MIN_WIDTH, minHeight: MIN_HEIGHT },
+  )
+  desk.placeAll(frames)
+  // Windows that cascade come in front of the half they cascade over; the focused window stays in front of all.
+  if (previous) desk.focus(previous)
+  windows.forEach(w => w.id !== focused && w.id !== previous && desk.focus(w.id))
+  if (focused) desk.focus(focused)
+}
+
 type Gesture = 'move' | 'resize' | 'left' | 'right' | 'bottom'
 
 /** The frame a gesture makes of `origin` after the pointer has travelled dx, dy. */

@@ -31,6 +31,20 @@ export interface Desk {
   /** Replaces the whole state, e.g. from a URL. Unknown shapes are normalised, not trusted. */
   restore(state: DeskState): void
   setStage(stage: () => Size): void
+  /**
+   * The desk changed size — an external display unplugged, a window resized. Brings every free
+   * window back onto it, and puts each one back where it was when the room returns. Says which
+   * windows had to be made smaller to fit, because more than one of those means a layout that no
+   * longer exists and is worth laying out again.
+   */
+  fitToStage(): FitResult
+}
+
+/** What a resize did: nothing, moved a window in, shrank one, or gave one its old frame back. */
+export interface FitResult {
+  readonly moved: readonly WindowId[]
+  readonly squeezed: readonly WindowId[]
+  readonly restored: readonly WindowId[]
 }
 
 export const EMPTY: DeskState = { windows: [], stack: [] }
@@ -93,6 +107,10 @@ export function nextCascadeFrame(windows: readonly DeskWindow[], stage: Size, op
   return cascadeFrame(taken.size % options.wrap, stage, options)
 }
 
+/** Is this frame wholly on a desk of this size? */
+const withinStage = (frame: Frame, stage: Size) =>
+  frame.x >= 0 && frame.y >= 0 && frame.x + frame.width <= stage.width && frame.y + frame.height <= stage.height
+
 /** Drops duplicate ids and makes the stack agree with the windows. */
 export function normalise(state: DeskState): DeskState {
   const windows = state.windows.filter((w, i, all) => all.findIndex(o => o.id === w.id) === i)
@@ -130,6 +148,16 @@ export function createDesk(options: DeskOptions = {}): Desk {
   /** Where each window was last free, so filling it and freeing it again is not a surprise. */
   const remembered = new Map<WindowId, Frame>()
 
+  /*
+   * Where a window was before the desk got smaller.
+   *
+   * Undocking a laptop is not a decision about your layout: the windows you spread across a big
+   * screen are suddenly past its edge, where they cannot be dragged back from. They are brought in
+   * — and kept, so plugging the display back in puts them out again exactly as they were. Move a
+   * window yourself while small and that is a decision, so the old frame is forgotten.
+   */
+  const beforeShrink = new Map<WindowId, Frame>()
+
   /** A remembered frame is only worth restoring while it still lands on this screen. */
   const fits = (frame: Frame | undefined) => {
     if (!frame) return undefined
@@ -143,7 +171,11 @@ export function createDesk(options: DeskOptions = {}): Desk {
     if (!window) return
     if (window.mode === 'floating' && !frame) return
     const next = frame ?? fits(remembered.get(id)) ?? nextFrame(state)
-    if (frame) remembered.set(id, frame)
+    if (frame) {
+      remembered.set(id, frame)
+      // Put here on purpose, so this is where it belongs now.
+      beforeShrink.delete(id)
+    }
     layouts?.save(windowType(id), { mode: 'floating', frame: next })
     commit(toFront(replace(state, { id, mode: 'floating', frame: next }), id))
   }
@@ -239,6 +271,40 @@ export function createDesk(options: DeskOptions = {}): Desk {
 
     setStage(next) {
       stage = next
+    },
+
+    fitToStage() {
+      const nothing: FitResult = { moved: [], squeezed: [], restored: [] }
+      const size = stage()
+      if (size.width <= 0 || size.height <= 0) return nothing
+      const moved: WindowId[] = []
+      const squeezed: WindowId[] = []
+      const restored: WindowId[] = []
+      const windows = state.windows.map(window => {
+        if (window.mode !== 'floating') return window
+        // The desk is big enough again for where this window used to be: put it back.
+        const before = beforeShrink.get(window.id)
+        if (before && withinStage(before, size)) {
+          beforeShrink.delete(window.id)
+          restored.push(window.id)
+          return { ...window, frame: before }
+        }
+        if (withinStage(window.frame, size)) return window
+        const fitted = fitFrame(window.frame, size)
+        if (!beforeShrink.has(window.id)) beforeShrink.set(window.id, before ?? window.frame)
+        if (!fitted) {
+          // Too small to be a window here at all: it fills the desk until there is room again.
+          squeezed.push(window.id)
+          return { id: window.id, mode: 'filled' as const }
+        }
+        // Only nudged back in, or actually made smaller? The second means its place is gone.
+        if (fitted.width < window.frame.width || fitted.height < window.frame.height) squeezed.push(window.id)
+        else moved.push(window.id)
+        return { ...window, frame: fitted }
+      })
+      if (!moved.length && !squeezed.length && !restored.length) return nothing
+      commit({ ...state, windows })
+      return { moved, squeezed, restored }
     },
   }
 }

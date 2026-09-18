@@ -18,6 +18,20 @@ Drag a window by its title bar to free it where it sits. Drop it against the lef
 that half. Resize from the sides, the bottom or the corner. Double-click the title bar, or press the green
 control, to fill the desk and back.
 
+Windows survive the desk changing size. Unplug an external display and the ones you spread across it
+are past the edge of the laptop screen, where nothing can drag them back — so they are brought in,
+shrunk if they must be, and a window too small to be one fills the desk instead. Plug the display
+back in and each goes out again exactly as it was. Move one yourself while the desk is small and
+that is a decision, so it stays where you put it.
+
+When more than one window has to be made smaller, the layout itself is gone — each was clamped on
+its own, so windows that sat side by side now sit on top of each other — and they are laid out the
+way **Arrange** would, for the screen there is now. The frames from the big screen are still
+remembered, and come back with it.
+
+A mounted `<Desktop>` watches its own size and does all of this. Without one, call
+`desk.fitToStage()`: it returns which windows it `moved`, `squeezed` and `restored`.
+
 Give the desk somewhere to keep layouts and windows come back the way they were left:
 
 ```ts
