@@ -29,7 +29,7 @@ describe('how big a window may be', () => {
     const style = windowFor('about').style
     expect(style.maxWidth).toBe('720px')
     expect(style.maxHeight).toBe('560px')
-    expect(style.marginInline).toBe('auto')
+    expect(style.margin).toBe('auto')
   })
 
   it('caps a free window too, without moving it', () => {
@@ -38,7 +38,7 @@ describe('how big a window may be', () => {
     const style = windowFor('about').style
     expect([style.left, style.top, style.width]).toEqual(['60px', '40px', '900px'])
     expect(style.maxWidth).toBe('400px')
-    expect(style.marginInline).toBe('')
+    expect(style.margin).toBe('')
   })
 
   it('says nothing about a window with no limits, which is most of them', () => {
@@ -46,7 +46,7 @@ describe('how big a window may be', () => {
     act(() => desk.open('rides'))
     const style = windowFor('rides').style
     expect(style.maxWidth).toBe('')
-    expect(style.marginInline).toBe('')
+    expect(style.margin).toBe('')
   })
 
   it('needs no limits function at all', () => {

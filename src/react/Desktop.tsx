@@ -374,7 +374,8 @@ function WindowView({ window, layout, hidden, depth, focused, title, note, info,
     ...(limits?.maxHeight ? { maxHeight: limits.maxHeight } : {}),
     ...(limits?.minWidth ? { minWidth: limits.minWidth } : {}),
     ...(limits?.minHeight ? { minHeight: limits.minHeight } : {}),
-    ...(limits && (limits.maxWidth || limits.maxHeight) && !frame ? { marginInline: 'auto' } : {}),
+    // Filled and capped: it sits in the middle of the room, not in the corner of it.
+    ...(limits && (limits.maxWidth || limits.maxHeight) && !frame ? { margin: 'auto' } : {}),
   }
   const style: CSSProperties | undefined =
     layout !== 'desktop'
