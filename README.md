@@ -2,6 +2,10 @@
 
 A desktop for the web, in React: windows that fill the desk, layered, and arrange when asked.
 
+![Four windows arranged on the desk, with a menu bar and a dock](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/arrange.png)
+
+<sub>The `examples/garage` sample, after Window → Arrange. Every screenshot below is that same sample — run it with `npm run example`.</sub>
+
 ```bash
 npm install @liberation-data/desk
 ```
@@ -132,6 +136,10 @@ Links work the same everywhere: a link opens the same windows, shown one at a ti
 
 ## Dock
 
+![The Window menu open over a filled window, with the dock below](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/menus.png)
+
+<sub>The dock along the bottom, with a badge and a stack; the Window menu listing what is open.</sub>
+
 ```tsx
 import { Dock, dockItem, dockSeparator, dockStack } from '@liberation-data/desk/react'
 
@@ -233,6 +241,10 @@ is the handful of cards a setup step turns on — an icon, a label, a line of wh
 underneath, so it is one tab stop and the arrow keys move the choice.
 
 ## Setup assistant
+
+![A setup assistant on its welcome step](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/setup.png)
+
+<sub>First run: one question at a time, with the steps named along the bottom.</sub>
 
 ```tsx
 const steps: WizardStep[] = [
@@ -361,6 +373,10 @@ anything else it sends is dropped, and messages from anywhere but its own frame 
 
 ## Search
 
+![A search palette over the desk, showing matching windows](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/search.png)
+
+<sub>The palette, grouped and keyboard-driven. The app supplies the results.</sub>
+
 ```tsx
 import { SearchPalette, windowResults } from '@liberation-data/desk/react'
 
@@ -407,6 +423,10 @@ delivers the last event on the topic straight away — the window that the event
 that very event, and would otherwise miss it by a frame.
 
 ## Conversation
+
+![A chat window with a thread of messages and a composer](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/chat.png)
+
+<sub>A thread and a composer, with no opinion about who is answering.</sub>
 
 ```tsx
 import { Composer, Thread } from '@liberation-data/desk/react'
@@ -584,6 +604,10 @@ screen. Opening or closing a window pushes a history entry, so Back closes it; f
 replace the entry. Other hash parameters are left alone.
 
 ## Theming
+
+![The same four arranged windows in the light theme](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/light.png)
+
+<sub>The same desk with `data-theme="light"` on the root.</sub>
 
 Every value in `desk.css` reads a `--desk-*` custom property. Redefine the tokens; don't override the
 selectors.
