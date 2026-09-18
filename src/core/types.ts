@@ -51,3 +51,11 @@ export interface OpenOptions {
   readonly mode?: WindowMode
   readonly frame?: Frame
 }
+
+/** How big a window may be. Everything is optional; a window with no limits takes what it is given. */
+export interface WindowLimits {
+  readonly minWidth?: number
+  readonly minHeight?: number
+  readonly maxWidth?: number
+  readonly maxHeight?: number
+}

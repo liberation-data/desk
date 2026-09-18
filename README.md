@@ -84,6 +84,22 @@ what went wrong and offers Reload, which tries the import again rather than reme
 `renderWindow` is called with a window's id. The desk never owns your content, and a window keeps its DOM
 when focus moves, so scroll positions, carets and iframes survive.
 
+### How big a window may be
+
+```tsx
+<Desktop
+  title={id => TITLES[id]}
+  limits={id => (id === 'about' ? { maxWidth: 720, maxHeight: 560 } : null)}
+  renderWindow={render}
+/>
+```
+
+Most windows want the whole desk when filled and whatever they are dragged to when free, which is
+what `null` says. A window whose content has a natural size — an About box, a short form — says so
+and is never stretched past it, however it is filled, arranged or dragged; filled, it sits in the
+middle of the room it was given rather than in a corner of it. `minWidth` and `minHeight` work the
+same way.
+
 ### What a window is looking at
 
 ```tsx

@@ -41,5 +41,6 @@ export type {
   OpenOptions,
   Size,
   WindowId,
+  WindowLimits,
   WindowMode,
 } from './types.js'

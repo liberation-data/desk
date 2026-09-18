@@ -3,7 +3,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from
 import { addCommandHandler, addDeskCommands, DeskCommands, STAGE_ATTRIBUTE, WINDOW_ATTRIBUTE, windowElement } from '../core/commands.js'
 import { focusedId } from '../core/desk.js'
 import type { Desk } from '../core/desk.js'
-import type { DeskWindow, Frame, WindowId } from '../core/types.js'
+import type { DeskWindow, Frame, WindowId, WindowLimits } from '../core/types.js'
 import { arrangement } from './arrange.js'
 import { InfoTip } from './infoTip.js'
 import { useDesk, useDeskState, WindowContext } from './context.js'
@@ -21,6 +21,13 @@ export interface DesktopProps {
    * gives way to the actions and disappears before the title does when the window is narrow.
    */
   readonly note?: (id: WindowId) => ReactNode
+  /**
+   * How big this window may be. Most windows want the whole desk when filled and whatever they are
+   * dragged to when free, which is what `null` says. A window whose content has a natural size —
+   * an About box, a small form — says so, and is never stretched past it, however it is filled,
+   * arranged or dragged.
+   */
+  readonly limits?: (id: WindowId) => WindowLimits | null
   /**
    * What this window is, behind an (i) at the end of its title bar — the same place in every window,
    * so a person who wonders what they are looking at always knows where to ask. Explanation only: a
@@ -84,7 +91,7 @@ const halfFrame = (stage: HTMLElement, side: 'start' | 'end'): Frame => {
   return { x: side === 'start' ? area.x : area.x + width + area.gap, y: area.y, width, height: area.height }
 }
 
-export function Desktop({ renderWindow, title, note, info, actions, empty, loading, failed, layout = 'auto', className }: DesktopProps) {
+export function Desktop({ renderWindow, title, note, info, actions, limits, empty, loading, failed, layout = 'auto', className }: DesktopProps) {
   const desk = useDesk()
   const state = useDeskState()
   const stage = useRef<HTMLDivElement>(null)
@@ -192,6 +199,7 @@ export function Desktop({ renderWindow, title, note, info, actions, empty, loadi
           title={title(window.id)}
           note={note?.(window.id)}
           info={info?.(window.id)}
+          limits={limits?.(window.id) ?? null}
           actions={actions?.(window.id)}
         >
           {/* Memoised on the id and the render function: moving or focusing a window
@@ -228,6 +236,7 @@ interface WindowViewProps {
   readonly title: ReactNode
   readonly note?: ReactNode
   readonly info?: ReactNode
+  readonly limits?: WindowLimits | null
   readonly actions?: ReactNode
   readonly children: ReactNode
 }
@@ -276,7 +285,7 @@ function reshape(gesture: Gesture, origin: Frame, dx: number, dy: number): Frame
   }
 }
 
-function WindowView({ window, layout, hidden, depth, focused, title, note, info, actions, children }: WindowViewProps) {
+function WindowView({ window, layout, hidden, depth, focused, title, note, info, actions, limits, children }: WindowViewProps) {
   const desk = useDesk()
   // While dragging, the frame lives here and commits once on release, so a drag
   // re-renders one window rather than notifying every subscriber per pixel.
@@ -355,12 +364,24 @@ function WindowView({ window, layout, hidden, depth, focused, title, note, info,
   }
 
   const frame = layout === 'desktop' ? (live ?? (window.mode === 'floating' ? window.frame : null)) : null
+  /*
+   * A window that says how big it may be is capped in the browser rather than in the state: filling
+   * the desk, being arranged into a cell and being dragged wider all end at the same place, and the
+   * window sits in the middle of whatever room it was given rather than pinned to a corner of it.
+   */
+  const capped: CSSProperties = {
+    ...(limits?.maxWidth ? { maxWidth: limits.maxWidth } : {}),
+    ...(limits?.maxHeight ? { maxHeight: limits.maxHeight } : {}),
+    ...(limits?.minWidth ? { minWidth: limits.minWidth } : {}),
+    ...(limits?.minHeight ? { minHeight: limits.minHeight } : {}),
+    ...(limits && (limits.maxWidth || limits.maxHeight) && !frame ? { marginInline: 'auto' } : {}),
+  }
   const style: CSSProperties | undefined =
     layout !== 'desktop'
-      ? undefined
+      ? capped
       : frame
-        ? { left: frame.x, top: frame.y, width: frame.width, height: frame.height, zIndex: 10 + depth }
-        : { zIndex: 10 + depth }
+        ? { left: frame.x, top: frame.y, width: frame.width, height: frame.height, zIndex: 10 + depth, ...capped }
+        : { zIndex: 10 + depth, ...capped }
 
   return (
     <WindowContext.Provider value={context}>

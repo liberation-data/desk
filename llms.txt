@@ -190,6 +190,8 @@ useWindowId(): string | null                        // inside a window's content
   title={(id) => ReactNode}
   note?={(id) => ReactNode}                         // quiet text in the title bar: what this window is looking at
   info?={(id) => ReactNode}                         // an (i) at the end of the title bar: what this window IS
+  limits?={(id) => ({ maxWidth?, maxHeight?, minWidth?, minHeight? } | null)}  // a window with a natural
+                                                    // size is never stretched past it; filled, it centres
   actions?={(id) => ReactNode}                      // window-wide controls in the title bar
   loading?={(id) => ReactNode}                      // inside a window while its code loads
   failed?={(id, error, reload) => ReactNode}        // inside a window that could not open
