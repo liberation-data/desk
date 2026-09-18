@@ -311,7 +311,7 @@ useDeskEvent<T>(topic, handler, { replay? })          // replay: deliver the las
           theme?={{ mode: 'light'|'dark', tokens: Record<string,string> }}
           sandbox?="allow-scripts allow-forms" />
 // theme: sent with hello and again on change; the bridge sets the tokens as custom properties on the
-// app's root, with data-desk-theme and color-scheme. The app may read desk.theme / desk.onTheme(fn).
+// app's root, with data-theme and color-scheme (the attribute desk's own CSS and the HIG use). The app may read desk.theme / desk.onTheme(fn).
 withAppBridge(html): string          // puts the app-side script in the page's <head>
 APP_BRIDGE_SCRIPT                    // the same script, to include some other way
 ```

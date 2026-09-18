@@ -31,6 +31,10 @@ const PROTOCOL = 1
  * the page is, for an app that decides its own colours but wants to know; `tokens` are custom
  * properties the bridge sets on the app's own root, so an app that reads them gets the desk's
  * colours with nothing to write.
+ *
+ * The mode is stamped as `data-theme`, which is the attribute desk's own stylesheet reads and the
+ * one the HIG tells app authors to honour — so a page already written that way follows the desk
+ * with nothing added to it.
  */
 export interface AppTheme {
   readonly mode: 'light' | 'dark'
@@ -188,7 +192,7 @@ export const APP_BRIDGE_SCRIPT = `(() => {
     if (!theme) return;
     desk.theme = theme;
     const root = document.documentElement;
-    root.dataset.deskTheme = theme.mode;
+    root.dataset.theme = theme.mode;
     root.style.colorScheme = theme.mode;
     for (const [name, value] of Object.entries(theme.tokens || {})) root.style.setProperty(name, value);
     themed.forEach(h => h(theme));

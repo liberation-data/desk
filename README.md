@@ -348,8 +348,9 @@ Give it `theme` and the app wears the desk's look instead of whatever its author
 />
 ```
 
-The bridge sets those custom properties on the app's own root, stamps `data-desk-theme` and
-`color-scheme` with the mode, and re-sends the lot whenever it changes — a person switching theme
+The bridge sets those custom properties on the app's own root, stamps `data-theme` and
+`color-scheme` with the mode — `data-theme` being what desk's own stylesheet reads and what the HIG
+asks app authors to honour, so a page already written that way follows along with nothing added, and re-sends the lot whenever it changes — a person switching theme
 switched the app too, not just the chrome around it. An app that would rather decide for itself can
 read `desk.theme`, watch `desk.onTheme(…)`, or ignore both.
 
