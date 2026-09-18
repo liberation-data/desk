@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { act, cleanup, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDesk, focusedId } from '../../src/core/index.js'
 import type { Desk } from '../../src/core/index.js'
@@ -66,7 +67,7 @@ describe('AppFrame', () => {
   it('says hello when the app is ready, with what it was granted', () => {
     const { frame, sent } = mount()
     fromApp(frame, { desk: 1, kind: 'ready' })
-    expect(sent).toHaveBeenCalledWith({ desk: 1, kind: 'hello', window: 'card', listens: ['ride.*'], says: ['ride.selected'] }, '*')
+    expect(sent).toHaveBeenCalledWith({ desk: 1, kind: 'hello', window: 'card', listens: ['ride.*'], says: ['ride.selected'], theme: null }, '*')
   })
 
   it('passes on the topics it may hear, and nothing else', () => {
@@ -163,5 +164,49 @@ describe('withAppBridge', () => {
 
   it('works on a fragment with no head', () => {
     expect(withAppBridge('<p>hello</p>').startsWith('<script>')).toBe(true)
+  })
+})
+
+describe('AppFrame and the desk’s look', () => {
+  const LIGHT = { mode: 'light' as const, tokens: { '--sb-bg-dark': '#eef1f6', '--sb-accent': '#336699' } }
+  const DARK = { mode: 'dark' as const, tokens: { '--sb-bg-dark': '#07090f', '--sb-accent': '#625fff' } }
+
+  it('offers the theme in its hello, so an app is themed before it draws', () => {
+    const { frame, sent } = mount({ theme: LIGHT })
+    fromApp(frame, { desk: 1, kind: 'ready' })
+    expect(sent).toHaveBeenCalledWith(expect.objectContaining({ kind: 'hello', theme: LIGHT }), '*')
+  })
+
+  it('sends it again when it changes, because a person switching theme switched the app too', () => {
+    const sent = vi.fn()
+    const desk = createDesk()
+    function Switcher() {
+      const [theme, setTheme] = useState(LIGHT as typeof LIGHT | typeof DARK)
+      return (
+        <>
+          <button type="button" onClick={() => setTheme(DARK)}>Dark</button>
+          <AppFrame title="Ride card" srcDoc="<p>card</p>" theme={theme} />
+        </>
+      )
+    }
+    render(
+      <DeskShell desk={desk}>
+        <Desktop title={id => id} renderWindow={() => <Switcher />} />
+      </DeskShell>,
+    )
+    act(() => desk.open('card'))
+    const frame = document.querySelector('iframe') as HTMLIFrameElement
+    Object.defineProperty(frame, 'contentWindow', { value: { postMessage: sent }, configurable: true })
+    fromApp(frame, { desk: 1, kind: 'ready' })
+    sent.mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'Dark' }))
+    expect(sent).toHaveBeenCalledWith({ desk: 1, kind: 'theme', theme: DARK }, '*')
+  })
+
+  it('says nothing about the theme when it was given none', () => {
+    const { frame, sent } = mount()
+    fromApp(frame, { desk: 1, kind: 'ready' })
+    sent.mockClear()
+    expect(sent).not.toHaveBeenCalledWith(expect.objectContaining({ kind: 'theme' }), '*')
   })
 })

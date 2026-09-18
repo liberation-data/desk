@@ -20,8 +20,27 @@ import { useBus } from './events.js'
 /** The protocol version. Every message carries it, so a mismatch is ignored rather than misread. */
 const PROTOCOL = 1
 
+/*
+ * THE HOST'S LOOK, OFFERED TO THE APP.
+ *
+ * An app runs in a frame of its own, so by default it wears whatever its author hard-coded: a white
+ * page inside a dark desk, a dark one inside a light desk. Switching the desk's theme should carry
+ * the app too — the person switched the whole thing, not the chrome around it.
+ *
+ * So the host offers its palette, and the app takes it or ignores it. `mode` says which way round
+ * the page is, for an app that decides its own colours but wants to know; `tokens` are custom
+ * properties the bridge sets on the app's own root, so an app that reads them gets the desk's
+ * colours with nothing to write.
+ */
+export interface AppTheme {
+  readonly mode: 'light' | 'dark'
+  /** Custom properties, named as they will be set: `{ '--sb-bg-dark': '#0b0f1a' }`. */
+  readonly tokens: Readonly<Record<string, string>>
+}
+
 type HostMessage =
-  | { readonly desk: 1; readonly kind: 'hello'; readonly window: string | null; readonly listens: readonly string[]; readonly says: readonly string[] }
+  | { readonly desk: 1; readonly kind: 'hello'; readonly window: string | null; readonly listens: readonly string[]; readonly says: readonly string[]; readonly theme: AppTheme | null }
+  | { readonly desk: 1; readonly kind: 'theme'; readonly theme: AppTheme }
   | { readonly desk: 1; readonly kind: 'event'; readonly topic: string; readonly payload: unknown; readonly from: string | null }
   | { readonly desk: 1; readonly kind: 'drop'; readonly type: string; readonly payload: unknown; readonly from: string | null }
 
@@ -43,6 +62,8 @@ export interface AppFrameProps {
   readonly listens?: readonly string[]
   /** Topics the app may say. Anything else it publishes is dropped. Default: none. */
   readonly says?: readonly string[]
+  /** The desk's own look, offered to the app: it is applied to the app's root and re-sent on change. */
+  readonly theme?: AppTheme
   /** What may be dropped on it. Default: nothing. */
   readonly accepts?: Accepts
   /** Windows the app may ask to open. Default: none. */
@@ -61,6 +82,7 @@ export function AppFrame({
   srcDoc,
   listens = [],
   says = [],
+  theme,
   accepts,
   opens = [],
   sandbox = 'allow-scripts allow-forms',
@@ -79,8 +101,8 @@ export function AppFrame({
     frame.current?.contentWindow?.postMessage(message, '*')
   }
 
-  const latest = useRef({ listens, says, opens, windowId })
-  latest.current = { listens, says, opens, windowId }
+  const latest = useRef({ listens, says, opens, windowId, theme })
+  latest.current = { listens, says, opens, windowId, theme }
 
   // What the app says: only from this frame, only on topics it was granted.
   useEffect(() => {
@@ -89,7 +111,7 @@ export function AppFrame({
       const message = event.data
       const granted = latest.current
       if (message.kind === 'ready') {
-        post({ desk: PROTOCOL, kind: 'hello', window: granted.windowId, listens: granted.listens, says: granted.says })
+        post({ desk: PROTOCOL, kind: 'hello', window: granted.windowId, listens: granted.listens, says: granted.says, theme: granted.theme ?? null })
       } else if (message.kind === 'publish') {
         if (typeof message.topic === 'string' && granted.says.some(pattern => topicMatches(pattern, message.topic))) {
           bus.publish(message.topic, message.payload, { from: granted.windowId })
@@ -101,6 +123,14 @@ export function AppFrame({
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [bus, desk])
+
+  // The desk's look, again, whenever it changes: a person switching theme switches the app too.
+  const themeKey = theme ? `${theme.mode}|${Object.entries(theme.tokens).map(([k, v]) => `${k}:${v}`).join(';')}` : ''
+  useEffect(() => {
+    if (!latest.current.theme) return
+    post({ desk: PROTOCOL, kind: 'theme', theme: latest.current.theme })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeKey])
 
   // What the app hears: only the topics it was granted, and never its own words back.
   const listenKey = listens.join('|')
@@ -154,10 +184,22 @@ export const APP_BRIDGE_SCRIPT = `(() => {
   const handlers = new Map();
   const drops = [];
   const send = message => parent.postMessage(Object.assign({ desk: ${PROTOCOL} }, message), '*');
+  const applyTheme = theme => {
+    if (!theme) return;
+    desk.theme = theme;
+    const root = document.documentElement;
+    root.dataset.deskTheme = theme.mode;
+    root.style.colorScheme = theme.mode;
+    for (const [name, value] of Object.entries(theme.tokens || {})) root.style.setProperty(name, value);
+    themed.forEach(h => h(theme));
+  };
+  const themed = [];
   const desk = {
     window: null,
     listens: [],
     says: [],
+    theme: null,
+    onTheme(handler) { themed.push(handler); if (desk.theme) handler(desk.theme); },
     on(topic, handler) { (handlers.get(topic) || handlers.set(topic, []).get(topic)).push(handler); },
     onDrop(handler) { drops.push(handler); },
     publish(topic, payload) { send({ kind: 'publish', topic, payload }); },
@@ -168,7 +210,8 @@ export const APP_BRIDGE_SCRIPT = `(() => {
   addEventListener('message', event => {
     if (event.source !== parent || !event.data || event.data.desk !== ${PROTOCOL}) return;
     const message = event.data;
-    if (message.kind === 'hello') { desk.window = message.window; desk.listens = message.listens; desk.says = message.says; }
+    if (message.kind === 'hello') { desk.window = message.window; desk.listens = message.listens; desk.says = message.says; applyTheme(message.theme); }
+    if (message.kind === 'theme') applyTheme(message.theme);
     if (message.kind === 'event') for (const [pattern, list] of handlers) if (matches(pattern, message.topic)) list.forEach(h => h(message));
     if (message.kind === 'drop') drops.forEach(h => h(message));
   });

@@ -322,8 +322,23 @@ part like any other:
 />
 ```
 
+Give it `theme` and the app wears the desk's look instead of whatever its author hard-coded:
+
+```tsx
+<AppFrame
+  title="Ride Card"
+  srcDoc={withAppBridge(generatedHtml)}
+  theme={{ mode: 'dark', tokens: { '--sb-bg-dark': '#0b0f1a', '--sb-accent': '#625fff' } }}
+/>
+```
+
+The bridge sets those custom properties on the app's own root, stamps `data-desk-theme` and
+`color-scheme` with the mode, and re-sends the lot whenever it changes — a person switching theme
+switched the app too, not just the chrome around it. An app that would rather decide for itself can
+read `desk.theme`, watch `desk.onTheme(…)`, or ignore both.
+
 Inside the page, the bridge gives it a small `desk` object: `desk.on(topic, …)`, `desk.onDrop(…)`,
-`desk.publish(topic, payload)` and `desk.open(window)`. The page runs sandboxed with no access to the host's
+`desk.publish(topic, payload)`, `desk.open(window)`, `desk.theme` and `desk.onTheme(…)`. The page runs sandboxed with no access to the host's
 origin, and talks only through messages. The host grants each app its topics, drop types and windows;
 anything else it sends is dropped, and messages from anywhere but its own frame are ignored.
 

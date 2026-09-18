@@ -306,13 +306,16 @@ useDeskEvent<T>(topic, handler, { replay? })          // replay: deliver the las
 
 ```tsx
 <AppFrame title src?|srcDoc? listens?={string[]} says?={string[]} accepts?={Accepts} opens?={string[]}
+          theme?={{ mode: 'light'|'dark', tokens: Record<string,string> }}
           sandbox?="allow-scripts allow-forms" />
+// theme: sent with hello and again on change; the bridge sets the tokens as custom properties on the
+// app's root, with data-desk-theme and color-scheme. The app may read desk.theme / desk.onTheme(fn).
 withAppBridge(html): string          // puts the app-side script in the page's <head>
 APP_BRIDGE_SCRIPT                    // the same script, to include some other way
 ```
 
 Inside the page: `desk.on(topic, message => …)`, `desk.onDrop(message => …)`, `desk.publish(topic, payload)`,
-`desk.open(window)`, and `desk.window` once connected. Messages carry `desk: 1`. The host ignores anything not
+`desk.open(window)`, `desk.theme`, `desk.onTheme(fn)`, and `desk.window` once connected. Messages carry `desk: 1`. The host ignores anything not
 from its own frame, drops publishes outside `says` and opens outside `opens`, never echoes an app its own
 events, and sets the frame's `pointer-events: none` while a drag is in the air so drops reach it.
 
