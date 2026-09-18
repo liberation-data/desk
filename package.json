@@ -1,6 +1,6 @@
 {
   "name": "@liberation-data/desk",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A desktop for the web, for React: windows, a dock, menus and commands, controls, tours and setup assistants.",
   "license": "Apache-2.0",
   "author": "Jasper Blues",
