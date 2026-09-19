@@ -13,7 +13,12 @@ import { join } from 'node:path'
  * the parts are printed under it, because an app can import only the ones it draws, and because a
  * part growing is easier to notice than a total growing.
  */
-const BUDGETS = { core: 11, react: 46, css: 12 }
+/*
+ * Raised for minimizing (0.9 core, 0.3 react) and the browser title (0.4 react): a window kept
+ * loaded off the desk is a third state that the desk, the URL, the dock and the Window menu all
+ * have to know about. Still tight — a budget with room in it is not one.
+ */
+const BUDGETS = { core: 12, react: 47, css: 12 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {

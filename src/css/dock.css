@@ -130,6 +130,12 @@
   background: var(--desk-accent);
 }
 
+/* Open, and all of it off the desk: the dot is hollow, so "open" still reads at a glance. */
+.desk-dock-item[data-minimized]::after {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--desk-muted);
+}
+
 .desk-dock-badge {
   position: absolute;
   top: -5px;

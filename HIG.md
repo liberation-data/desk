@@ -144,7 +144,8 @@ together, they are one window; if people want them side by side, they are two.
 ### The key window
 
 - Exactly one window has focus — the **key window**. It has an accent-tinted border, coloured controls and a
-  full-contrast title. Other windows have muted titles and grey controls.
+  full-contrast title. Other windows have muted titles and grey controls. A desk whose windows are all
+  minimized has no key window; a minimized one is never it, because there is nothing on screen to type into.
 - Keyboard input, menu commands and typed input go to the key window first (see §5).
 - Pressing anywhere in a window makes it key. Pressing a control in a background window also performs that
   control's action.
@@ -188,7 +189,7 @@ the stage.
 
 ### Title bars
 
-- Controls are on the leading side: **close**, then **zoom**. Title follows.
+- Controls are on the leading side: **close**, then **minimize**, then **zoom**. Title follows.
 - A title is the name of the thing, not the app: **Dandenongs loop**, not **Garage — Map**.
 - A title bar may hold at most one or two window-wide actions on its trailing side. Anything more belongs
   in a toolbar inside the window.
@@ -207,13 +208,29 @@ the stage.
 - Closing a window discards its unsaved state only after asking, or keeps a draft. Prefer the draft.
 - Back closes the last window opened, because opening a window is navigation.
 
+### Minimizing
+
+- **Minimizing takes a window off the desk. It does not close it.** The window stays open and stays loaded:
+  a half-written message, a paused video, a scrolled list and a long-running request are all exactly as they
+  were when it comes back. Nothing is asked before minimizing, because nothing is lost.
+- A minimized window keeps the mode and the place it had, and comes back to them. Minimizing is not a way of
+  sitting on the desk, so it never counts as one.
+- **Every way of choosing a window brings it back**: its dock item, its place in the Window menu, opening it
+  again. There is no separate un-minimize to find.
+- **A minimized window must be findable in two places at once**: its dock item still shows it is open, and the
+  Window menu lists it and says it is minimized. A window nobody can get back to is a window that was closed
+  without being asked about.
+- Minimize only where windows are layered. Showing one window at a time already puts the others offstage, so
+  a second way of doing it is a control that appears to do nothing.
+
 ---
 
 ## 4. Dock
 
 - The dock holds **what people return to**: the few windows used most, stacks for the rest, then pins.
   Order: core windows, a separator, stacks, a separator, pins.
-- A **dot** under an item means its window is open. The accent dot means it is the key window.
+- A **dot** under an item means its window is open. The accent dot means it is the key window. A hollow dot
+  means it is open and minimized — off the desk, and one press away.
 - A **badge** counts things waiting for the person — due, unread, failed. It is a number or a single mark,
   never a word. If nothing is waiting, there is no badge; a badge showing 0 is a bug.
 - A **stack** groups related windows. Its name is a plain noun (**Plan**, **Garage**). Its icon previews its
@@ -261,6 +278,7 @@ Use the platform's modifier (⌘ on Apple devices, Ctrl elsewhere). Don't reassi
 | Search the desk | ⌘K |
 | Settings | ⌘, |
 | Close window | ⌘W — but the browser owns it; offer it inside the app only when installed as an app |
+| Minimize window | ⌘M |
 | Undo / Redo | ⌘Z / ⇧⌘Z |
 | Copy / Cut / Paste / Select all | ⌘C / ⌘X / ⌘V / ⌘A |
 | Find in window | ⌘F |

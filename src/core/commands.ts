@@ -1,4 +1,4 @@
-import { focusedId } from './desk.js'
+import { focusedId, onDesk } from './desk.js'
 import type { Desk } from './desk.js'
 
 /*
@@ -118,6 +118,8 @@ export const DeskCommands = {
   closeWindow: 'desk.window.close',
   /** Fills the key window, or frees it: the green control. */
   zoomWindow: 'desk.window.zoom',
+  /** Takes the key window off the desk, still open and still loaded: the amber control. */
+  minimizeWindow: 'desk.window.minimize',
   /** Answered by a mounted Desktop, which knows the space windows are laid out in. */
   arrange: 'desk.window.arrange',
   nextWindow: 'desk.window.next',
@@ -126,8 +128,10 @@ export const DeskCommands = {
 
 export function addDeskCommands(stage: EventTarget, desk: Desk): () => void {
   const key = () => focusedId(desk.getState())
+  // Only the windows on the desk: cycling through a minimized one would drag it back out by the way.
   const cycle = (step: 1 | -1) => {
-    const { windows } = desk.getState()
+    const windows = onDesk(desk.getState())
+    if (!windows.length) return
     const current = windows.findIndex(w => w.id === key())
     const next = windows[(current + step + windows.length) % windows.length]
     if (next) desk.focus(next.id)
@@ -135,8 +139,9 @@ export function addDeskCommands(stage: EventTarget, desk: Desk): () => void {
   const removers = [
     addCommandHandler(stage, DeskCommands.closeWindow, () => { const id = key(); if (id) desk.close(id) }, { enabled: () => key() !== null }),
     addCommandHandler(stage, DeskCommands.zoomWindow, () => { const id = key(); if (id) desk.toggleMode(id) }, { enabled: () => key() !== null }),
-    addCommandHandler(stage, DeskCommands.nextWindow, () => cycle(1), { enabled: () => desk.getState().windows.length > 1 }),
-    addCommandHandler(stage, DeskCommands.previousWindow, () => cycle(-1), { enabled: () => desk.getState().windows.length > 1 }),
+    addCommandHandler(stage, DeskCommands.minimizeWindow, () => { const id = key(); if (id) desk.minimize(id) }, { enabled: () => key() !== null }),
+    addCommandHandler(stage, DeskCommands.nextWindow, () => cycle(1), { enabled: () => onDesk(desk.getState()).length > 1 }),
+    addCommandHandler(stage, DeskCommands.previousWindow, () => cycle(-1), { enabled: () => onDesk(desk.getState()).length > 1 }),
   ]
   return () => removers.forEach(remove => remove())
 }

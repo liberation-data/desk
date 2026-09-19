@@ -44,6 +44,7 @@ import {
   Toggle,
   TourBar,
   useCommand,
+  useDocumentTitle,
   useSetupProgress,
   useTasks,
   useDesk,
@@ -498,6 +499,7 @@ const SHORTCUTS: readonly { readonly keys: string; readonly does: string }[] = [
   { keys: 'mod+comma', does: 'Settings' },
   { keys: 'mod+j', does: 'Type to the window in front' },
   { keys: 'mod+e', does: 'Export rides, from the Rides window' },
+  { keys: 'mod+m', does: 'Minimize the window in front — it stays open and loaded' },
   { keys: 'mod+alt+a', does: 'Arrange the windows' },
   { keys: 'alt+]', does: 'Next window' },
   { keys: 'alt+[', does: 'Previous window' },
@@ -974,6 +976,13 @@ type Id = keyof typeof SURFACES
 // `rides#2` is a second Rides window: the kind is what decides how it renders.
 const isKnown = (id: string): id is Id => windowType(id) in SURFACES
 const kindOf = (id: string) => windowType(id) as Id
+const windowTitle = (id: string) => (isKnown(id) ? SURFACES[kindOf(id)].title : id)
+
+/** The tab says what is in front. "Garage" comes from the page's own <title>, so it is named once. */
+function BrowserTitle() {
+  useDocumentTitle(windowTitle)
+  return null
+}
 
 const item = (id: Id, extra: Partial<DockItem> = {}): DockItem => ({
   id,
@@ -1093,10 +1102,11 @@ function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonl
   return (
     <DeskShell desk={desk}>
       <div className="garage">
+        <BrowserTitle />
         <GarageMenuBar desk={desk} steps={steps} touring={touring} onTour={() => { setOffering(false); setTouring(true) }} onSetupAgain={onSetupAgain} />
         <main className="screen">
           <Desktop
-            title={id => (isKnown(id) ? SURFACES[id].title : id)}
+            title={windowTitle}
             renderWindow={id => (isKnown(id) ? body(id) : null)}
             empty={<div className="empty"><h2>Nothing open</h2><p>Pick something from the dock.</p></div>}
           />
@@ -1186,6 +1196,7 @@ function GarageMenuBar({
       id: 'window',
       label: 'Window',
       items: () => [
+        menuCommand('Minimize', DeskCommands.minimizeWindow, { shortcut: 'mod+m' }),
         menuCommand('Zoom', DeskCommands.zoomWindow),
         menuCommand('Arrange', DeskCommands.arrange, { shortcut: 'mod+alt+a' }),
         menuSeparator(),

@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
 import { canPerform, perform } from '../core/commands.js'
 import type { CommandId } from '../core/commands.js'
-import { focusedId } from '../core/desk.js'
+import { focusedId, isMinimized } from '../core/desk.js'
 import { bindShortcuts, formatShortcut, isApplePlatform } from '../core/shortcuts.js'
 import type { Desk } from '../core/desk.js'
 import type { DeskState, WindowId } from '../core/types.js'
@@ -59,10 +59,19 @@ export const menuAction = (label: string, onSelect: () => void, options: Omit<Op
 export const menuSeparator = (): MenuItem => ({ type: 'separator' })
 export const menuHeader = (label: string): MenuItem => ({ type: 'header', label })
 
-/** One item per open window, the key window checked — what a Window menu lists at its foot. */
+/**
+ * One item per open window, the key window checked — what a Window menu lists at its foot. A
+ * minimized window says so and is still listed: the menu is where someone looks for a window
+ * they cannot see, and choosing it brings it back.
+ */
 export function windowMenuItems(state: DeskState, focus: (id: WindowId) => void, title: (id: WindowId) => string): MenuItem[] {
   const key = focusedId(state)
-  return state.windows.map(w => menuAction(title(w.id), () => focus(w.id), { checked: w.id === key }))
+  return state.windows.map(w =>
+    menuAction(title(w.id), () => focus(w.id), {
+      checked: w.id === key,
+      ...(isMinimized(state, w.id) ? { detail: 'Minimized' } : {}),
+    }),
+  )
 }
 
 export interface MenuBarProps {

@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 import { addCommandHandler, addDeskCommands, DeskCommands, STAGE_ATTRIBUTE, WINDOW_ATTRIBUTE, windowElement } from '../core/commands.js'
-import { focusedId } from '../core/desk.js'
+import { focusedId, isMinimized, onDesk } from '../core/desk.js'
 import type { Desk } from '../core/desk.js'
 import type { DeskWindow, Frame, WindowId, WindowLimits } from '../core/types.js'
 import { arrangement } from './arrange.js'
@@ -36,7 +36,7 @@ export interface DesktopProps {
   readonly info?: (id: WindowId) => ReactNode
   /** Window-wide controls on the trailing side of the title bar. One or two; more belongs in a toolbar. */
   readonly actions?: (id: WindowId) => ReactNode
-  /** Shown when no window is open. */
+  /** Shown when no window is on the desk — none open, or every one of them minimized. */
   readonly empty?: ReactNode
   /** Shown inside a window while its code loads. Default: a quiet "Loading…". */
   readonly loading?: WindowLoading
@@ -159,7 +159,7 @@ export function Desktop({ renderWindow, title, note, info, actions, limits, empt
       () => arrangeNow(desk, element),
       {
         enabled: () => {
-          const { windows } = desk.getState()
+          const windows = onDesk(desk.getState())
           return windows.length > 1 || windows.some(w => w.mode === 'floating')
         },
       },
@@ -186,7 +186,7 @@ export function Desktop({ renderWindow, title, note, info, actions, limits, empt
       data-layout={mode}
       {...{ [STAGE_ATTRIBUTE]: '' }}
     >
-      {state.windows.length === 0 && empty}
+      {onDesk(state).length === 0 && empty}
       {state.windows.map(window => (
         <WindowView
           key={window.id}
@@ -194,8 +194,10 @@ export function Desktop({ renderWindow, title, note, info, actions, limits, empt
           layout={mode}
           depth={state.stack.indexOf(window.id)}
           focused={window.id === focused}
-          // One window at a time: the rest stay mounted, keeping their state, and simply wait offstage.
-          hidden={mode === 'fullscreen' && window.id !== focused}
+          // Offstage, not gone: it keeps its DOM, so nothing in it is lost. One window at a time on
+          // touch, and minimizing, are the same thing to everything below this line.
+          hidden={(mode === 'fullscreen' && window.id !== focused) || isMinimized(state, window.id)}
+          minimized={isMinimized(state, window.id)}
           title={title(window.id)}
           note={note?.(window.id)}
           info={info?.(window.id)}
@@ -231,6 +233,8 @@ interface WindowViewProps {
   readonly window: DeskWindow
   readonly layout: DeskLayout
   readonly hidden?: boolean
+  /** Hidden because it was minimized, rather than because another window has the screen. */
+  readonly minimized?: boolean
   readonly depth: number
   readonly focused: boolean
   readonly title: ReactNode
@@ -244,7 +248,10 @@ interface WindowViewProps {
 /** Moving by the title bar, or resizing from the corner or from the left, right or bottom edge. */
 /** Lays every open window out at once: what Window → Arrange does, and what a shrunken desk needs. */
 function arrangeNow(desk: Desk, element: HTMLElement) {
-  const { windows, stack } = desk.getState()
+  const state = desk.getState()
+  // Minimized windows are off the desk: laying one out would put it back without being asked.
+  const windows = onDesk(state)
+  const stack = state.stack.filter(id => !isMinimized(state, id))
   const [focused, previous] = [stack.at(-1), stack.at(-2)]
   if (windows.length === 1) {
     if (focused) desk.fill(focused)
@@ -285,7 +292,7 @@ function reshape(gesture: Gesture, origin: Frame, dx: number, dy: number): Frame
   }
 }
 
-function WindowView({ window, layout, hidden, depth, focused, title, note, info, actions, limits, children }: WindowViewProps) {
+function WindowView({ window, layout, hidden, minimized, depth, focused, title, note, info, actions, limits, children }: WindowViewProps) {
   const desk = useDesk()
   // While dragging, the frame lives here and commits once on release, so a drag
   // re-renders one window rather than notifying every subscriber per pixel.
@@ -393,6 +400,7 @@ function WindowView({ window, layout, hidden, depth, focused, title, note, info,
         className="desk-window"
         data-mode={layout === 'fullscreen' ? 'fullscreen' : live ? 'floating' : window.mode}
         data-hidden={hidden || undefined}
+        data-minimized={minimized || undefined}
         inert={hidden || undefined}
         data-focused={focused || undefined}
         data-dragging={live ? true : undefined}
@@ -413,7 +421,11 @@ function WindowView({ window, layout, hidden, depth, focused, title, note, info,
           <div className="desk-controls">
             <button type="button" className="desk-control" data-control="close" aria-label="Close" onClick={() => desk.close(window.id)} />
             {layout === 'desktop' && (
-              <button type="button" className="desk-control" data-control="mode" aria-label="Zoom" onClick={zoom} />
+              <>
+                {/* Off the desk, still open: nothing is unmounted, so nothing inside it is lost. */}
+                <button type="button" className="desk-control" data-control="minimize" aria-label="Minimize" onClick={() => desk.minimize(window.id)} />
+                <button type="button" className="desk-control" data-control="mode" aria-label="Zoom" onClick={zoom} />
+              </>
             )}
           </div>
           <h2 id={titleId} className="desk-title">

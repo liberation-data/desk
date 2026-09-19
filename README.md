@@ -22,6 +22,11 @@ Drag a window by its title bar to free it where it sits. Drop it against the lef
 that half. Resize from the sides, the bottom or the corner. Double-click the title bar, or press the green
 control, to fill the desk and back.
 
+**Minimize** (⌘M, or the amber control) takes a window off the desk without closing it. It stays open and
+stays loaded — the half-written message, the paused video, the request still running — and comes back to the
+mode and the place it had. Its dock item still says it is open, with a hollow dot; the Window menu lists it
+and says it is minimized. Choosing it anywhere brings it back, so there is no un-minimize to hunt for.
+
 Windows survive the desk changing size. Unplug an external display and the ones you spread across it
 are past the edge of the laptop screen, where nothing can drag them back — so they are brought in,
 shrunk if they must be, and a window too small to be one fills the desk instead. Plug the display
@@ -602,6 +607,43 @@ The hash carries which windows are open, which float, and which has focus — `#
 but never positions: a shared link opens the same things, not someone else's layout on a different
 screen. Opening or closing a window pushes a history entry, so Back closes it; focus and mode changes
 replace the entry. Other hash parameters are left alone.
+
+## Minimizing
+
+```tsx
+desk.minimize('rides')          // off the desk, still open, still loaded
+desk.focus('rides')             // and back, to the mode and frame it had
+isMinimized(desk.getState(), 'rides')
+onDesk(desk.getState())         // the windows Arrange lays out
+```
+
+A minimized window stays in `windows`, so `<Desktop>` keeps it mounted and nothing inside it is thrown away;
+it is named in `state.minimized`, which is absent while nothing is. Minimizing is deliberately not a
+`WindowMode`: the window keeps the mode and frame it had, which is how it comes back to them.
+
+There is no un-minimize. `focus`, `open`, `fill` and `float` all bring a window back, because every way of
+choosing one means the same thing. `focusedId` skips minimized windows — a desk whose windows are all
+minimized has no key window, and shows `<Desktop empty>` — and so do Arrange, ⌘\` cycling and `fitToStage`.
+
+The hash carries it: `#w=rides,map~_` is Rides filling the desk and Map minimized, free. Which windows are
+open and how is not someone else's screen geometry, so unlike frames it travels.
+
+## The browser tab
+
+```tsx
+import { useDocumentTitle } from '@liberation-data/desk/react'
+
+useDocumentTitle(id => SURFACES[id].title)
+```
+
+The tab says what is in front — `Rides — Garage` — and the app's own name with nothing open. That name
+is not asked for twice: left out, it is whatever the page's `<title>` already said, so the app is named
+in one place. Pass `{ app, separator }` to say it here instead. The title is put back as it was when the
+desk unmounts, which matters for a desk living inside a larger page.
+
+The window's name is wanted as a string, not the `ReactNode` `<Desktop title>` renders: an icon beside a
+label belongs in a title bar, and `document.title` is text. It is the same signature `windowMenuItems`
+takes.
 
 ## Theming
 

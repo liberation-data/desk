@@ -61,6 +61,11 @@ is an ordinary window: move or resize one and only that one changes. Drag a wind
 an edge to give it that half, double-click a title bar to fill the desk and back. Nobody has to arrange
 anything, and nobody is stopped from arranging.
 
+**Minimize** (⌘M, or the amber control) takes a window off the desk without closing it: still open, still
+mounted, still loaded, and back to the mode and place it had when it is chosen again — from its dock item,
+from the Window menu, or by opening it. There is no un-minimize, because every way of choosing a window
+already means "bring it back". A minimized window is not the key window and is not laid out by Arrange.
+
 On a touch screen the desk shows **one window at a time**; the others stay mounted, so their state survives.
 `<Desktop layout="auto">` decides from the device; pass `"desktop"` or `"fullscreen"` to decide yourself.
 
@@ -69,8 +74,8 @@ Two rules worth knowing:
 - **Arrange uses the order windows were opened in**, with the focused window first. Focusing never moves
   anything.
 - **A window keeps its DOM while it is open.** Scroll positions, carets, iframes and video all survive
-  focusing, filling, arranging and dragging. Closing a window unmounts it; if state has to outlive that, keep
-  it above the desk.
+  focusing, filling, arranging, dragging and minimizing. Closing a window unmounts it; if state has to
+  outlive that, keep it above the desk.
 
 ## 4. Links, history and reloads
 
@@ -85,6 +90,11 @@ different screen.
 
 `isKnown` is not optional in spirit: it drops ids your app cannot render, so a stale or hand-edited link
 opens what it can rather than breaking.
+
+The browser's tab is the other half of this: `useDocumentTitle(id => SURFACES[id].title)` keeps
+`document.title` on the frontmost window — `Rides — Garage` — and on the app's own name with nothing
+open. That name defaults to the page's `<title>`, so it is written once, in the HTML; `{ app,
+separator }` overrides it. The title is restored on unmount.
 
 ## 5. Commands: the part most apps get wrong
 

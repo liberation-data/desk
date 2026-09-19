@@ -62,7 +62,8 @@ interface Desk {
   openInstance(type: string, options?): string    // 'query', then 'query#2' — returns the id it opened
   close(id: string): void
   closeAll(): void
-  focus(id: string): void
+  minimize(id: string): void                      // off the desk, still open and loaded; see Minimizing
+  focus(id: string): void                         // forward, and back onto the desk when minimized
   float(id: string, frame?: Frame): void          // no frame: last place it sat, else the next cascade step
   fill(id: string): void                          // fill the desk; remembers the frame for float()
   toggleMode(id: string): void                    // zoom: fill ⇄ free
@@ -77,7 +78,8 @@ interface Desk {
 
 interface DeskState {
   windows: readonly DeskWindow[]   // the order they were opened = the order Arrange lays out
-  stack: readonly string[]         // back to front; the last one is key
+  stack: readonly string[]         // back to front; the last one NOT minimized is key
+  minimized?: readonly string[]    // open and off the desk; absent while nothing is
 }
 type DeskWindow = { id: string; mode: 'filled' } | { id: string; mode: 'floating'; frame: Frame }
 interface Frame { x: number; y: number; width: number; height: number }
@@ -98,17 +100,43 @@ lays windows out once as free windows (`placeAll`); moving or resizing one chang
 filled window frees it where it sits. Edge drops take a half; double-click or the green control zooms. State is immutable; every mutator returns void and notifies
 subscribers only when something actually changed.
 
+### Minimizing
+
+```ts
+desk.minimize(id)                     // off the desk, still open and still mounted
+desk.focus(id) / desk.open(id)        // and back, to the mode and frame it had — there is no un-minimize
+isMinimized(state, id) / onDesk(state)
+state.minimized?: readonly WindowId[] // absent while nothing is minimized
+```
+
+Deliberately NOT a `WindowMode`: the window keeps its mode and frame, which is how it comes back to them.
+`focusedId` skips minimized windows, so a desk with everything minimized has no key window and shows
+`<Desktop empty>`; Arrange, window cycling and `fitToStage` skip them too. The title bar's amber control and
+`DeskCommands.minimizeWindow` (⌘M) do it. The dock keeps `data-running` and adds `data-minimized`;
+`windowMenuItems` gives the item `detail: 'Minimized'`.
+
 ### URL and history
 
 ```ts
 syncWithLocation(desk, stage: () => Size, options?: LocationOptions, env?: LocationEnv): () => void
-serialize(state, options?): URLSearchParams        // #w=rides,map~&f=map   (`~` = free; the rest fill)
+serialize(state, options?): URLSearchParams        // #w=rides,map~_&f=rides  (`~` = free, `_` = minimized)
 parse(params, stage, options?): DeskState
 interface LocationOptions { key?: 'w'; focusKey?: 'f'; isKnown?: (id: string) => boolean }
 ```
 
 Opening or closing pushes history (Back closes); focus and mode changes replace it. Frames are never in the
 URL. Other hash parameters are left alone. A URL naming no windows adopts whatever the app opened.
+
+### The browser tab
+
+```tsx
+useDocumentTitle(title: (id: WindowId) => string, options?: DocumentTitleOptions): void
+interface DocumentTitleOptions { app?: string; separator?: string }   // default separator ' — '
+```
+
+`document.title` follows the frontmost window — `Rides — Garage` — and is the app's name alone with nothing
+open. `app` defaults to the document's own title (the page's `<title>`), and is restored on unmount. The
+window's name is a string here, not the `ReactNode` `<Desktop title>` renders.
 
 ### Commands (the responder chain)
 
@@ -119,7 +147,7 @@ addCommandHandler(element: EventTarget, command, handler, { enabled? }): () => v
 addDeskCommands(stage: EventTarget, desk): () => void
 chainStart(desk, options?): EventTarget
 windowElement(doc, id): Element | null
-DeskCommands = { closeWindow, zoomWindow, arrange, nextWindow, previousWindow }
+DeskCommands = { closeWindow, minimizeWindow, zoomWindow, arrange, nextWindow, previousWindow }
 // arrange is answered by a mounted Desktop: 1 fills, 2 split, 3 one tall + two stacked, 4+ a grid of usable cells;
 // the focused window takes the first place. Put it in the Window menu as "Arrange", shortcut 'mod+alt+a'.
 WINDOW_ATTRIBUTE = 'data-desk-window'; STAGE_ATTRIBUTE = 'data-desk-stage'

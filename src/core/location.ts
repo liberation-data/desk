@@ -1,4 +1,4 @@
-import { cascadeFrame, focusedId, normalise } from './desk.js'
+import { cascadeFrame, focusedId, isMinimized, normalise } from './desk.js'
 import type { Desk } from './desk.js'
 import type { DeskState, DeskWindow, Size, WindowId } from './types.js'
 
@@ -7,12 +7,15 @@ import type { DeskState, DeskWindow, Size, WindowId } from './types.js'
  * never frames. A shared link should open the same things, not reproduce
  * someone else's window positions on a different screen.
  *
- *   #w=notes,clock~,inspector&f=clock
+ *   #w=notes,clock~,inspector_&f=clock
  *
- * `~` marks a free window; the others fill the desk. `f` names the focused window.
+ * `~` marks a free window; the others fill the desk. `_` marks one that is minimized — open and
+ * off the desk — which is not a position but which windows are open and how, so it travels.
+ * `f` names the focused window.
  */
 
 const FLOAT = '~'
+const MINIMIZED = '_'
 
 const warned = new Set<string>()
 /** Said once per message: a warning on every parse would be noise, not help. */
@@ -36,7 +39,9 @@ export function serialize(state: DeskState, options: LocationOptions = {}): URLS
   if (!state.windows.length) return params
   params.set(
     options.key ?? 'w',
-    state.windows.map(w => `${encodeURIComponent(w.id)}${w.mode === 'floating' ? FLOAT : ''}`).join(','),
+    state.windows
+      .map(w => `${encodeURIComponent(w.id)}${w.mode === 'floating' ? FLOAT : ''}${isMinimized(state, w.id) ? MINIMIZED : ''}`)
+      .join(','),
   )
   const focused = focusedId(state)
   if (focused) params.set(options.focusKey ?? 'f', focused)
@@ -58,8 +63,10 @@ export function parse(params: URLSearchParams, stage: Size, options: LocationOpt
     .split(',')
     .filter(Boolean)
     .map(token => {
-      const floating = token.endsWith(FLOAT)
-      return { id: decodeURIComponent(floating ? token.slice(0, -1) : token), floating }
+      const minimized = token.endsWith(MINIMIZED)
+      const rest = minimized ? token.slice(0, -1) : token
+      const floating = rest.endsWith(FLOAT)
+      return { id: decodeURIComponent(floating ? rest.slice(0, -1) : rest), floating, minimized }
     })
     .filter(e => e.id && known(e.id))
 
@@ -72,7 +79,8 @@ export function parse(params: URLSearchParams, stage: Size, options: LocationOpt
   const focus = params.get(options.focusKey ?? 'f')
   const ids = windows.map(w => w.id)
   const stack = focus && ids.includes(focus) ? [...ids.filter(id => id !== focus), focus] : ids
-  return normalise({ windows, stack })
+  const minimized = entries.filter(e => e.minimized).map(e => e.id)
+  return normalise(minimized.length ? { windows, stack, minimized } : { windows, stack })
 }
 
 export interface LocationEnv {

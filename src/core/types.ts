@@ -24,8 +24,14 @@ export type WindowMode = DeskWindow['mode']
 export interface DeskState {
   /** Open windows in the order they were opened. Arrange lays them out in this order, so focusing never reshuffles them. */
   readonly windows: readonly DeskWindow[]
-  /** Window ids back to front. The last one has focus. */
+  /** Window ids back to front. The last one that is not minimized has focus. */
   readonly stack: readonly WindowId[]
+  /**
+   * Open, still mounted, and off the desk. Minimizing is not a way for a window to sit on the desk,
+   * so it is not a mode: the window keeps the mode and the frame it had, and comes back to them.
+   * Absent while nothing is minimized, which is most of the time.
+   */
+  readonly minimized?: readonly WindowId[]
 }
 
 export interface CascadeOptions {

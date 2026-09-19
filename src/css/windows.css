@@ -105,6 +105,11 @@
   background: var(--desk-close);
 }
 
+.desk-window[data-focused] .desk-control[data-control="minimize"],
+.desk-control[data-control="minimize"]:hover {
+  background: var(--desk-minimize);
+}
+
 .desk-window[data-focused] .desk-control[data-control="mode"],
 .desk-control[data-control="mode"]:hover {
   background: var(--desk-mode);

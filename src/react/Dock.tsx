@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
-import { focusedId, instancesOf, windowType } from '../core/desk.js'
+import { focusedId, instancesOf, isMinimized, windowType } from '../core/desk.js'
 import type { DeskState, WindowId } from '../core/types.js'
 import { useDesk, useDeskState } from './context.js'
 import { useContextMenu } from './contextMenu.js'
@@ -73,10 +73,13 @@ const windowOf = (item: DockItem) => item.window ?? item.id
 
 const statusOf = (state: DeskState, items: readonly DockItem[]) => {
   const key = focusedId(state)
+  const windows = items.flatMap(i => instancesOf(state, windowOf(i)))
   return {
     // Any window of this kind counts: a second query window is still Query, running.
-    running: items.some(i => instancesOf(state, windowOf(i)).length > 0),
+    running: windows.length > 0,
     focused: items.some(i => key !== null && windowType(key) === windowOf(i)),
+    // Open, and none of it on the desk. One window of a kind still showing means the item is not.
+    minimized: windows.length > 0 && windows.every(w => isMinimized(state, w.id)),
   }
 }
 
@@ -165,7 +168,7 @@ interface DockButtonProps {
 
 function DockButton({ item, tabIndex, pins }: DockButtonProps) {
   const desk = useDesk()
-  const { running, focused } = statusOf(useDeskState(), [item])
+  const { running, focused, minimized } = statusOf(useDeskState(), [item])
   const context = useContextMenu({ label: item.label, items: item.contextMenu ?? (() => []), disabled: !item.contextMenu })
   // Only kept items take drops, so something carried lands among them and never splits the fixed ones.
   const droppable = Boolean(pins && item.movable)
@@ -182,6 +185,7 @@ function DockButton({ item, tabIndex, pins }: DockButtonProps) {
       aria-label={item.label}
       data-running={running || undefined}
       data-focused={focused || undefined}
+      data-minimized={minimized || undefined}
       // An item with a menu stays reachable while it cannot open, so it can still be removed.
       disabled={item.disabled && !item.contextMenu}
       aria-disabled={(item.disabled && item.contextMenu && true) || undefined}
@@ -219,7 +223,7 @@ interface StackButtonProps {
 function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) {
   const desk = useDesk()
   const state = useDeskState()
-  const { running, focused } = statusOf(state, stack.items)
+  const { running, focused, minimized } = statusOf(state, stack.items)
   const onOpenChange = (next: boolean) => setOpenStack(next ? stack.id : null)
   const button = useRef<HTMLButtonElement>(null)
   const panel = useRef<HTMLDivElement>(null)
@@ -264,6 +268,7 @@ function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) 
         aria-controls={open ? panelId : undefined}
         data-running={running || undefined}
         data-focused={focused || undefined}
+        data-minimized={minimized || undefined}
         onClick={() => onOpenChange(!open)}
       >
         <span className="desk-dock-icon" aria-hidden="true">
@@ -307,6 +312,7 @@ function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) 
                   data-rove
                   className="desk-stack-item"
                   data-running={status.running || undefined}
+                  data-minimized={status.minimized || undefined}
                   disabled={item.disabled}
                   onClick={() => select(item)}
                 >

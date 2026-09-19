@@ -19,6 +19,12 @@ export interface Desk {
   openInstance(type: string, options?: OpenOptions): WindowId
   close(id: WindowId): void
   closeAll(): void
+  /**
+   * Off the desk without being closed: still open, still mounted, and keeping the mode and frame it
+   * had. Focusing or opening it again brings it back.
+   */
+  minimize(id: WindowId): void
+  /** Brings a window forward, and back onto the desk when it was minimized. */
   focus(id: WindowId): void
   /** Frees a window: where it last was, or at the next step of the cascade. Given a frame, puts it there. */
   float(id: WindowId, frame?: Frame): void
@@ -59,7 +65,24 @@ const DEFAULT_CASCADE: CascadeOptions = {
 
 const DEFAULT_STAGE: Size = { width: 1024, height: 768 }
 
-export const focusedId = (state: DeskState): WindowId | null => state.stack.at(-1) ?? null
+/** Open, and off the desk: still mounted, and not somewhere anyone can point at. */
+export const isMinimized = (state: DeskState, id: WindowId): boolean => state.minimized?.includes(id) ?? false
+
+/** The windows on the desk, in the order they were opened: what Arrange lays out. */
+export const onDesk = (state: DeskState): readonly DeskWindow[] =>
+  state.minimized?.length ? state.windows.filter(w => !isMinimized(state, w.id)) : state.windows
+
+/**
+ * The key window: the frontmost one on the desk. A minimized window keeps its place in the stack,
+ * so it comes back where it was, but is never key — there is nothing on screen to type into.
+ */
+export const focusedId = (state: DeskState): WindowId | null => {
+  for (let i = state.stack.length - 1; i >= 0; i--) {
+    const id = state.stack[i] as WindowId
+    if (!isMinimized(state, id)) return id
+  }
+  return null
+}
 
 /**
  * Two windows onto the same thing — a second query beside the first — are the
@@ -117,7 +140,18 @@ export function normalise(state: DeskState): DeskState {
   const ids = new Set(windows.map(w => w.id))
   const stacked = state.stack.filter((id, i, all) => ids.has(id) && all.indexOf(id) === i)
   const unstacked = windows.map(w => w.id).filter(id => !stacked.includes(id))
-  return { windows, stack: [...unstacked, ...stacked] }
+  const minimized = state.minimized?.filter((id, i, all) => ids.has(id) && all.indexOf(id) === i) ?? []
+  const stack = [...unstacked, ...stacked]
+  // Left out while nothing is minimized: the everyday state is the two lists it always was.
+  return minimized.length ? { windows, stack, minimized } : { windows, stack }
+}
+
+/** Keeps the field out of the state while nothing is minimized, so the everyday state is two lists. */
+function withMinimized(state: DeskState, ids: readonly WindowId[]): DeskState {
+  if (ids.length) return { ...state, minimized: ids }
+  if (!state.minimized) return state
+  const { minimized: _none, ...rest } = state
+  return rest
 }
 
 export function createDesk(options: DeskOptions = {}): Desk {
@@ -133,8 +167,14 @@ export function createDesk(options: DeskOptions = {}): Desk {
     listeners.forEach(listener => listener(state))
   }
 
-  const toFront = (s: DeskState, id: WindowId): DeskState =>
-    s.stack.at(-1) === id ? s : { ...s, stack: [...s.stack.filter(x => x !== id), id] }
+  /*
+   * Forward, and back onto the desk: there is no focused-but-minimized window, so every way of
+   * choosing one comes back through here.
+   */
+  const toFront = (s: DeskState, id: WindowId): DeskState => {
+    const shown = withMinimized(s, s.minimized?.filter(x => x !== id) ?? [])
+    return shown.stack.at(-1) === id ? shown : { ...shown, stack: [...shown.stack.filter(x => x !== id), id] }
+  }
 
   const nextFrame = (s: DeskState) => nextCascadeFrame(s.windows, stage(), cascade)
 
@@ -165,11 +205,16 @@ export function createDesk(options: DeskOptions = {}): Desk {
     return frame.x + 40 <= width && frame.y + 20 <= height && frame.x >= 0 && frame.y >= 0 ? frame : undefined
   }
 
+  /* Already in the mode being asked for, so nothing to change — except that it may be off the desk. */
+  const restoreIfMinimized = (id: WindowId) => {
+    if (isMinimized(state, id)) commit(toFront(state, id))
+  }
+
   // Plain functions rather than methods, so `const { open } = desk` works.
   const float = (id: WindowId, frame?: Frame) => {
     const window = find(id)
     if (!window) return
-    if (window.mode === 'floating' && !frame) return
+    if (window.mode === 'floating' && !frame) return restoreIfMinimized(id)
     const next = frame ?? fits(remembered.get(id)) ?? nextFrame(state)
     if (frame) {
       remembered.set(id, frame)
@@ -182,7 +227,8 @@ export function createDesk(options: DeskOptions = {}): Desk {
 
   const fill = (id: WindowId) => {
     const window = find(id)
-    if (!window || window.mode === 'filled') return
+    if (!window) return
+    if (window.mode === 'filled') return restoreIfMinimized(id)
     remembered.set(id, window.frame)
     layouts?.save(windowType(id), { mode: 'filled' })
     commit(toFront(replace(state, { id, mode: 'filled' }), id))
@@ -228,7 +274,15 @@ export function createDesk(options: DeskOptions = {}): Desk {
     },
 
     close(id) {
-      if (find(id)) commit({ windows: state.windows.filter(w => w.id !== id), stack: state.stack.filter(x => x !== id) })
+      if (!find(id)) return
+      const closed: DeskState = { windows: state.windows.filter(w => w.id !== id), stack: state.stack.filter(x => x !== id) }
+      commit(withMinimized(closed, state.minimized?.filter(x => x !== id) ?? []))
+    },
+
+    minimize(id) {
+      if (!find(id) || isMinimized(state, id)) return
+      // The stack is left alone: a window comes back to where it was, not to the front of everything.
+      commit(withMinimized(state, [...(state.minimized ?? []), id]))
     },
 
     closeAll() {
