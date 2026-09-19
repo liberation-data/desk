@@ -21,6 +21,16 @@ beforeEach(() => {
   localStorage.clear()
 })
 
+/*
+ * The sample's setup runs real, deliberate pauses — it is showing someone what setting up looks
+ * like — and they come to about three seconds before "All set". A wait here is not a measurement of
+ * that: it is the point at which a sample that never arrives is declared broken, so it is set well
+ * clear of the work rather than just past it. `waitFor` returns the moment the condition holds, so
+ * a ceiling this high costs nothing on a machine that is keeping up, and 4s cost a red build on one
+ * that was not.
+ */
+const SETTLE = 10_000
+
 const continueButton = () => screen.getByRole('button', { name: /Continue|Get started|Open the garage|Connect/ })
 const dock = () => screen.getByRole('toolbar', { name: 'Garage dock' })
 
@@ -28,14 +38,14 @@ const dock = () => screen.getByRole('toolbar', { name: 'Garage dock' })
 async function arrive(user: ReturnType<typeof userEvent.setup>) {
   render(<App />)
   await user.click(await screen.findByRole('button', { name: /Get started|Continue/ })) // Welcome
-  await vi.waitFor(() => expect(continueButton()).toHaveProperty("disabled", false), { timeout: 4000 }) // the workshop check
+  await vi.waitFor(() => expect(continueButton()).toHaveProperty("disabled", false), { timeout: SETTLE }) // the workshop check
   await user.click(continueButton()) // Workshop
   await user.click(continueButton()) // Rider — prefilled
   await user.click(continueButton()) // Bikes
   await user.click(continueButton()) // Weather: checks the key before moving on
-  await vi.waitFor(() => expect(screen.getByRole('heading', { name: 'Where the maps come from' })).toBeTruthy(), { timeout: 4000 })
+  await vi.waitFor(() => expect(screen.getByRole('heading', { name: 'Where the maps come from' })).toBeTruthy(), { timeout: SETTLE })
   await user.click(continueButton()) // Maps
-  await vi.waitFor(() => expect(screen.getByRole('heading', { name: 'All set' })).toBeTruthy(), { timeout: 4000 })
+  await vi.waitFor(() => expect(screen.getByRole('heading', { name: 'All set' })).toBeTruthy(), { timeout: SETTLE })
   await user.click(continueButton()) // Finishing
   await user.click(continueButton()) // Ready → the garage
 }
@@ -57,7 +67,7 @@ describe('the garage sample', () => {
     const user = userEvent.setup()
     const first = render(<App />)
     await user.click(await screen.findByRole('button', { name: /Get started|Continue/ })) // Welcome
-    await vi.waitFor(() => expect(continueButton()).toHaveProperty('disabled', false), { timeout: 4000 })
+    await vi.waitFor(() => expect(continueButton()).toHaveProperty('disabled', false), { timeout: SETTLE })
     await user.click(continueButton()) // Workshop
     first.unmount()
 
@@ -86,7 +96,7 @@ describe('the garage sample', () => {
     const user = userEvent.setup()
     render(<App />)
     await user.click(await screen.findByRole('button', { name: /Get started|Continue/ })) // Welcome
-    await vi.waitFor(() => expect(continueButton()).toHaveProperty('disabled', false), { timeout: 4000 })
+    await vi.waitFor(() => expect(continueButton()).toHaveProperty('disabled', false), { timeout: SETTLE })
     await user.click(continueButton()) // Workshop
     await user.click(continueButton()) // Rider
     await user.click(continueButton()) // Bikes
@@ -95,7 +105,7 @@ describe('the garage sample', () => {
     await user.type(field, 'not-a-key')
     await user.click(screen.getByRole('button', { name: 'Connect' }))
     expect(screen.getByRole('button', { name: 'Checking the key…' })).toBeTruthy()
-    await vi.waitFor(() => expect(screen.getByRole('alert').textContent).toContain('did not accept'), { timeout: 4000 })
+    await vi.waitFor(() => expect(screen.getByRole('alert').textContent).toContain('did not accept'), { timeout: SETTLE })
     expect(screen.getByRole('heading', { name: 'Connect a weather service' })).toBeTruthy()
   })
 
@@ -152,7 +162,7 @@ describe('the garage sample', () => {
     await arrive(user)
     await user.click(within(dock()).getByRole('button', { name: 'Chat' }))
     await user.type(screen.getByRole('textbox', { name: 'Message' }), 'what needs doing on the chain?{Enter}')
-    await vi.waitFor(() => expect(screen.getByText(/road chain is at/)).toBeTruthy(), { timeout: 4000 })
+    await vi.waitFor(() => expect(screen.getByText(/road chain is at/)).toBeTruthy(), { timeout: SETTLE })
   })
 
   it('searches the whole garage from the menu bar', async () => {
