@@ -86,6 +86,11 @@ different screen.
 `isKnown` is not optional in spirit: it drops ids your app cannot render, so a stale or hand-edited link
 opens what it can rather than breaking.
 
+The browser's tab is the other half of this: `useDocumentTitle(id => SURFACES[id].title)` keeps
+`document.title` on the frontmost window — `Rides — Garage` — and on the app's own name with nothing
+open. That name defaults to the page's `<title>`, so it is written once, in the HTML; `{ app,
+separator }` overrides it. The title is restored on unmount.
+
 ## 5. Commands: the part most apps get wrong
 
 A menu item, a shortcut and a button often mean the same action. Wiring each to a specific component means

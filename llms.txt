@@ -110,6 +110,17 @@ interface LocationOptions { key?: 'w'; focusKey?: 'f'; isKnown?: (id: string) =>
 Opening or closing pushes history (Back closes); focus and mode changes replace it. Frames are never in the
 URL. Other hash parameters are left alone. A URL naming no windows adopts whatever the app opened.
 
+### The browser tab
+
+```tsx
+useDocumentTitle(title: (id: WindowId) => string, options?: DocumentTitleOptions): void
+interface DocumentTitleOptions { app?: string; separator?: string }   // default separator ' — '
+```
+
+`document.title` follows the frontmost window — `Rides — Garage` — and is the app's name alone with nothing
+open. `app` defaults to the document's own title (the page's `<title>`), and is restored on unmount. The
+window's name is a string here, not the `ReactNode` `<Desktop title>` renders.
+
 ### Commands (the responder chain)
 
 ```ts

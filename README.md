@@ -603,6 +603,23 @@ but never positions: a shared link opens the same things, not someone else's lay
 screen. Opening or closing a window pushes a history entry, so Back closes it; focus and mode changes
 replace the entry. Other hash parameters are left alone.
 
+## The browser tab
+
+```tsx
+import { useDocumentTitle } from '@liberation-data/desk/react'
+
+useDocumentTitle(id => SURFACES[id].title)
+```
+
+The tab says what is in front — `Rides — Garage` — and the app's own name with nothing open. That name
+is not asked for twice: left out, it is whatever the page's `<title>` already said, so the app is named
+in one place. Pass `{ app, separator }` to say it here instead. The title is put back as it was when the
+desk unmounts, which matters for a desk living inside a larger page.
+
+The window's name is wanted as a string, not the `ReactNode` `<Desktop title>` renders: an icon beside a
+label belongs in a title bar, and `document.title` is text. It is the same signature `windowMenuItems`
+takes.
+
 ## Theming
 
 ![The same four arranged windows in the light theme](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/light.png)

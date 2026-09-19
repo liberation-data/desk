@@ -44,6 +44,7 @@ import {
   Toggle,
   TourBar,
   useCommand,
+  useDocumentTitle,
   useSetupProgress,
   useTasks,
   useDesk,
@@ -974,6 +975,13 @@ type Id = keyof typeof SURFACES
 // `rides#2` is a second Rides window: the kind is what decides how it renders.
 const isKnown = (id: string): id is Id => windowType(id) in SURFACES
 const kindOf = (id: string) => windowType(id) as Id
+const windowTitle = (id: string) => (isKnown(id) ? SURFACES[kindOf(id)].title : id)
+
+/** The tab says what is in front. "Garage" comes from the page's own <title>, so it is named once. */
+function BrowserTitle() {
+  useDocumentTitle(windowTitle)
+  return null
+}
 
 const item = (id: Id, extra: Partial<DockItem> = {}): DockItem => ({
   id,
@@ -1093,10 +1101,11 @@ function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonl
   return (
     <DeskShell desk={desk}>
       <div className="garage">
+        <BrowserTitle />
         <GarageMenuBar desk={desk} steps={steps} touring={touring} onTour={() => { setOffering(false); setTouring(true) }} onSetupAgain={onSetupAgain} />
         <main className="screen">
           <Desktop
-            title={id => (isKnown(id) ? SURFACES[id].title : id)}
+            title={windowTitle}
             renderWindow={id => (isKnown(id) ? body(id) : null)}
             empty={<div className="empty"><h2>Nothing open</h2><p>Pick something from the dock.</p></div>}
           />
