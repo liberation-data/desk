@@ -262,7 +262,9 @@ export function createDesk(options: DeskOptions = {}): Desk {
         return stepFrom(kept, siblings, stage(), cascade.step, cascade.margin)
       }
       const window: DeskWindow = mode === 'filled' ? { id, mode } : { id, mode, frame: frame() }
-      commit({ windows: [...state.windows, window], stack: [...state.stack, id] })
+      // Spread, not a fresh pair: a state literal here drops `minimized`, and every window off the desk comes back.
+      // Spread, not a fresh pair: a state literal here drops `minimized`, and every window off the desk comes back.
+      commit({ ...state, windows: [...state.windows, window], stack: [...state.stack, id] })
     },
 
     openInstance(type, opts = {}) {

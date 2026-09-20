@@ -85,6 +85,42 @@ describe('minimize', () => {
     expect(d.getState()).toBe(before)
   })
 
+  it('stays minimized while another window is opened', () => {
+    const d = desk()
+    d.open('rides')
+    d.minimize('rides')
+    d.open('service')
+    expect(isMinimized(d.getState(), 'rides')).toBe(true)
+    expect(onDesk(d.getState()).map(w => w.id)).toEqual(['service'])
+  })
+
+  it('stays minimized while a window is opened by instance', () => {
+    const d = desk()
+    d.open('rides')
+    d.minimize('rides')
+    d.openInstance('service')
+    expect(isMinimized(d.getState(), 'rides')).toBe(true)
+  })
+
+  it('stays minimized while another window is closed', () => {
+    const d = desk()
+    d.open('rides')
+    d.open('service')
+    d.minimize('rides')
+    d.close('service')
+    expect(isMinimized(d.getState(), 'rides')).toBe(true)
+    expect(onDesk(d.getState())).toHaveLength(0)
+  })
+
+  it('keeps every minimized window when one of several is closed', () => {
+    const d = desk()
+    ;['a', 'b', 'c'].forEach(id => d.open(id))
+    d.minimize('a')
+    d.minimize('b')
+    d.close('c')
+    expect(d.getState().minimized).toEqual(['a', 'b'])
+  })
+
   it('forgets a minimized window that is closed', () => {
     const d = desk()
     d.open('rides')

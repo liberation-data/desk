@@ -99,6 +99,28 @@ describe('the dock', () => {
   })
 })
 
+describe('a window off the desk', () => {
+  it('stays off it while another window is opened', () => {
+    const desk = mount()
+    act(() => desk.open('rides'))
+    act(() => desk.minimize('rides'))
+    act(() => desk.open('service'))
+    expect(isMinimized(desk.getState(), 'rides')).toBe(true)
+    expect(window('Rides').dataset.minimized).toBe('true')
+    expect(window('Rides').hasAttribute('inert')).toBe(true)
+  })
+
+  it('stays off it while another window is closed from its own title bar', () => {
+    const desk = mount()
+    act(() => desk.open('rides'))
+    act(() => desk.open('service'))
+    act(() => desk.minimize('rides'))
+    fireEvent.click(within(window('Service')).getByRole('button', { name: 'Close' }))
+    expect(isMinimized(desk.getState(), 'rides')).toBe(true)
+    expect(screen.getByText('Nothing open')).toBeTruthy()
+  })
+})
+
 describe('the Window menu', () => {
   it('lists a minimized window, and says so', () => {
     const desk = createDesk()
