@@ -8,6 +8,7 @@ import type { WindowId } from '../core/types.js'
 import { useCommand, useShortcuts } from './commands.js'
 import { Composer } from './conversation.js'
 import { useFocusTrap, useLayer } from './layers.js'
+import { missingProvider } from './missingProvider.js'
 import { BusContext, useDesk, useDeskState, useWindowId } from './context.js'
 
 /** Supplies a bus of your own, or shares one across several desks. A desk already has one. */
@@ -18,7 +19,7 @@ export function BusProvider({ bus, children }: { readonly bus?: Bus; readonly ch
 
 export function useBus(): Bus {
   const bus = useContext(BusContext)
-  if (!bus) throw new Error('useBus must be used inside a <DeskProvider> or <BusProvider>')
+  if (!bus) throw missingProvider('useBus', 'a <DeskProvider> or <BusProvider>')
   return bus
 }
 

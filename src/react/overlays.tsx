@@ -5,6 +5,7 @@ import { windowElement } from '../core/commands.js'
 import { Button } from './controls.js'
 import { useWindowId } from './context.js'
 import { useFocusTrap, useLayer } from './layers.js'
+import { missingProvider } from './missingProvider.js'
 
 /*
  * Interruption, least to most (HIG.md §7): a popover belongs to one control, a
@@ -196,7 +197,7 @@ export function ToastProvider({ children }: { readonly children: ReactNode }) {
 
 export function useToast(): ToastApi {
   const api = useContext(ToastContext)
-  if (!api) throw new Error('useToast must be used inside a <ToastProvider>')
+  if (!api) throw missingProvider('useToast', 'a <ToastProvider>')
   return api
 }
 

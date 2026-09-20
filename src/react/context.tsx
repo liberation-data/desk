@@ -4,6 +4,7 @@ import { createBus } from '../core/events.js'
 import type { Bus } from '../core/events.js'
 import { createDesk } from '../core/desk.js'
 import { DragProvider } from './dragContext.js'
+import { missingProvider } from './missingProvider.js'
 import type { Desk } from '../core/desk.js'
 import type { DeskOptions, DeskState, WindowId } from '../core/types.js'
 
@@ -37,7 +38,7 @@ export const useOptionalDesk = (): Desk | null => useContext(DeskContext)
 
 export function useDesk(): Desk {
   const desk = useContext(DeskContext)
-  if (!desk) throw new Error('useDesk must be used inside a <DeskProvider>')
+  if (!desk) throw missingProvider('useDesk', 'a <DeskProvider>')
   return desk
 }
 

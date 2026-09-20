@@ -18,7 +18,12 @@ import { join } from 'node:path'
  * loaded off the desk is a third state that the desk, the URL, the dock and the Window menu all
  * have to know about. Still tight — a budget with room in it is not one.
  */
-const BUDGETS = { core: 12, react: 47, css: 12 }
+/*
+ * Raised 0.5 react for the caller in a missing-provider error: an error boundary shows the
+ * message and not the stack, so the frame that has to change is read off the stack and put in
+ * the message. Half a KiB is the whole cost of a blank page being traceable to a line.
+ */
+const BUDGETS = { core: 12, react: 48, css: 12 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
