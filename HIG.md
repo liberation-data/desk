@@ -146,6 +146,8 @@ together, they are one window; if people want them side by side, they are two.
 - Exactly one window has focus — the **key window**. It has an accent-tinted border, coloured controls and a
   full-contrast title. Other windows have muted titles and grey controls. A desk whose windows are all
   minimized has no key window; a minimized one is never it, because there is nothing on screen to type into.
+  A background window's controls colour and show their marks while the pointer is over them, so a window can
+  be closed without first being made key.
 - Keyboard input, menu commands and typed input go to the key window first (see §5).
 - Pressing anywhere in a window makes it key. Pressing a control in a background window also performs that
   control's action.
@@ -190,6 +192,9 @@ the stage.
 ### Title bars
 
 - Controls are on the leading side: **close**, then **minimize**, then **zoom**. Title follows.
+- A control says what it does when the pointer arrives over the three of them, or when one has the
+  keyboard: the marks come up together, and are not there at rest. Colour alone is not the answer to
+  which dot is which, and three marks kept on screen are three icons in a title bar.
 - A title is the name of the thing, not the app: **Dandenongs loop**, not **Garage — Map**.
 - A title bar may hold at most one or two window-wide actions on its trailing side. Anything more belongs
   in a toolbar inside the window.

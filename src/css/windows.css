@@ -91,6 +91,9 @@
 }
 
 .desk-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 12px;
   height: 12px;
   padding: 0;
@@ -100,19 +103,42 @@
   background: var(--desk-rule);
 }
 
+/* The cluster, not the dot: arriving anywhere over the three colours and marks all three. */
 .desk-window[data-focused] .desk-control[data-control="close"],
-.desk-control[data-control="close"]:hover {
+.desk-controls:hover .desk-control[data-control="close"] {
   background: var(--desk-close);
 }
 
 .desk-window[data-focused] .desk-control[data-control="minimize"],
-.desk-control[data-control="minimize"]:hover {
+.desk-controls:hover .desk-control[data-control="minimize"] {
   background: var(--desk-minimize);
 }
 
 .desk-window[data-focused] .desk-control[data-control="mode"],
-.desk-control[data-control="mode"]:hover {
+.desk-controls:hover .desk-control[data-control="mode"] {
   background: var(--desk-mode);
+}
+
+/*
+ * The mark inside a dot says what pressing it does. It is there only while the pointer is over
+ * the cluster, or while a control has the keyboard: a dot carrying its mark all the time is
+ * three icons in a title bar, and the colours stop being the quiet thing they are for.
+ */
+.desk-control-glyph {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  color: rgb(0 0 0 / .58);
+  opacity: 0;
+  transition: opacity .12s var(--desk-ease);
+}
+
+.desk-controls:hover .desk-control-glyph,
+.desk-control:focus-visible .desk-control-glyph {
+  opacity: 1;
 }
 
 .desk-control:focus-visible {

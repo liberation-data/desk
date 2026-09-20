@@ -229,6 +229,23 @@ const WindowContent = memo(function WindowContent({ id, render, loading, failed 
   )
 })
 
+/*
+ * What each dot does, shown on the way to pressing one: the glyphs come up together when the
+ * pointer arrives over the cluster, as a Mac's do, so a control is never chosen on colour alone.
+ * Drawn rather than lettered: a font puts its own cross where it likes, and these are 12px wide.
+ */
+const GLYPHS = {
+  close: <path d="M4.1 4.1 7.9 7.9M7.9 4.1 4.1 7.9" />,
+  minimize: <path d="M3.6 6h4.8" />,
+  mode: <path d="M3.8 3.8h2.6L3.8 6.4zM8.2 8.2H5.6L8.2 5.6z" fill="currentColor" stroke="none" />,
+}
+
+const Glyph = ({ control }: { readonly control: keyof typeof GLYPHS }) => (
+  <svg className="desk-control-glyph" viewBox="0 0 12 12" aria-hidden="true">
+    {GLYPHS[control]}
+  </svg>
+)
+
 interface WindowViewProps {
   readonly window: DeskWindow
   readonly layout: DeskLayout
@@ -419,12 +436,18 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
           data-draggable={layout === 'desktop' || undefined}
         >
           <div className="desk-controls">
-            <button type="button" className="desk-control" data-control="close" aria-label="Close" onClick={() => desk.close(window.id)} />
+            <button type="button" className="desk-control" data-control="close" aria-label="Close" onClick={() => desk.close(window.id)}>
+              <Glyph control="close" />
+            </button>
             {layout === 'desktop' && (
               <>
                 {/* Off the desk, still open: nothing is unmounted, so nothing inside it is lost. */}
-                <button type="button" className="desk-control" data-control="minimize" aria-label="Minimize" onClick={() => desk.minimize(window.id)} />
-                <button type="button" className="desk-control" data-control="mode" aria-label="Zoom" onClick={zoom} />
+                <button type="button" className="desk-control" data-control="minimize" aria-label="Minimize" onClick={() => desk.minimize(window.id)}>
+                  <Glyph control="minimize" />
+                </button>
+                <button type="button" className="desk-control" data-control="mode" aria-label="Zoom" onClick={zoom}>
+                  <Glyph control="mode" />
+                </button>
               </>
             )}
           </div>
