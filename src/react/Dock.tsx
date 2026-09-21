@@ -221,19 +221,10 @@ interface StackButtonProps {
 }
 
 /**
- * What a stack is waiting on, gathered onto its closed icon.
- *
- * A stack hides its items, so whatever they are counting is invisible until somebody opens it —
- * which is the one thing a badge exists to prevent. Numbers ADD UP: three unread here and five
- * there is eight waiting behind this icon, and reporting "2" instead answers a question nobody
- * asked ("how many of your items have something?").
- *
- * A badge is a ReactNode, so it is not always a number — an app may use a dot, a glyph, or "99+"
- * for a count it has already capped. Those cannot be summed, and inventing a total across them
- * would be worse than saying less, so a stack holding any non-numeric badge falls back to the
- * count of badged items. Mixed stays mixed on purpose: a partial sum would read as a total.
- *
- * Null when nothing is waiting, so the caller renders no badge at all rather than a zero.
+ * What a stack is waiting on, gathered onto its closed icon. Numbers ADD UP — a stack hides its
+ * items, so "2 of your items have something" answers a question nobody asked. A badge is a
+ * ReactNode, so a non-numeric one cannot be summed and a partial sum would read as a total: a
+ * stack holding one falls back to the count of badged items. Null when nothing is waiting.
  */
 function stackBadge(items: readonly DockItem[]): ReactNode | null {
   const badged = items.filter(i => i.badge != null)

@@ -23,7 +23,17 @@ import { join } from 'node:path'
  * message and not the stack, so the frame that has to change is read off the stack and put in
  * the message. Half a KiB is the whole cost of a blank page being traceable to a line.
  */
-const BUDGETS = { core: 12, react: 48, css: 12 }
+/*
+ * Raised react 48 → 52. Not for one feature: 48 was reached with 0.0 spare, which is a budget that
+ * fails on the next commit whatever that commit is, and the three notes above are the same 0.x raise
+ * three times. 9 KiB of the react bundle is comments — tsc emits them and `removeComments` would
+ * take the `.d.ts` docs with them — so in this package prose costs budget, and a budget that makes
+ * explaining a decision expensive buys bytes with the thing the bytes are for. 52 is room for the
+ * features in front of us; it still catches what this is actually for, which is a stray dependency
+ * or a duplicated module arriving unnoticed. Core 12 → 13 for the same reason and not for a change
+ * of its own: it stood at 0.1 spare, so the next commit to touch it was red whatever it did.
+ */
+const BUDGETS = { core: 13, react: 52, css: 12 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
