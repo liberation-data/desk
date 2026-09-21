@@ -220,6 +220,20 @@ interface StackButtonProps {
   readonly setOpenStack: (id: string | null) => void
 }
 
+/**
+ * What a stack is waiting on, gathered onto its closed icon. Numbers ADD UP — a stack hides its
+ * items, so "2 of your items have something" answers a question nobody asked. A badge is a
+ * ReactNode, so a non-numeric one cannot be summed and a partial sum would read as a total: a
+ * stack holding one falls back to the count of badged items. Null when nothing is waiting.
+ */
+function stackBadge(items: readonly DockItem[]): ReactNode | null {
+  const badged = items.filter(i => i.badge != null)
+  if (badged.length === 0) return null
+  const numbers = badged.map(i => (typeof i.badge === 'number' ? i.badge : null))
+  if (numbers.some(n => n === null)) return badged.length
+  return (numbers as number[]).reduce((total, n) => total + n, 0)
+}
+
 function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) {
   const desk = useDesk()
   const state = useDeskState()
@@ -251,7 +265,7 @@ function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) 
     onOpenChange(false)
   }
 
-  const badges = stack.items.filter(i => i.badge != null).length
+  const badges = stackBadge(stack.items)
 
   return (
     <span className="desk-dock-slot">
@@ -280,7 +294,7 @@ function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) 
             </span>
           )}
         </span>
-        {badges > 0 && <Badge>{badges}</Badge>}
+        {badges != null && <Badge>{badges}</Badge>}
         <span className="desk-dock-tip" aria-hidden="true">
           {stack.label}
         </span>

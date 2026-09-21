@@ -123,8 +123,24 @@ describe('Dock', () => {
     expect(document.activeElement).toBe(garage)
   })
 
-  it('counts the badged items inside a stack', () => {
+  it('adds up the numbers waiting inside a stack', () => {
+    // A stack hides its items, so what they are counting is invisible until somebody opens it —
+    // which is the one thing a badge exists to prevent. Three here and five there is eight
+    // waiting behind the icon; reporting "2" answers a question nobody asked.
+    mount([dockStack({ id: 's', label: 'Stack', items: [{ id: 'a', label: 'A', icon, badge: 3 }, { id: 'b', label: 'B', icon, badge: 5 }] })])
+    expect(screen.getByRole('button', { name: 'Stack' }).textContent).toContain('8')
+  })
+
+  it('falls back to counting when a badge is not a number', () => {
+    // A badge is a ReactNode: a dot, a glyph, or "99+" for a count the app already capped. Those
+    // cannot be summed, and a partial sum would read as a total — so mixed stays mixed.
     mount([dockStack({ id: 's', label: 'Stack', items: [{ id: 'a', label: 'A', icon, badge: '!' }, { id: 'b', label: 'B', icon, badge: 3 }] })])
     expect(screen.getByRole('button', { name: 'Stack' }).textContent).toContain('2')
+  })
+
+  it('shows no badge on a stack with nothing waiting', () => {
+    // Null rather than zero: an icon that always carries a badge is one people stop reading.
+    mount([dockStack({ id: 's', label: 'Stack', items: [{ id: 'a', label: 'A', icon }] })])
+    expect(screen.getByRole('button', { name: 'Stack' }).querySelector('.desk-dock-badge')).toBeNull()
   })
 })
