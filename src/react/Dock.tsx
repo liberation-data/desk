@@ -220,6 +220,29 @@ interface StackButtonProps {
   readonly setOpenStack: (id: string | null) => void
 }
 
+/**
+ * What a stack is waiting on, gathered onto its closed icon.
+ *
+ * A stack hides its items, so whatever they are counting is invisible until somebody opens it —
+ * which is the one thing a badge exists to prevent. Numbers ADD UP: three unread here and five
+ * there is eight waiting behind this icon, and reporting "2" instead answers a question nobody
+ * asked ("how many of your items have something?").
+ *
+ * A badge is a ReactNode, so it is not always a number — an app may use a dot, a glyph, or "99+"
+ * for a count it has already capped. Those cannot be summed, and inventing a total across them
+ * would be worse than saying less, so a stack holding any non-numeric badge falls back to the
+ * count of badged items. Mixed stays mixed on purpose: a partial sum would read as a total.
+ *
+ * Null when nothing is waiting, so the caller renders no badge at all rather than a zero.
+ */
+function stackBadge(items: readonly DockItem[]): ReactNode | null {
+  const badged = items.filter(i => i.badge != null)
+  if (badged.length === 0) return null
+  const numbers = badged.map(i => (typeof i.badge === 'number' ? i.badge : null))
+  if (numbers.some(n => n === null)) return badged.length
+  return (numbers as number[]).reduce((total, n) => total + n, 0)
+}
+
 function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) {
   const desk = useDesk()
   const state = useDeskState()
@@ -251,7 +274,7 @@ function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) 
     onOpenChange(false)
   }
 
-  const badges = stack.items.filter(i => i.badge != null).length
+  const badges = stackBadge(stack.items)
 
   return (
     <span className="desk-dock-slot">
@@ -280,7 +303,7 @@ function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) 
             </span>
           )}
         </span>
-        {badges > 0 && <Badge>{badges}</Badge>}
+        {badges != null && <Badge>{badges}</Badge>}
         <span className="desk-dock-tip" aria-hidden="true">
           {stack.label}
         </span>
