@@ -49,7 +49,7 @@ describe('a window whose code loads when it opens', () => {
     const Query = lazyWindow(() => load.promise)
     const desk = mount(id => (id === 'query' ? <Query /> : <p>{id}</p>))
     act(() => desk.open('query'))
-    expect(within(windowBody('query')).getByRole('status').textContent).toBe('Loading…')
+    expect(within(windowBody('query')).getByRole('status').textContent).toBe('Loading')
     await act(async () => load.resolve({ default: Studio }))
     expect(within(windowBody('query')).getByText('Route planner')).toBeTruthy()
   })

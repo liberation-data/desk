@@ -972,3 +972,89 @@
   width: 40px;
   height: 40px;
 }
+
+/*
+ * WAITING. A mark that turns while something is on its way (HIG.md §7), and the panel-sized
+ * version of it for a view that has nothing else to draw yet.
+ *
+ * It lives beside the controls rather than in a part of its own so that an app importing the
+ * pieces it draws cannot end up with a spinner and no rule to draw it with.
+ */
+.desk-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--desk-space-2);
+  color: var(--desk-muted);
+  font-size: 13px;
+}
+
+.desk-spinner-ring {
+  box-sizing: border-box;
+  flex: none;
+  border-radius: 50%;
+  /* THE ARC IS THE INK, not the accent. The accent means focus and selection, and neither is
+     happening; the ink is near-white on a dark ground and near-black on a light one, so one
+     rule is bright on both without a colour that only works in one theme. The track is a mix of
+     the same ink rather than --desk-rule, which disappears against the surface at this size. */
+  border: 2px solid color-mix(in srgb, var(--desk-ink) 20%, transparent);
+  border-top-color: var(--desk-ink);
+  animation: desk-spin 900ms linear infinite;
+}
+
+.desk-spinner-ring[data-size="small"] { width: 12px; height: 12px; border-width: 1.5px; }
+.desk-spinner-ring[data-size="regular"] { width: 16px; height: 16px; }
+.desk-spinner-ring[data-size="large"] { width: 28px; height: 28px; border-width: 3px; }
+
+.desk-spinner-label[data-hidden] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.desk-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--desk-space-3);
+  /* Fills whatever it was given, so it stands where the content will stand rather than at the
+     top of the empty space the content has not taken yet. */
+  min-height: 100%;
+  padding: var(--desk-space-6) var(--desk-space-4);
+  text-align: center;
+}
+
+.desk-loading-label {
+  margin: 0;
+  color: var(--desk-muted);
+  font-size: 13px;
+}
+
+/* Quieter than the label: it arrived second and it is the smaller fact. */
+.desk-loading-slow {
+  max-width: 44ch;
+  margin: 0;
+  color: var(--desk-muted);
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+@keyframes desk-spin { to { transform: rotate(360deg); } }
+
+/* A FADE, NOT A FREEZE. §2 Motion asks for movement to go and fades to stay, and a ring that has
+   simply stopped is indistinguishable from a view that has. Breathing says the same thing the
+   turning did, without anything travelling across the screen. */
+@keyframes desk-spinner-breathe { 50% { opacity: 0.35; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-spinner-ring {
+    border-color: color-mix(in srgb, var(--desk-ink) 20%, transparent);
+    border-top-color: var(--desk-ink);
+    animation: desk-spinner-breathe 1.8s ease-in-out infinite;
+  }
+}

@@ -235,6 +235,7 @@ useWindowId(): string | null                        // inside a window's content
 const RoutePlanner = lazyWindow(() => import('./apps/RoutePlanner'))   // use in renderWindow
 ```
 
+The default fallback is `<Loading label="Loading" />`; pass `loading` to `Desktop` to replace it.
 Every window has its own Suspense and error boundary: one window loading or throwing never blanks another,
 the menu bar or the dock. A failure is logged with `console.error` and shows Reload, which remounts the
 window; `lazyWindow` retries its import on reload, unlike `React.lazy`, which caches a failed import.
@@ -374,6 +375,18 @@ SearchCommand = 'desk.search'                          // a menu item can open i
 <PopUpButton value={T|null} onChange options={{value,label,description?,icon?,disabled?}[]}
              label labelHidden? placeholder? disabled? size? />
 ```
+
+### Waiting
+
+```tsx
+<Spinner label size?={'small'|'regular'|'large'} showLabel?={false} />   // inline; label is read, not shown
+<Loading label slow?={ReactNode} slowAfterMs?={3000} size?={'large'} />  // a view with nothing on it yet
+```
+
+Both are one `role="status"`. `Loading` shows `slow` once the wait passes `slowAfterMs`, inside that same
+region, so its arrival is the announcement; the timer restarts when `slow` or `slowAfterMs` changes. There
+is no determinate bar: a bar needs a fraction the browser can see, and work with real steps is a
+`Checklist`. `Loading` fills the height it is given, so give its parent one.
 
 ### Lists
 

@@ -342,8 +342,13 @@ From least to most interrupting — use the least that works:
 | **Sheet** | a task that belongs to one window and blocks only that window |
 | **Alert** | the whole app cannot continue until the person decides; rare |
 
-- Progress: a spinner for under ~3 seconds, a determinate bar for longer, and a way to cancel for anything
-  that can run long.
+- Progress: a spinner (`Spinner`, or `Loading` for a view with nothing else on it yet) for under
+  ~3 seconds, a determinate bar for longer, and a way to cancel for anything that can run long.
+- **A bar needs something real to measure.** One request whose progress the browser cannot see has
+  no fraction to draw, and a bar invented over it reports the one number it exists to report. Give
+  such a wait words instead: the spinner keeps turning, and past a few seconds it says what is
+  taking the time (`Loading`'s `slow`). Work that genuinely has steps has them named, in order —
+  that is what `Checklist` is.
 - Never interrupt with an alert for something that could be a badge.
 
 ---

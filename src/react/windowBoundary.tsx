@@ -2,6 +2,7 @@ import { Component, createContext, lazy, Suspense, useContext } from 'react'
 import type { ComponentType, ErrorInfo, LazyExoticComponent, ReactNode } from 'react'
 import type { WindowId } from '../core/types.js'
 import { Button } from './controls.js'
+import { Loading } from './progress.js'
 
 /*
  * Each window loads, and fails, on its own. One window fetching its code shows a
@@ -16,11 +17,12 @@ export type WindowFailed = (id: WindowId, error: Error, reload: () => void) => R
 /** How many times this window has been reloaded: a lazy window loads afresh for each. */
 const AttemptContext = createContext(0)
 
-const defaultLoading: WindowLoading = () => (
-  <div className="desk-window-status" role="status">
-    Loading…
-  </div>
-)
+/*
+ * A window fetching its code says so the way any wait does. It was a line of text, which reads as
+ * a window that has finished and has nothing in it — the one thing a window still arriving must
+ * not look like.
+ */
+const defaultLoading: WindowLoading = () => <Loading label="Loading" />
 
 const defaultFailed: WindowFailed = (_id, error, reload) => (
   <div className="desk-window-status" role="alert">

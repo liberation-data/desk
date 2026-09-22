@@ -245,6 +245,30 @@ keeps it for screen readers), and an `error` marks it invalid and replaces the h
 is the handful of cards a setup step turns on — an icon, a label, a line of why — with native radios
 underneath, so it is one tab stop and the arrow keys move the choice.
 
+## Waiting
+
+```tsx
+import { Loading, Spinner } from '@liberation-data/desk/react'
+
+<Spinner label="Saving the ride" />                      // inline: beside a control, in a toolbar
+<Loading label="Asking the weather service"              // a view with nothing else on it yet
+         slow="It answers slowly on a Friday. The garage works without it." />
+```
+
+A wait says so within a moment, and if it goes on it says more. `Spinner` is the mark on its own — its
+label is read aloud rather than drawn, because inline the thing it sits beside has usually said it already.
+`Loading` fills the space the content will take, names what is on its way, and adds `slow` once the wait
+passes three seconds, which is where a spinner alone stops being an answer.
+
+There is no determinate bar, and that is deliberate. A bar needs a fraction the browser can actually see,
+and one request whose progress the server never reports has none — a bar drawn over it invents the single
+number it exists to report. Work that has real steps has them named instead, in order, with the
+[setup assistant's](#setup-assistant) `Checklist`.
+
+Each is one `role="status"`, and `slow` arrives inside that same region so a screen reader hears the
+explanation as news. Under `prefers-reduced-motion` the ring stops turning and breathes instead: nothing
+travels, and the view still reads as alive rather than as one that has died mid-load.
+
 ## Setup assistant
 
 ![A setup assistant on its welcome step](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/setup.png)
