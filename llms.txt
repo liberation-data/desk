@@ -465,7 +465,7 @@ Every value reads a `--desk-*` token; redefine tokens, never override selectors.
 `--desk-surface`, `--desk-titlebar`, `--desk-ink`, `--desk-muted`, `--desk-rule`, `--desk-accent`,
 `--desk-ok|warn|bad`, `--desk-on-accent`. Spacing `--desk-space-1..7` = 4, 8, 12, 16, 24, 32, 48 px. Also
 `--desk-radius`, `--desk-control-height`, `--desk-control-radius`, `--desk-font`, `--desk-font-mono`,
-`--desk-ease`, `--desk-dock-size`, `--desk-dock-glass`, `--desk-inset-bottom`.
+`--desk-ease`, `--desk-dock-size`, `--desk-dock-glass`, `--desk-inset-bottom`, `--desk-wizard-height`.
 
 Light and dark follow `prefers-color-scheme`; `data-theme="light" | "dark"` on the root wins.
 
