@@ -103,10 +103,23 @@
 
 /* ── Wizard ── */
 
+/*
+ * ONE SIZE FOR EVERY STEP, not a floor with taller steps growing past it.
+ *
+ * `min-height` meant a step with an extra field was a taller card than the step before it, so the
+ * pane changed shape as somebody moved through setup and the buttons they were reaching for moved
+ * with it. Worse within a step: a choice that swaps one field for two resized the pane under the
+ * pointer.
+ *
+ * A fixed height costs a step that genuinely needs more room, which is why the content area
+ * scrolls rather than being clipped, and why the height is a token an app can raise once for all
+ * of its steps. `max-height` keeps the whole thing on a short screen.
+ */
 .desk-wizard {
   box-sizing: border-box;
   width: min(640px, 100%);
-  min-height: 520px;
+  height: var(--desk-wizard-height, 520px);
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--desk-rule);
@@ -120,6 +133,9 @@
 
 .desk-wizard-content {
   flex: 1;
+  /* The card's height is fixed, so a step that needs more room scrolls inside it. */
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
