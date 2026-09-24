@@ -203,10 +203,31 @@
   gap: 2px;
 }
 
+/*
+ * A LABEL AND ITS INPUT ARE ONE THING, and the space around them has to say so. The gap INSIDE a
+ * field is 4px; the gap BETWEEN fields has to be clearly larger, or the eye groups a label with
+ * the field above it instead of the one below — which is what a label sitting closer to its
+ * neighbour than to its own input actually does.
+ *
+ * `.desk-field` only ever set the inside gap, and said nothing about the outside. Every consumer
+ * picked its own: one app's forms came out at 14px, another's at 10px, and anything that forgot
+ * got the browser's default of none. Same components, different grouping, and no rule to point at.
+ */
 .desk-field {
   display: flex;
   flex-direction: column;
   gap: var(--desk-space-1);
+}
+
+/*
+ * The container a stack of fields goes in. Four times the inside gap, which is enough that the
+ * pairing is read rather than worked out, and an app that wants tighter or looser sets the token
+ * rather than the rule.
+ */
+.desk-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--desk-field-gap, var(--desk-space-4));
 }
 
 .desk-label {

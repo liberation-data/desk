@@ -45,6 +45,11 @@ can be undone, or ask first — never both, and never neither.
 - Spacing comes from one scale: **4, 8, 12, 16, 24, 32, 48** px (`--desk-space-1` … `--desk-space-7`).
   Nothing else. Two values close together on a screen should be the same value.
 - Group with space before lines. Use a rule (`--desk-rule`) only when space alone cannot separate two groups.
+- **What belongs together sits closer than what does not.** A label and its input are one thing: the
+  space inside the pair must be clearly smaller than the space between pairs, or the eye groups a
+  label with the field above it. `.desk-field` is 4 px inside, `.desk-fields` is `--desk-field-gap`
+  (16 px) between — never set the outer gap per screen, or the same form reads differently in two
+  places.
 - Siblings are laid out with `gap`, not margins.
 - Running text is at most **68 characters** wide.
 - Keep **16 px** clear at the edges of every window body.
