@@ -53,9 +53,19 @@ export interface SegmentedControlProps<T extends string> {
   readonly label: string
   readonly size?: 'regular' | 'small'
   readonly disabled?: boolean
+  /**
+   * `fit` (the default) sizes each option to its own label, which is right for a control that sits
+   * beside other things in a toolbar.
+   *
+   * `fill` spans the row and gives every option the same width. Use it when the control is the
+   * heading of what it governs rather than one item among several: "Direct" and "Via an endpoint"
+   * are the same kind of answer, and sizing them by how many letters they happen to have says the
+   * short one is the lesser choice.
+   */
+  readonly width?: 'fit' | 'fill'
 }
 
-export function SegmentedControl<T extends string>({ options, value, onChange, label, size = 'regular', disabled }: SegmentedControlProps<T>) {
+export function SegmentedControl<T extends string>({ options, value, onChange, label, size = 'regular', disabled, width = 'fit' }: SegmentedControlProps<T>) {
   const group = useRef<HTMLDivElement>(null)
 
   const move = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -73,7 +83,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
   }
 
   return (
-    <div ref={group} role="radiogroup" aria-label={label} className="desk-segmented" data-size={size} onKeyDown={move}>
+    <div ref={group} role="radiogroup" aria-label={label} className="desk-segmented" data-size={size} data-width={width} onKeyDown={move}>
       {options.map(option => {
         const selected = option.value === value
         return (

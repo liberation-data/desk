@@ -364,7 +364,7 @@ SearchCommand = 'desk.search'                          // a menu item can open i
 
 ```tsx
 <Button intent?={'normal'|'default'|'quiet'|'destructive'} size?={'regular'|'small'} icon? … />
-<SegmentedControl options={{value,label,icon?,disabled?}[]} value onChange label size? disabled? />
+<SegmentedControl options={{value,label,icon?,disabled?}[]} value onChange label size? disabled? width?={fit|fill} />
 <Toggle checked onChange label? description? disabled? aria-label? />        // applies at once
 <Checkbox checked indeterminate? onChange label? description? disabled? />   // waits for Save
 <Slider value onChange label min? max? step? disabled? format?={(v) => string} />

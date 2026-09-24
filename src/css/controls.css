@@ -136,6 +136,22 @@
   cursor: pointer;
 }
 
+/*
+ * Spanning the row, with every option the same width. The default sizes each option to its label,
+ * which is right in a toolbar and wrong when the control is the heading of the thing below it:
+ * equal answers should not be different sizes because one of them is a longer word.
+ */
+.desk-segmented[data-width="fill"] {
+  display: flex;
+  width: 100%;
+}
+
+.desk-segmented[data-width="fill"] .desk-segment {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
+
 .desk-segmented[data-size="small"] .desk-segment {
   min-height: calc(var(--desk-control-height-small) - 4px);
   padding: 0 var(--desk-space-2);

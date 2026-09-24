@@ -1,6 +1,6 @@
 {
   "name": "@liberation-data/desk",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "A desktop for the web, for React: windows, a dock, menus and commands, controls, tours and setup assistants.",
   "keywords": [
     "react",

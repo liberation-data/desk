@@ -50,6 +50,20 @@ describe('SegmentedControl', () => {
     expect(screen.getByRole('radio', { name: 'All' }).getAttribute('aria-checked')).toBe('true')
   })
 
+  it('sizes options to their labels unless asked to fill the row', () => {
+    // jsdom lays nothing out, so the WIDTH is the stylesheet's business and only the attribute it
+    // keys on can be asserted here. What matters is that the default did not change: a control in
+    // a toolbar still sizes to its labels.
+    render(<Harness />)
+    expect(screen.getByRole('radiogroup').getAttribute('data-width')).toBe('fit')
+  })
+
+  it('fills the row when the control heads the thing it governs', () => {
+    render(<SegmentedControl label="How this key connects" width="fill" value="direct" onChange={() => {}}
+      options={[{ value: 'direct', label: 'Direct' }, { value: 'via', label: 'Via an endpoint' }]} />)
+    expect(screen.getByRole('radiogroup').getAttribute('data-width')).toBe('fill')
+  })
+
   it('selects on click', () => {
     render(<Harness />)
     fireEvent.click(screen.getByRole('radio', { name: 'Road' }))
