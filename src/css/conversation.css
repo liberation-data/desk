@@ -46,7 +46,28 @@
   font-size: 11.5px;
   font-weight: 600;
   color: var(--desk-muted);
+  /* A row, so an avatar and the name share a baseline rather than the mark pushing the name
+     down by its own height. */
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-1);
 }
+
+/*
+ * Who is speaking, beside their name. Sized here rather than by the caller so every application
+ * that supplies one lands on the same line — a node is free to be anything, but it is not free to
+ * be any size.
+ */
+.desk-message-avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+.desk-message-avatar > * { inline-size: 100%; block-size: 100%; }
 
 .desk-bubble {
   padding: var(--desk-space-2) var(--desk-space-3);
