@@ -1,6 +1,6 @@
 {
   "name": "@liberation-data/desk",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "A desktop for the web, for React: windows, a dock, menus and commands, controls, tours and setup assistants.",
   "keywords": [
     "react",
@@ -53,7 +53,8 @@
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
     "size": "node scripts/size.mjs",
     "check": "npm run typecheck && npm test && npm run build && npm run size",
-    "check:browser": "node scripts/browser-check.mjs"
+    "check:browser": "node scripts/browser-check.mjs",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "peerDependencies": {
     "react": "^19.0.0"

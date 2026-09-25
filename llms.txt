@@ -17,7 +17,7 @@ import { createDesk }                    from '@liberation-data/desk'        // 
 import { Desktop, DeskProvider }         from '@liberation-data/desk/react'  // components and hooks
 import '@liberation-data/desk/desk.css'                                      // tokens and styles
 // or only the parts you draw: css/tokens.css (required) + windows|dock|menus|controls|overlays|
-// conversation|search|setup|apps.css
+// conversation|search|setup|apps.css, then looks.css last
 ```
 
 ## The shape of an app
@@ -25,12 +25,12 @@ import '@liberation-data/desk/desk.css'                                      // 
 ```tsx
 const desk = createDesk()
 
-<DeskShell desk={desk}>         {/* desk + bus + toasts; or DeskProvider on its own */}
+<DeskShell desk={desk} look={look}>  {/* desk + bus + toasts; or DeskProvider on its own */}
       <MenuBar menus={…} status={…} />
       <div className="screen">  {/* position: relative; the stage fills it */}
         <Desktop title={id => TITLES[id]} renderWindow={id => SURFACES[id]} empty={…} />
         <InputBar onSubmit={…} />
-        <Dock entries={…} />
+        <Dock entries={…} side="left" />  {/* a sibling of Desktop, so it makes its own room */}
         <SearchPalette open={…} onOpenChange={…} search={…} />
       </div>
 </DeskShell>
@@ -38,7 +38,12 @@ const desk = createDesk()
 
 Rules that are easy to get wrong:
 - `.desk-stage` fills its parent: give the parent a height, and `position: relative` if the dock or input
-  bar overlays it. Set `--desk-inset-bottom` to the height of anything overlaying the bottom.
+  bar overlays it. An overlay `<Dock>` beside the `<Desktop>` (same parent) makes its own room; set
+  `--desk-inset-bottom` only for something else of the app's overlaying the bottom — never for the dock.
+- The look (`look?: 'auto' | 'mac' | 'gnome' | 'windows'` on DeskShell/DeskProvider, default `auto` = the
+  device's) is chrome only: it never changes tokens like `--desk-accent`, and never the keyboard — shortcuts
+  follow the device. The app stores a user's choice and passes it back. `useLook()` returns the resolved look
+  for chrome the app draws itself, e.g. a Window menu: Zoom on `mac`, Maximize elsewhere.
 - A window is an id; `renderWindow(id)` says what it looks like. Every open window renders, including ones
   offstage in the touch layout — that is what preserves their state.
 - Opening a window that is already open focuses it. For a second window onto the same thing use
@@ -164,7 +169,9 @@ bindShortcuts(desk, keymap: Record<string, string>, { target?, apple? }): () => 
 parseShortcut('mod+shift+z'): Shortcut
 matchesShortcut(event, shortcut, apple?): boolean
 formatShortcut('mod+comma', apple?): string        // '⌘,' or 'Ctrl+,'
-isApplePlatform(): boolean
+isApplePlatform(): boolean                         // the KEYBOARD; the look is separate
+deviceLook(): Look                                 // 'mac' | 'gnome' | 'windows' for this device
+lookFor(platform, userAgent): Look                 // the same, pure; resolveLook('auto' | Look): Look
 isInstalledApp(): boolean                          // gate ⌘W / ⌘` on this; never take ⌘T or ⌘N
 titleCase('ride card'): string                    // 'Ride Card' — app and window names; a document keeps its own name
 isTitleCase(name): boolean                         // for a test over the names an app defines
@@ -207,9 +214,10 @@ InputCommands = { submit: 'desk.input.submit', describe: 'desk.input.describe' }
 ### Shell
 
 ```tsx
-<DeskShell desk?={Desk} options?={DeskOptions} bus?={Bus} toasts?={true}>
-<DeskProvider desk={desk}>                          // or options={…} to make one
+<DeskShell desk?={Desk} options?={DeskOptions} bus?={Bus} toasts?={true} look?={'auto'}>
+<DeskProvider desk={desk} look?={'auto'}>           // or options={…} to make one
 useDesk(): Desk
+useLook(): 'mac' | 'gnome' | 'windows'              // resolved; the device's outside a desk
 useDeskState(): DeskState
 useWindowId(): string | null                        // inside a window's content
 
@@ -256,15 +264,16 @@ explanation only — never a warning, which belongs in front of people.
 ### Dock
 
 ```tsx
-<Dock entries={DockEntry[]} label?="Dock" placement?={'overlay' | 'inline'}
+<Dock entries={DockEntry[]} label?="Dock" placement?={'overlay' | 'inline'} side?={'left' | 'right' | 'bottom'}
   pins?={{ accepts, onPin: (drag, before: id | null) => void, onMove?: (id, before: id | null) => void }} />
 dockItem({ id, label, icon, window?, description?, badge?, onSelect?, disabled?, contextMenu?: () => MenuItem[], movable? })
 dockStack({ id, label, items: DockItem[], icon? })
 dockSeparator(id)
 ```
 
-An item opens `window ?? id` and shows a dot while that window is open, accent when it is key. A stack fans
-out above the dock. One tab stop; arrow keys along it; Escape folds a stack away.
+An item opens `window ?? id` and shows a dot while that window is open, accent when it is key. `side`
+defaults to `left`. A stack fans out toward the desk. One tab stop; arrow keys along it (Up/Down at a side,
+Left/Right at the bottom); Escape folds a stack away.
 Pins: the app stores kept items and passes them back as entries. A drop on the dock keeps at the end; on a
 `movable` item, in front of it. Movable items drag along the dock (type DOCK_ITEM, payload id).
 
@@ -465,10 +474,11 @@ Every value reads a `--desk-*` token; redefine tokens, never override selectors.
 `--desk-surface`, `--desk-titlebar`, `--desk-ink`, `--desk-muted`, `--desk-rule`, `--desk-accent`,
 `--desk-ok|warn|bad`, `--desk-on-accent`. Spacing `--desk-space-1..7` = 4, 8, 12, 16, 24, 32, 48 px. Also
 `--desk-radius`, `--desk-control-height`, `--desk-control-radius`, `--desk-font`, `--desk-font-mono`,
-`--desk-ease`, `--desk-dock-size`, `--desk-dock-glass`, `--desk-inset-bottom`, `--desk-wizard-height`,
-`--desk-field-gap`.
+`--desk-ease`, `--desk-dock-size`, `--desk-dock-glass`, `--desk-dock-offset`, `--desk-dock-room`,
+`--desk-inset-bottom`, `--desk-wizard-height`, `--desk-field-gap`.
 
-Light and dark follow `prefers-color-scheme`; `data-theme="light" | "dark"` on the root wins.
+Light and dark follow `prefers-color-scheme`; `data-theme="light" | "dark"` on the root wins. The look is
+`data-look="mac" | "gnome" | "windows"` on the root, set by the desk; don't set it yourself — pass `look`.
 
 ## Testing
 

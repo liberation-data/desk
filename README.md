@@ -141,9 +141,9 @@ Links work the same everywhere: a link opens the same windows, shown one at a ti
 
 ## Dock
 
-![The Window menu open over a filled window, with the dock below](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/menus.png)
+![The Window menu open over a filled window, with the dock beside it](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/menus.png)
 
-<sub>The dock along the bottom, with a badge and a stack; the Window menu listing what is open.</sub>
+<sub>The dock on the left, with a badge and stacks; the Window menu listing what is open.</sub>
 
 ```tsx
 import { Dock, dockItem, dockSeparator, dockStack } from '@liberation-data/desk/react'
@@ -159,11 +159,17 @@ import { Dock, dockItem, dockSeparator, dockStack } from '@liberation-data/desk/
 ```
 
 An item opens the window with its id (or `window`), and shows a dot while that window is open. A stack fans
-its items out above the dock and previews the first four icons. `onSelect` replaces opening a window.
+its items out toward the desk and previews the first four icons. `onSelect` replaces opening a window.
 
-The dock is one tab stop: arrow keys move along it, Enter opens, Escape folds a stack away and returns focus
-to it. With `placement="overlay"` (the default) it floats over the bottom of its positioned parent; set
-`--desk-inset-bottom` so windows stop above it.
+`side` puts the dock on the `left` (the default), `right` or `bottom` of the desk. Left, because a bottom
+dock takes height from every window — which is what a laptop has least of — and on a Mac it sits on top
+of the real one.
+
+The dock is one tab stop: arrow keys move along it (Up and Down when it stands at a side), Enter opens,
+Escape folds a stack away and returns focus to it. With `placement="overlay"` (the default) it floats over
+its positioned parent and makes its own room: a `<Desktop>` beside it starts where the dock ends, so no
+window opens underneath it. That needs the dock and the desktop to be siblings; composed any other way,
+set `--desk-inset-bottom` (or pad the stage) yourself.
 
 ### Keeping things in the dock
 
@@ -692,7 +698,36 @@ import '@liberation-data/desk/css/conversation.css'
 import '@liberation-data/desk/css/search.css'
 import '@liberation-data/desk/css/setup.css'     // the wizard and tours
 import '@liberation-data/desk/css/apps.css'      // app frames and dragging between windows
+import '@liberation-data/desk/css/looks.css'     // GNOME and Windows chrome: last, it restyles the rest
 ``` Light and dark follow `prefers-color-scheme`, and `data-theme="light|dark"` on the root wins.
+
+## Looks
+
+![Four arranged windows in the GNOME look](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/look-gnome.png)
+
+<sub>The GNOME look: title bars with the title centred and the controls at the end, a dark top bar and dash.</sub>
+
+![Four arranged windows in the Windows look](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/look-windows.png)
+
+<sub>The Windows look: full-height controls with a red close, and a pill under each open item in the dock.</sub>
+
+The desk wears the chrome of the platform it is on — Mac, GNOME or Windows — and an app can choose one
+instead. Where a window's controls sit and what they look like, how the title, the menu bar and the dock
+are drawn: that is the look. It is separate from the theme, so every look comes light and dark.
+
+```tsx
+<DeskShell look="auto">    {/* 'auto' (the default) | 'mac' | 'gnome' | 'windows' */}
+```
+
+`auto` reads the device: Macs, iPhones and iPads get `mac`, Windows gets `windows`, Linux and ChromeOS get
+`gnome`, and anything else gets `mac`. The look is set as `data-look` on the root, so menus and popovers
+portalled out of the desk get it too. The desk does not remember a choice: keep it where the app keeps its
+other preferences and pass it back in, as the garage sample's Settings does.
+
+A look changes chrome, not brand: it never touches `--desk-accent` or `--desk-ground`. Nor the keyboard —
+somebody on a Mac who picks the GNOME look still presses ⌘, and menus still say so. An app drawing chrome
+of its own reads the look with `useLook()`, as the sample does to call its Window menu's Zoom *Maximize*
+off a Mac.
 
 ## Docs
 

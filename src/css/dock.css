@@ -19,10 +19,54 @@
 
 .desk-dock[data-placement="overlay"] {
   position: absolute;
-  left: 50%;
-  bottom: 12px;
   z-index: 1000;
+}
+
+.desk-dock[data-placement="overlay"][data-side="bottom"] {
+  left: 50%;
+  bottom: var(--desk-dock-offset);
   transform: translateX(-50%);
+}
+
+.desk-dock[data-placement="overlay"]:not([data-side="bottom"]) {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.desk-dock[data-placement="overlay"][data-side="left"] {
+  left: var(--desk-dock-offset);
+}
+
+.desk-dock[data-placement="overlay"][data-side="right"] {
+  right: var(--desk-dock-offset);
+}
+
+/* Standing in a column: items top to bottom, and never taller than the room it stands in. */
+.desk-dock:not([data-side="bottom"]) {
+  flex-direction: column;
+  align-items: center;
+  max-width: none;
+  max-height: calc(100% - 2 * var(--desk-dock-offset));
+  /* The same thickness standing up as lying down, so --desk-dock-room holds on every side. */
+  padding: 9px 7px;
+}
+
+/*
+ * An overlay dock makes its own room. The stage beside it starts where the dock ends — a margin, not
+ * padding, because windows are placed from the stage's own corner: padding would keep filled windows
+ * clear and still open every free one underneath the dock.
+ */
+:has(> .desk-dock[data-placement="overlay"][data-side="left"]) > .desk-stage {
+  margin-left: var(--desk-dock-room);
+}
+
+:has(> .desk-dock[data-placement="overlay"][data-side="right"]) > .desk-stage {
+  margin-right: var(--desk-dock-room);
+}
+
+:has(> .desk-dock[data-placement="overlay"][data-side="bottom"]) > .desk-stage {
+  /* The stage is `height: 100%`, so a margin would push it past its parent rather than shorten it. */
+  height: calc(100% - var(--desk-dock-room));
 }
 
 .desk-dock-separator {
@@ -31,6 +75,12 @@
   width: 1px;
   margin: 6px 4px;
   background: var(--desk-rule);
+}
+
+.desk-dock:not([data-side="bottom"]) .desk-dock-separator {
+  width: auto;
+  height: 1px;
+  margin: 4px 6px;
 }
 
 .desk-dock-slot {
@@ -66,10 +116,21 @@
   outline-offset: 2px;
 }
 
+/* Magnified toward the desk, whichever side that is. */
 @media (hover: hover) and (pointer: fine) {
-  .desk-dock-item:hover:not(:disabled) {
+  .desk-dock[data-side="bottom"] .desk-dock-item:hover:not(:disabled) {
     transform: translateY(-8px) scale(1.14);
     margin: 0 5px;
+  }
+
+  .desk-dock[data-side="left"] .desk-dock-item:hover:not(:disabled) {
+    transform: translateX(8px) scale(1.14);
+    margin: 5px 0;
+  }
+
+  .desk-dock[data-side="right"] .desk-dock-item:hover:not(:disabled) {
+    transform: translateX(-8px) scale(1.14);
+    margin: 5px 0;
   }
 }
 
@@ -126,6 +187,22 @@
   background: var(--desk-muted);
 }
 
+/* On a dock at the side the dot sits between the item and the edge of the screen, as it does under a bottom one. */
+.desk-dock:not([data-side="bottom"]) .desk-dock-item[data-running]::after {
+  top: 50%;
+  bottom: auto;
+  margin: -2px 0 0;
+}
+
+.desk-dock[data-side="left"] .desk-dock-item[data-running]::after {
+  left: -6px;
+}
+
+.desk-dock[data-side="right"] .desk-dock-item[data-running]::after {
+  left: auto;
+  right: -6px;
+}
+
 .desk-dock-item[data-focused]::after {
   background: var(--desk-accent);
 }
@@ -173,6 +250,21 @@
   transition: opacity .12s;
 }
 
+.desk-dock:not([data-side="bottom"]) .desk-dock-tip {
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.desk-dock[data-side="left"] .desk-dock-tip {
+  left: calc(100% + 14px);
+}
+
+.desk-dock[data-side="right"] .desk-dock-tip {
+  left: auto;
+  right: calc(100% + 14px);
+}
+
 .desk-dock-item:hover .desk-dock-tip,
 .desk-dock-item:focus-visible .desk-dock-tip {
   opacity: 1;
@@ -207,6 +299,30 @@
   from {
     opacity: 0;
     transform: translateX(-50%) translateY(6px) scale(.98);
+  }
+}
+
+/* Beside a dock at the side, level with the stack it came from, opening toward the desk. */
+.desk-dock:not([data-side="bottom"]) .desk-stack {
+  bottom: auto;
+  top: 0;
+  transform: none;
+  animation-name: desk-pop-aside;
+}
+
+.desk-dock[data-side="left"] .desk-stack {
+  left: calc(100% + 18px);
+}
+
+.desk-dock[data-side="right"] .desk-stack {
+  left: auto;
+  right: calc(100% + 18px);
+}
+
+@keyframes desk-pop-aside {
+  from {
+    opacity: 0;
+    scale: .98;
   }
 }
 
@@ -274,4 +390,8 @@
 
 .desk-dock-item[data-desk-drop][data-over] {
   box-shadow: -6px 0 0 -2px var(--desk-accent);
+}
+
+.desk-dock:not([data-side="bottom"]) .desk-dock-item[data-desk-drop][data-over] {
+  box-shadow: 0 -6px 0 -2px var(--desk-accent);
 }

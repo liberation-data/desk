@@ -46,11 +46,15 @@
   --desk-on-accent: #ffffff;
   --desk-ease: cubic-bezier(.32, .72, 0, 1);
   --desk-dock-size: 48px;
+  /* How far an overlay dock stands off the edge of the desk. */
+  --desk-dock-offset: 12px;
+  /* The room an overlay dock takes from the stage beside it: the offset, the dock, its border and padding. */
+  --desk-dock-room: calc(var(--desk-dock-offset) + var(--desk-dock-size) + 16px);
   --desk-dock-glass: rgb(255 255 255 / 72%);
   --desk-dock-icon: linear-gradient(160deg, #ffffff, #eceff5);
   --desk-badge: #ef4444;
   --desk-badge-ink: #ffffff;
-  /* Room the stage leaves at the bottom for an overlay dock. */
+  /* Room the stage leaves at the bottom for something of the app's own. An overlay dock makes its own. */
   --desk-inset-bottom: 0px;
 }
 

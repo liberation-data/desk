@@ -1,7 +1,6 @@
 /* The sample's own look, on top of desk.css tokens. */
 :root {
   --desk-accent: #ff7a45;
-  --desk-inset-bottom: 88px;
   --ok: #3ecf8e;
   --warn: #fbbf24;
   --bad: #f87171;
@@ -50,25 +49,31 @@ textarea {
   position: relative;
   flex: 1;
   min-height: 0;
-}
-
-.screen .desk-stage {
+  /* On the screen, not the stage: the dock stands beside the stage, and the ground runs under both. */
   background:
     radial-gradient(70ch 50ch at 15% -10%, rgb(255 122 69 / 12%), transparent 70%),
     radial-gradient(60ch 45ch at 95% 110%, rgb(62 207 142 / 8%), transparent 70%),
     var(--desk-ground);
 }
 
+.screen .desk-stage {
+  background: none;
+}
+
 .bottomstack {
   position: absolute;
   left: 50%;
-  bottom: 88px;
+  bottom: 16px;
   transform: translateX(-50%);
   z-index: 900;
   width: min(720px, calc(100% - 32px));
   display: flex;
   flex-direction: column;
   gap: var(--desk-space-2);
+}
+
+.screen:has(> .desk-dock[data-side="bottom"]) .bottomstack {
+  bottom: calc(var(--desk-dock-room) + 16px);
 }
 
 .linkish {
