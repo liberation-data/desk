@@ -15,6 +15,7 @@ npm install @liberation-data/desk        # peer: react ^19
 ```ts
 import { createDesk }                    from '@liberation-data/desk'        // no DOM, no React
 import { Desktop, DeskProvider }         from '@liberation-data/desk/react'  // components and hooks
+import { createFx }                      from '@liberation-data/desk/fx'     // sounds; opt-in, no React
 import '@liberation-data/desk/desk.css'                                      // tokens and styles
 // or only the parts you draw: css/tokens.css (required) + windows|dock|menus|controls|overlays|
 // conversation|search|setup|apps.css, then looks.css last
@@ -480,6 +481,23 @@ Every value reads a `--desk-*` token; redefine tokens, never override selectors.
 Light and dark follow `prefers-color-scheme`; `data-theme="light" | "dark"` on the root wins. The look is
 `data-look="mac" | "gnome" | "windows"` on the root, set by the desk; don't set it yourself — pass `look`.
 
+## Sounds: `@liberation-data/desk/fx`
+
+```ts
+const fx = createFx({ storageKey?: 'app.sounds-muted', coalesceMs?: 1500, volume?: 0.8,
+                      sounds?: { chime: (ctx, out, at) => void } })   // one per app, module scope
+fx.unlock()                         // once, at startup: opens audio on the first press
+fx.play('attention' | 'ready' | 'failed' | <own>)   // → boolean; silent if muted, repeated, or before a press
+fx.muted(); fx.setMuted(bool); fx.subscribe(() => …)                   // follows other tabs too
+await measureLoudness(fx, 'failed', { speaker: 'laptop' })            // → { lufs, peakDb }; browser only
+<SoundsToggle fx={fx} label? description? />                          // from /react: the one switch
+```
+
+`attention`: something is waiting on this person. `ready`: something to look at when they are ready.
+`failed`: their work did not finish. Each is matched to -27 LUFS on a laptop speaker. `scored(score)`
+builds a sound in the same family from a `Score` (`BELL` and `GROWL` are the voices). When to play one
+is the app's decision: HIG §7, Sound.
+
 ## Testing
 
 ```ts
@@ -501,5 +519,7 @@ in the accessibility tree.
 - A `DeskProvider` already carries an event bus; `BusProvider` is only for supplying or sharing one.
 - `renderWindow` must be stable (module scope or `useCallback`) for the memoisation to hold.
 - `parse`/`syncWithLocation` warn once when no `isKnown` is given: unknown ids from a URL are then trusted.
-- `npm run size` enforces a gzipped budget: core 11 KiB, react 46 KiB, css 10 KiB.
+- `npm run size` enforces a gzipped budget: core 13 KiB, react 52 KiB, css 16 KiB, fx 5 KiB.
+- `fx.play` never resumes audio itself: outside a press a browser's resume may never settle. Call
+  `fx.unlock()` at startup, or nothing sounds until a press after the sound was due.
 - The package is ESM only, with `"sideEffects": ["**/*.css"]`.

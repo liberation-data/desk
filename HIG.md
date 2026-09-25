@@ -31,7 +31,8 @@ action immediately, where it happened.
 **Feedback.** Every action gets a visible response within 100 ms. Anything that takes longer says it is
 working, and anything that takes more than a few seconds says how far it has got.
 
-**People stay in control.** Nothing opens, closes, moves or plays without being asked. Destructive actions
+**People stay in control.** Nothing opens, closes, moves or plays without being asked — the one exception
+being a sound that says something needs them, and that they can turn off (§7, Sound). Destructive actions
 can be undone, or ask first — never both, and never neither.
 
 **Forgiveness.** Undo is the default safety net. Confirmation dialogs are for what cannot be undone.
@@ -394,6 +395,29 @@ From least to most interrupting — use the least that works:
   taking the time (`Loading`'s `slow`). Work that genuinely has steps has them named, in order —
   that is what `Checklist` is.
 - Never interrupt with an alert for something that could be a badge.
+
+### Sound
+
+A sound reaches someone who is not looking — which is the only reason to make one. `fx` has three,
+and an app should not need a fourth:
+
+| Sound | When |
+|---|---|
+| `attention` | work has stopped until this person answers: a permission, a question |
+| `ready` | something they started finished, or something arrived they have not seen |
+| `failed` | something they started, and are waiting on, did not finish |
+
+- **Sound accompanies, never replaces.** Every sound has a badge, a status line or a toast beside it.
+  Muted, or on a machine with no speakers, nothing is lost.
+- **Not for what they just did.** Pressing Send is not news to the person who pressed it.
+- **Not for what they are looking at.** If the window it concerns is the key window and the tab is
+  visible, its own feedback has already told them. `ready` especially.
+- **Not for a backlog.** Opening the app announces nothing: the first look at anything is what was
+  already there.
+- **Not for a background recovery.** A retry that worked, a poll that failed once: put it where it can
+  be found later, not in their ears.
+- **One switch, in Settings.** `SoundsToggle`, labelled with what it silences. It covers every sound
+  the app makes, its own included.
 
 ---
 

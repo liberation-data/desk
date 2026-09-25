@@ -133,6 +133,20 @@ describe('the garage sample', () => {
     expect(screen.getByRole('menubar')).toBeTruthy()
   })
 
+  it('has one switch for its sounds, in Settings, that it remembers', async () => {
+    const user = userEvent.setup()
+    await arrive(user)
+    await user.click(within(dock()).getByRole('button', { name: 'System' }))
+    await user.click(within(screen.getByRole('dialog', { name: 'System' })).getByRole('button', { name: /Settings/ }))
+    const sounds = screen.getByRole('switch', { name: 'Play sounds' })
+    expect(sounds.getAttribute('aria-checked')).toBe('true')
+    await user.click(sounds)
+    expect(sounds.getAttribute('aria-checked')).toBe('false')
+    expect(localStorage.getItem('garage.sounds-muted')).toBe('yes')
+    // Each can be heard from here, and nowhere else plays one unasked. jsdom has no audio: silent.
+    for (const name of ['Attention', 'Ready', 'Failed']) expect(screen.getByRole('button', { name })).toBeTruthy()
+  })
+
   it('filters the rides and sends one to the map', async () => {
     const user = userEvent.setup()
     await arrive(user)

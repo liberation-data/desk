@@ -729,6 +729,34 @@ somebody on a Mac who picks the GNOME look still presses ⌘, and menus still sa
 of its own reads the look with `useLook()`, as the sample does to call its Window menu's Zoom *Maximize*
 off a Mac.
 
+## Sounds
+
+Three sounds, synthesised, in their own entry point so an app that makes none loads none:
+
+```tsx
+import { createFx } from '@liberation-data/desk/fx'
+import { SoundsToggle } from '@liberation-data/desk/react'
+
+const fx = createFx({ storageKey: 'garage.sounds-muted' })   // one per app
+fx.unlock()                                                  // audio opens on the first press
+
+fx.play('attention')   // something is waiting on this person
+fx.play('ready')       // something to look at when they are ready
+fx.play('failed')      // their work did not finish
+
+<SoundsToggle fx={fx} description="When a part needs you, when a service is ready, and when one fails" />
+```
+
+They are one family, told apart by shape: attention rises, ready is small and high, failed is a low
+growl. Each is levelled to the same loudness on a laptop speaker, measured rather than judged by ear —
+`measureLoudness` is exported, for checking a sound of your own. A second request for the same sound
+within 1.5 seconds is the same event, and plays once. Nothing plays before the first press: browsers
+refuse, so `unlock()` takes that press. The mute is this browser's, and `SoundsToggle` follows it across
+tabs.
+
+An app's own sound — a chime when it opens, say — goes in `createFx({ sounds: { chime } })`, and obeys the
+same mute. When to make a sound is the hard part: see [HIG.md](HIG.md), Sound.
+
 ## Docs
 
 - [docs/guide.md](docs/guide.md) — building an app with it, and what catches people out
@@ -742,7 +770,7 @@ npm install
 npm test            # vitest
 npm run typecheck
 npm run example     # the Garage sample in examples/garage
-npm run size        # the gzipped budget: core 11 KiB, react 46, css 10
+npm run size        # the gzipped budget: core 13 KiB, react 52, css 16, fx 5
 npm run check       # everything CI runs
 npm run check:browser   # the generated-app bridge in real Chrome, against a running sample
 npm run build       # dist/

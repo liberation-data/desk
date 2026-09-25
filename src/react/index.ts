@@ -38,6 +38,8 @@ export type {
   TextFieldProps,
   ToggleProps,
 } from './controls.js'
+export { SoundsToggle } from './soundsToggle.js'
+export type { SoundsToggleProps } from './soundsToggle.js'
 export { Loading, Spinner } from './progress.js'
 export type { LoadingProps, SpinnerProps, SpinnerSize } from './progress.js'
 export { Pane, Toolbar } from './pane.js'

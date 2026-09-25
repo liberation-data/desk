@@ -46,7 +46,12 @@ import { join } from 'node:path'
  * Linux machine that had not imported the GNOME part would render GNOME's title bar with the Mac's
  * styles. The looks part is printed on its own line below, so it growing is visible.
  */
-const BUDGETS = { core: 13, react: 52, css: 16 }
+/*
+ * fx 5 for sounds, an entry of its own so an app that makes no sound loads none of it. It is 4.4 at
+ * birth, much of that the comments saying why each sound is built as it is; 5 rather than 4.5 for
+ * the reason the notes above give, that a budget with no room fails the next commit whatever it is.
+ */
+const BUDGETS = { core: 13, react: 52, css: 16, fx: 5 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
@@ -61,6 +66,7 @@ const parts = walk('dist/css').filter(path => path.endsWith('.css')).sort()
 const measured = {
   core: sizeOf(js.filter(path => path.includes('/core/'))),
   react: sizeOf(js.filter(path => path.includes('/react/'))),
+  fx: sizeOf(js.filter(path => path.includes('/fx/'))),
   css: sizeOf(['dist/desk.css']),
 }
 

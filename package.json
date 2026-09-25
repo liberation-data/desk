@@ -42,6 +42,10 @@
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.js"
     },
+    "./fx": {
+      "types": "./dist/fx/index.d.ts",
+      "import": "./dist/fx/index.js"
+    },
     "./desk.css": "./dist/desk.css",
     "./css/*": "./dist/css/*"
   },
