@@ -116,6 +116,28 @@ Colour has **roles**, not names. Components use roles; a theme assigns colours t
   for everyone.
 - Don't invent an icon for an abstract idea. Use a word.
 
+### Looks
+
+The desk wears the chrome of a platform: **Mac**, **GNOME** or **Windows** (`look`, on `DeskShell` or
+`DeskProvider`). By default it matches the device, and the app may offer the choice; the app keeps it.
+
+- **Detect, then let people choose.** A person on Linux should not have to learn a Mac's title bar to use
+  the app, and a person who prefers another platform's chrome can have it. Offer the choice among the
+  app's settings, next to light and dark, never on first run.
+- **A look is chrome, not brand.** It decides where a window's controls sit and how they are drawn, the
+  title, the menu bar and the dock's material. It never changes the accent, the ground or the content —
+  an app looks like itself in every look.
+- **A look is not the keyboard.** Shortcuts follow the device: ⌘ on a Mac in any look, Ctrl elsewhere.
+  Menus show the keys people will actually press.
+- **One behaviour, the platform's names.** Filling the desk and back is *Zoom* on a Mac and *Maximize* /
+  *Restore* on GNOME and Windows, in the title bar and in any menu the app draws (`useLook()`). It is the
+  same act, so it is never two commands.
+- **Where a platform has no global menu bar, the desk keeps one.** GNOME and Windows put menus in the
+  window; the desk's menu bar is how commands reach the key window (§5), and a look does not change how
+  commands are routed. It takes the platform's material instead: GNOME's dark top bar, Windows' flat one.
+- **A new look is a whole look.** Title bar, menu bar, dock, light and dark, the touch layout — or none of
+  it. A half-applied look is worse than the Mac one it replaced.
+
 ### Accessibility
 
 - Everything that can be done with a pointer can be done with a keyboard.
@@ -148,8 +170,9 @@ together, they are one window; if people want them side by side, they are two.
 
 ### The key window
 
-- Exactly one window has focus — the **key window**. It has an accent-tinted border, coloured controls and a
-  full-contrast title. Other windows have muted titles and grey controls. A desk whose windows are all
+- Exactly one window has focus — the **key window**. It has a full-contrast title; other windows have muted
+  titles. On the Mac look it also has an accent-tinted border and coloured controls, and other windows grey
+  ones; on GNOME it is told apart by its shadow, and on Windows by full-strength control marks. A desk whose windows are all
   minimized has no key window; a minimized one is never it, because there is nothing on screen to type into.
   A background window's controls colour and show their marks while the pointer is over them, so a window can
   be closed without first being made key.
@@ -196,10 +219,18 @@ the stage.
 
 ### Title bars
 
-- Controls are on the leading side: **close**, then **minimize**, then **zoom**. Title follows.
-- A control says what it does when the pointer arrives over the three of them, or when one has the
+- Controls sit where the platform puts them, and are in the document in that order — never reordered with
+  CSS — so Tab walks them the way they read:
+  - **Mac**: leading, **close**, **minimize**, **zoom**, then the title.
+  - **GNOME**: trailing, **minimize**, **maximize**, **close**, after everything else in the bar. The title,
+    and the note under it, are centred on the bar.
+  - **Windows**: trailing, **minimize**, **maximize**, **close**, full height and flush to the corner.
+- On a Mac a control says what it does when the pointer arrives over the three of them, or when one has the
   keyboard: the marks come up together, and are not there at rest. Colour alone is not the answer to
-  which dot is which, and three marks kept on screen are three icons in a title bar.
+  which dot is which, and three marks kept on screen are three icons in a title bar. GNOME and Windows
+  draw their controls as symbols, not colours, so their marks are always there.
+- Maximize and Restore are one control whose mark and name change with the window: *Restore* on a window
+  filling the desk, *Maximize* on a free one.
 - A title is the name of the thing, not the app: **Dandenongs loop**, not **Garage — Map**.
 - A title bar may hold at most one or two window-wide actions on its trailing side. Anything more belongs
   in a toolbar inside the window.
@@ -237,9 +268,17 @@ the stage.
 
 ## 4. Dock
 
+- The dock stands on the **left** by default, and may stand on the right or along the bottom. A bottom dock
+  takes height from every window, which is what a laptop has least of, and on a Mac it sits on top of the
+  real one. Let people move it; don't move it for them.
+- The dock **makes its own room**: the desk beside it starts where it ends, so no window opens, fills or is
+  arranged underneath it.
+- Everything that opens from the dock opens **toward the desk** — labels, stacks — and magnification grows
+  toward the desk too. The running dot sits on the side nearest the edge of the screen.
 - The dock holds **what people return to**: the few windows used most, stacks for the rest, then pins.
   Order: core windows, a separator, stacks, a separator, pins.
-- A **dot** under an item means its window is open. The accent dot means it is the key window. A hollow dot
+- A **dot** beside an item means its window is open (on the Windows look, a short pill that widens for the
+  key window). The accent dot means it is the key window. A hollow dot
   means it is open and minimized — off the desk, and one press away.
 - A **badge** counts things waiting for the person — due, unread, failed. It is a number or a single mark,
   never a word. If nothing is waiting, there is no badge; a badge showing 0 is a bug.
@@ -433,6 +472,7 @@ reach an empty desktop without knowing what to do next.
 
 - [ ] Uses only tokens for colour, space, type, radius and motion.
 - [ ] Works in light and dark, with 4.5:1 text contrast in both.
+- [ ] Looks right in every look — Mac, GNOME and Windows — and with the dock on every side.
 - [ ] Fully usable by keyboard, with a visible focus ring.
 - [ ] Has an accessible name and the right role.
 - [ ] 44 × 44 px touch target; nothing hover-only.

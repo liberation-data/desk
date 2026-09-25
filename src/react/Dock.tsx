@@ -60,11 +60,22 @@ export const dockItem = (item: DockItem): DockEntry => ({ type: 'item', ...item 
 export const dockStack = (stack: DockStack): DockEntry => ({ type: 'stack', ...stack })
 export const dockSeparator = (id: string): DockEntry => ({ type: 'separator', id })
 
+/**
+ * Which edge of the desk the dock stands against. Left by default: a bottom dock takes height from
+ * every window, which is what a laptop has least of, and on a Mac it sits on top of the real one.
+ */
+export type DockSide = 'left' | 'right' | 'bottom'
+
 export interface DockProps {
   readonly entries: readonly DockEntry[]
   readonly label?: string
   /** `overlay` floats the dock over the bottom of its positioned parent; `inline` leaves layout to you. */
   readonly placement?: 'overlay' | 'inline'
+  /**
+   * An overlay dock on the left or right stands in a column, and makes its own room: a stage beside
+   * it starts where the dock ends, so no window opens underneath it.
+   */
+  readonly side?: DockSide
   readonly className?: string
   readonly pins?: DockPins
 }
@@ -104,7 +115,8 @@ function roveFocus(event: KeyboardEvent<HTMLElement>, keys: { next: string[]; pr
   target.focus()
 }
 
-export function Dock({ entries, label = 'Dock', placement = 'overlay', className, pins }: DockProps) {
+export function Dock({ entries, label = 'Dock', placement = 'overlay', side = 'left', className, pins }: DockProps) {
+  const vertical = side !== 'bottom'
   const [openStack, setOpenStack] = useState<string | null>(null)
   const firstFocusable = entries.find(e => e.type !== 'separator')?.id
   const { dropProps } = useDropTarget({
@@ -117,13 +129,14 @@ export function Dock({ entries, label = 'Dock', placement = 'overlay', className
     <div
       role="toolbar"
       aria-label={label}
-      aria-orientation="horizontal"
+      aria-orientation={vertical ? 'vertical' : 'horizontal'}
       className={['desk-dock', className].filter(Boolean).join(' ')}
       data-placement={placement}
+      data-side={side}
       {...dropProps}
       onKeyDown={event => {
         if ((event.target as HTMLElement).closest('.desk-stack')) return
-        roveFocus(event, { next: ['ArrowRight'], previous: ['ArrowLeft'] })
+        roveFocus(event, vertical ? { next: ['ArrowDown'], previous: ['ArrowUp'] } : { next: ['ArrowRight'], previous: ['ArrowLeft'] })
       }}
     >
       {entries.map(entry => {

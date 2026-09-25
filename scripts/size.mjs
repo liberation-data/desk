@@ -40,7 +40,13 @@ import { join } from 'node:path'
  * core notes above describe. The parts line under the total is what actually catches growth here: a
  * single part doubling is visible, a total creeping by 0.1 is not.
  */
-const BUDGETS = { core: 13, react: 52, css: 14 }
+/*
+ * Raised css 14 → 16 for looks: GNOME and Windows chrome (1.9 KiB) and a dock that stands on any side
+ * (0.7). Both are in desk.css rather than an opt-in part because the look is detected: an app on a
+ * Linux machine that had not imported the GNOME part would render GNOME's title bar with the Mac's
+ * styles. The looks part is printed on its own line below, so it growing is visible.
+ */
+const BUDGETS = { core: 13, react: 52, css: 16 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {

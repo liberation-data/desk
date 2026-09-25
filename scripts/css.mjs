@@ -20,6 +20,8 @@ export const PARTS = [
   'search',
   'setup',
   'apps',
+  // Last: a look restyles the parts above, and wins by coming after them.
+  'looks',
 ]
 
 const banner = (name) => `/* @liberation-data/desk — ${name}.css */\n`

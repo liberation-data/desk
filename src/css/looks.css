@@ -1,0 +1,257 @@
+/*
+ * Looks: the platform chrome, on `data-look` at the root. The rest of desk.css is the Mac look, so
+ * this part only says how GNOME and Windows differ from it.
+ *
+ * A look changes chrome, never brand: nothing here sets --desk-accent or --desk-ground. Selectors
+ * carry the look AND the base rule's own specificity, so they win by coming later, not by !important.
+ */
+
+/* ── GNOME (Adwaita) ── */
+
+[data-look="gnome"] {
+  --desk-font: Cantarell, "Adwaita Sans", system-ui, sans-serif;
+}
+
+/*
+ * Title and note stacked in the middle of the bar, centred on the bar and not on the space left over,
+ * as a GNOME header bar does. The end of the bar keeps room for the controls and a little more.
+ */
+[data-look="gnome"] .desk-titlebar {
+  position: relative;
+  min-height: 46px;
+  padding: 0 11px;
+  justify-content: flex-end;
+}
+
+[data-look="gnome"] .desk-titlebar-heading {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 2 * 120px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+[data-look="gnome"] .desk-titlebar-heading > * {
+  max-width: 100%;
+}
+
+[data-look="gnome"] .desk-title {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+[data-look="gnome"] .desk-window-note {
+  margin: 0;
+  font-size: 11.5px;
+}
+
+[data-look="gnome"] .desk-window .desk-controls {
+  gap: 12px;
+}
+
+[data-look="gnome"] .desk-window .desk-control[data-control] {
+  width: 24px;
+  height: 24px;
+  background: color-mix(in srgb, var(--desk-ink) 10%, transparent);
+  color: var(--desk-ink);
+}
+
+[data-look="gnome"] .desk-window .desk-controls .desk-control[data-control]:hover {
+  background: color-mix(in srgb, var(--desk-ink) 16%, transparent);
+}
+
+[data-look="gnome"] .desk-window .desk-controls .desk-control[data-control]:active {
+  background: color-mix(in srgb, var(--desk-ink) 26%, transparent);
+}
+
+/* GNOME's marks are always there: symbolic icons, not colours. */
+[data-look="gnome"] .desk-window .desk-control-glyph {
+  opacity: 1;
+  color: currentColor;
+  stroke-width: 1.3;
+}
+
+/* The key window is told apart by its shadow and its title, not by an accent border. */
+[data-look="gnome"] .desk-window[data-focused] {
+  border-color: var(--desk-rule);
+}
+
+/* ── Windows 11 ── */
+
+[data-look="windows"] {
+  --desk-font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --desk-radius: 8px;
+}
+
+/* The controls run the full height of the bar, flush to its end. */
+[data-look="windows"] .desk-titlebar {
+  min-height: 32px;
+  padding: 0 0 0 12px;
+  align-items: stretch;
+  background: var(--desk-surface);
+}
+
+[data-look="windows"] .desk-titlebar > * {
+  align-self: center;
+}
+
+[data-look="windows"] .desk-title {
+  flex: 1 1 auto;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+[data-look="windows"] .desk-titlebar > .desk-controls {
+  align-self: stretch;
+  margin-left: var(--desk-space-2);
+  gap: 0;
+}
+
+[data-look="windows"] .desk-window .desk-control[data-control] {
+  width: 46px;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  color: var(--desk-ink);
+}
+
+[data-look="windows"] .desk-window .desk-controls .desk-control[data-control]:hover {
+  background: color-mix(in srgb, var(--desk-ink) 8%, transparent);
+}
+
+[data-look="windows"] .desk-window .desk-controls .desk-control[data-control="close"]:hover {
+  background: #c42b1c;
+  color: #ffffff;
+}
+
+[data-look="windows"] .desk-window .desk-control-glyph {
+  width: 10px;
+  height: 10px;
+  opacity: 1;
+  color: currentColor;
+  stroke-width: 1;
+  stroke-linecap: butt;
+}
+
+[data-look="windows"] .desk-window:not([data-focused]) .desk-control-glyph {
+  opacity: .45;
+}
+
+[data-look="windows"] .desk-control:focus-visible {
+  outline-offset: -2px;
+}
+
+/*
+ * ── GNOME shell: the top bar and the dash are dark in either theme, and so is what opens from them ──
+ * The tokens are redefined on the bar and the dock themselves, so their menus and stacks, which sit
+ * inside them, come out dark too — as the shell's own menus do.
+ */
+[data-look="gnome"] .desk-menubar,
+[data-look="gnome"] .desk-dock {
+  --desk-ink: #ffffff;
+  --desk-muted: rgb(255 255 255 / 68%);
+  --desk-surface: #2a2a2a;
+  --desk-rule: rgb(255 255 255 / 10%);
+  --desk-dock-icon: transparent;
+}
+
+[data-look="gnome"] .desk-menubar {
+  height: 32px;
+  --desk-dock-glass: rgb(0 0 0 / 94%);
+  border-bottom: 0;
+  font-weight: 600;
+}
+
+[data-look="gnome"] .desk-menubar-title {
+  border-radius: 999px;
+}
+
+[data-look="gnome"] .desk-menu {
+  border-radius: 12px;
+  padding: 6px;
+}
+
+[data-look="gnome"] .desk-menu-item {
+  border-radius: 6px;
+  font-weight: 400;
+}
+
+[data-look="gnome"] .desk-menu-item[data-active],
+[data-look="windows"] .desk-menu-item[data-active] {
+  background: color-mix(in srgb, var(--desk-ink) 10%, transparent);
+  color: var(--desk-ink);
+}
+
+[data-look="gnome"] .desk-dock {
+  --desk-dock-glass: rgb(24 24 24 / 86%);
+  border-radius: 20px;
+}
+
+[data-look="gnome"] .desk-dock .desk-dock-item {
+  border: 0;
+  border-radius: 12px;
+}
+
+/* No magnification: GNOME's dash lights an item up rather than growing it. */
+[data-look="gnome"] .desk-dock .desk-dock-item:hover:not(:disabled),
+[data-look="windows"] .desk-dock .desk-dock-item:hover:not(:disabled) {
+  transform: none;
+  margin: 0;
+  background: color-mix(in srgb, var(--desk-ink) 12%, transparent);
+}
+
+/* ── Windows: a flat bar, taskbar tiles, and a pill that widens for the key window ── */
+
+[data-look="windows"] .desk-menubar {
+  background: var(--desk-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+[data-look="windows"] .desk-menubar-title,
+[data-look="windows"] .desk-menu-item {
+  border-radius: 4px;
+}
+
+[data-look="windows"] .desk-menu {
+  border-radius: 8px;
+  padding: 4px;
+}
+
+[data-look="windows"] .desk-dock {
+  border-radius: 8px;
+}
+
+[data-look="windows"] .desk-dock .desk-dock-item {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+}
+
+[data-look="windows"] .desk-dock .desk-dock-item[data-running]::after {
+  width: 6px;
+  height: 3px;
+  margin-left: -3px;
+  border-radius: 2px;
+  bottom: -4px;
+}
+
+[data-look="windows"] .desk-dock[data-side="bottom"] .desk-dock-item[data-focused]::after {
+  width: 16px;
+  margin-left: -8px;
+}
+
+[data-look="windows"] .desk-dock:not([data-side="bottom"]) .desk-dock-item[data-running]::after {
+  width: 3px;
+  height: 6px;
+  margin: -3px 0 0;
+}
+
+[data-look="windows"] .desk-dock:not([data-side="bottom"]) .desk-dock-item[data-focused]::after {
+  height: 16px;
+  margin-top: -8px;
+}

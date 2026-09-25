@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   createDesk,
@@ -9,7 +9,7 @@ import {
   syncWithLocation,
   windowType,
 } from '../../src/core/index.js'
-import type { Desk } from '../../src/core/index.js'
+import type { Desk, LookChoice } from '../../src/core/index.js'
 import {
   Alert,
   AppFrame,
@@ -49,6 +49,7 @@ import {
   useTasks,
   useDesk,
   useDragSource,
+  useLook,
   useDropTarget,
   useDeskEvent,
   useDeskState,
@@ -61,7 +62,7 @@ import {
   windowResults,
   Wizard,
 } from '../../src/react/index.js'
-import type { Column, DockEntry, DockItem, Menu, Message as MessageT, SearchResult, SegmentedOption, SetupProgress, Sort, Tour, WizardStep } from '../../src/react/index.js'
+import type { Column, DockEntry, DockItem, DockSide, Menu, Message as MessageT, SearchResult, SegmentedOption, SetupProgress, Sort, Tour, WizardStep } from '../../src/react/index.js'
 import '../../src/css/tokens.css'
 import '../../src/css/windows.css'
 import '../../src/css/dock.css'
@@ -72,6 +73,7 @@ import '../../src/css/conversation.css'
 import '../../src/css/search.css'
 import '../../src/css/setup.css'
 import '../../src/css/apps.css'
+import '../../src/css/looks.css'
 import './garage.css'
 
 /*
@@ -456,7 +458,46 @@ const UNIT_OPTIONS = [
   { value: 'imperial', label: 'Miles and feet' },
 ] as const
 
+/*
+ * How the desk looks, chosen in Settings and kept in this browser. The desk takes the choice as props;
+ * keeping it is the app's job, which is why it lives here and not in the toolkit.
+ */
+interface Appearance {
+  readonly look: LookChoice
+  readonly side: DockSide
+}
+
+const APPEARANCE_KEY = 'garage.appearance'
+const DEFAULT_APPEARANCE: Appearance = { look: 'auto', side: 'left' }
+
+function loadAppearance(): Appearance {
+  try {
+    return { ...DEFAULT_APPEARANCE, ...JSON.parse(localStorage.getItem(APPEARANCE_KEY) ?? '{}') }
+  } catch {
+    return DEFAULT_APPEARANCE
+  }
+}
+
+const AppearanceContext = createContext<{ readonly appearance: Appearance; readonly change: (next: Partial<Appearance>) => void }>({
+  appearance: DEFAULT_APPEARANCE,
+  change: () => {},
+})
+
+const LOOK_OPTIONS: readonly SegmentedOption<LookChoice>[] = [
+  { value: 'auto', label: 'Automatic' },
+  { value: 'mac', label: 'Mac' },
+  { value: 'gnome', label: 'GNOME' },
+  { value: 'windows', label: 'Windows' },
+]
+
+const SIDE_OPTIONS: readonly SegmentedOption<DockSide>[] = [
+  { value: 'left', label: 'Left' },
+  { value: 'bottom', label: 'Bottom' },
+  { value: 'right', label: 'Right' },
+]
+
 function Settings() {
+  const { appearance, change } = useContext(AppearanceContext)
   const [units, setUnits] = useState<(typeof UNIT_OPTIONS)[number]['value']>('metric')
   const [remind, setRemind] = useState(true)
   const [threshold, setThreshold] = useState(90)
@@ -466,6 +507,13 @@ function Settings() {
   const wheelError = /^\d+$/.test(wheel) ? undefined : 'Enter a size in millimetres, like 622'
   return (
     <div className="pad settings">
+      <section className="section">
+        <h3>Appearance</h3>
+        <span className="desk-label" aria-hidden="true">Look</span>
+        <SegmentedControl label="Look" options={LOOK_OPTIONS} value={appearance.look} onChange={look => change({ look })} />
+        <span className="desk-label" aria-hidden="true">Dock position</span>
+        <SegmentedControl label="Dock position" options={SIDE_OPTIONS} value={appearance.side} onChange={side => change({ side })} />
+      </section>
       <section className="section">
         <h3>Units</h3>
         <PopUpButton label="Distance" options={UNIT_OPTIONS} value={units} onChange={setUnits} />
@@ -999,7 +1047,18 @@ function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonl
   // Straight after setup the tour is offered, so nobody lands on the desktop without a word.
   const [touring, setTouring] = useState(firstRun)
   const [offering, setOffering] = useState(firstRun)
+  const [appearance, setAppearance] = useState(loadAppearance)
   const due = steps.filter(s => s.state === 'todo').length
+  const changeAppearance = (next: Partial<Appearance>) =>
+    setAppearance(current => {
+      const merged = { ...current, ...next }
+      try {
+        localStorage.setItem(APPEARANCE_KEY, JSON.stringify(merged))
+      } catch {
+        // Private windows and blocked storage: the choice lasts until the page is closed.
+      }
+      return merged
+    })
 
   useEffect(() => syncWithLocation(desk, () => {
     const el = document.querySelector('.desk-stage')
@@ -1100,7 +1159,8 @@ function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonl
   }
 
   return (
-    <DeskShell desk={desk}>
+    <DeskShell desk={desk} look={appearance.look}>
+      <AppearanceContext.Provider value={{ appearance, change: changeAppearance }}>
       <div className="garage">
         <BrowserTitle />
         <GarageMenuBar desk={desk} steps={steps} touring={touring} onTour={() => { setOffering(false); setTouring(true) }} onSetupAgain={onSetupAgain} />
@@ -1125,7 +1185,7 @@ function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonl
             fallbackTarget="Chat"
             shortcut={null}
           />
-          <Dock entries={entries} label="Garage dock" />
+          <Dock entries={entries} label="Garage dock" side={appearance.side} />
           <SearchPalette
             open={searching}
             onOpenChange={setSearching}
@@ -1136,6 +1196,7 @@ function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonl
           />
         </main>
       </div>
+      </AppearanceContext.Provider>
     </DeskShell>
   )
 }
@@ -1154,6 +1215,7 @@ function GarageMenuBar({
   readonly onSetupAgain: () => void
 }) {
   useDeskState() // re-render as windows change, so the status menu and badge stay current
+  const look = useLook()
   const titleOf = (id: string) => {
     const [kind, instance] = id.split('#')
     const title = isKnown(id) ? SURFACES[kind as Id].title : id
@@ -1197,7 +1259,8 @@ function GarageMenuBar({
       label: 'Window',
       items: () => [
         menuCommand('Minimize', DeskCommands.minimizeWindow, { shortcut: 'mod+m' }),
-        menuCommand('Zoom', DeskCommands.zoomWindow),
+        // Zoom on a Mac, Maximize elsewhere: the same act, named the way the title bar names it.
+        menuCommand(look === 'mac' ? 'Zoom' : 'Maximize', DeskCommands.zoomWindow),
         menuCommand('Arrange', DeskCommands.arrange, { shortcut: 'mod+alt+a' }),
         menuSeparator(),
         menuAction('New window of this kind', () => {

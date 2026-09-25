@@ -3,17 +3,17 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createDesk, focusedId } from '../../src/core/index.js'
 import { Dock, DeskProvider, dockItem, dockSeparator, dockStack } from '../../src/react/index.js'
-import type { DockEntry } from '../../src/react/index.js'
+import type { DockEntry, DockSide } from '../../src/react/index.js'
 
 afterEach(cleanup)
 
 const icon = <svg />
 
-function mount(entries: readonly DockEntry[]) {
+function mount(entries: readonly DockEntry[], side?: DockSide) {
   const desk = createDesk()
   render(
     <DeskProvider desk={desk}>
-      <Dock entries={entries} />
+      <Dock entries={entries} {...(side ? { side } : {})} />
     </DeskProvider>,
   )
   return desk
@@ -108,7 +108,7 @@ describe('Dock', () => {
   })
 
   it('is one tab stop, with arrow keys moving between items and skipping separators', () => {
-    mount(ENTRIES)
+    mount(ENTRIES, 'bottom')
     const buttons = within(dock()).getAllByRole('button')
     expect(buttons.filter(b => b.tabIndex === 0)).toHaveLength(1)
     const [rides, service, garage] = buttons as [HTMLElement, HTMLElement, HTMLElement]
@@ -121,6 +121,34 @@ describe('Dock', () => {
     expect(document.activeElement).toBe(rides)
     fireEvent.keyDown(rides, { key: 'ArrowLeft' })
     expect(document.activeElement).toBe(garage)
+  })
+
+  it('stands on the left unless told otherwise, and reads top to bottom', () => {
+    // A bottom dock takes height from every window, and on a Mac it sits on top of the real one.
+    mount(ENTRIES)
+    expect(dock().dataset.side).toBe('left')
+    expect(dock().getAttribute('aria-orientation')).toBe('vertical')
+  })
+
+  it('moves along a dock on either side with Up and Down, not Left and Right', () => {
+    for (const side of ['left', 'right'] as const) {
+      mount(ENTRIES, side)
+      const [rides, service] = within(dock()).getAllByRole('button') as [HTMLElement, HTMLElement]
+      rides.focus()
+      fireEvent.keyDown(rides, { key: 'ArrowRight' })
+      expect(document.activeElement).toBe(rides)
+      fireEvent.keyDown(rides, { key: 'ArrowDown' })
+      expect(document.activeElement).toBe(service)
+      fireEvent.keyDown(service, { key: 'ArrowUp' })
+      expect(document.activeElement).toBe(rides)
+      cleanup()
+    }
+  })
+
+  it('lies along the bottom when asked, and reads left to right', () => {
+    mount(ENTRIES, 'bottom')
+    expect(dock().dataset.side).toBe('bottom')
+    expect(dock().getAttribute('aria-orientation')).toBe('horizontal')
   })
 
   it('adds up the numbers waiting inside a stack', () => {

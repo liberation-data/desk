@@ -3,10 +3,11 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from
 import { addCommandHandler, addDeskCommands, DeskCommands, STAGE_ATTRIBUTE, WINDOW_ATTRIBUTE, windowElement } from '../core/commands.js'
 import { focusedId, isMinimized, onDesk } from '../core/desk.js'
 import type { Desk } from '../core/desk.js'
+import type { Look } from '../core/look.js'
 import type { DeskWindow, Frame, WindowId, WindowLimits } from '../core/types.js'
 import { arrangement } from './arrange.js'
 import { InfoTip } from './infoTip.js'
-import { useDesk, useDeskState, WindowContext } from './context.js'
+import { useDesk, useDeskState, useLook, WindowContext } from './context.js'
 import { WindowBoundary } from './windowBoundary.js'
 import type { WindowFailed, WindowLoading } from './windowBoundary.js'
 
@@ -229,22 +230,77 @@ const WindowContent = memo(function WindowContent({ id, render, loading, failed 
   )
 })
 
+type ControlGlyph = 'close' | 'minimize' | 'maximize' | 'restore'
+
 /*
- * What each dot does, shown on the way to pressing one: the glyphs come up together when the
- * pointer arrives over the cluster, as a Mac's do, so a control is never chosen on colour alone.
- * Drawn rather than lettered: a font puts its own cross where it likes, and these are 12px wide.
+ * What each control does, drawn rather than lettered: a font puts its own cross where it likes, and
+ * these are 12px wide. On a Mac the marks come up together when the pointer arrives over the cluster,
+ * so a control is never chosen on colour alone, and zoom has one mark whichever way it goes. GNOME
+ * and Windows show their marks all the time, and draw maximize and restore differently, as they do.
  */
-const GLYPHS = {
+const MAC = {
   close: <path d="M4.1 4.1 7.9 7.9M7.9 4.1 4.1 7.9" />,
   minimize: <path d="M3.6 6h4.8" />,
-  mode: <path d="M3.8 3.8h2.6L3.8 6.4zM8.2 8.2H5.6L8.2 5.6z" fill="currentColor" stroke="none" />,
+  maximize: <path d="M3.8 3.8h2.6L3.8 6.4zM8.2 8.2H5.6L8.2 5.6z" fill="currentColor" stroke="none" />,
 }
 
-const Glyph = ({ control }: { readonly control: keyof typeof GLYPHS }) => (
+const GLYPHS: Record<Look, Record<ControlGlyph, ReactNode>> = {
+  mac: { ...MAC, restore: MAC.maximize },
+  gnome: {
+    close: <path d="M3.5 3.5 8.5 8.5M8.5 3.5 3.5 8.5" />,
+    minimize: <path d="M3.5 8.5h5" />,
+    maximize: <path d="M3.5 3.5h5v5h-5z" />,
+    restore: <path d="M5 3h4v4M3 5h4v4H3z" />,
+  },
+  windows: {
+    close: <path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5" />,
+    minimize: <path d="M2 6h8" />,
+    maximize: <path d="M2.5 2.5h7v7h-7z" />,
+    restore: <path d="M4 2.5h5.5V8M2.5 4H8v5.5H2.5z" />,
+  },
+}
+
+const Glyph = ({ look, control }: { readonly look: Look; readonly control: ControlGlyph }) => (
   <svg className="desk-control-glyph" viewBox="0 0 12 12" aria-hidden="true">
-    {GLYPHS[control]}
+    {GLYPHS[look][control]}
   </svg>
 )
+
+interface WindowControlsProps {
+  readonly look: Look
+  readonly layout: DeskLayout
+  readonly filled: boolean
+  readonly onClose: () => void
+  readonly onMinimize: () => void
+  readonly onZoom: () => void
+}
+
+/**
+ * Close, minimize and zoom, in the platform's order and in the document in that order — never
+ * reordered by CSS — so Tab walks them the way they read. One window at a time offers only Close.
+ */
+function WindowControls({ look, layout, filled, onClose, onMinimize, onZoom }: WindowControlsProps) {
+  const close = (
+    <button key="close" type="button" className="desk-control" data-control="close" aria-label="Close" onClick={onClose}>
+      <Glyph look={look} control="close" />
+    </button>
+  )
+  if (layout !== 'desktop') return <div className="desk-controls">{close}</div>
+  // Off the desk, still open: nothing is unmounted, so nothing inside it is lost.
+  const minimize = (
+    <button key="minimize" type="button" className="desk-control" data-control="minimize" aria-label="Minimize" onClick={onMinimize}>
+      <Glyph look={look} control="minimize" />
+    </button>
+  )
+  // The same act everywhere — fill the desk and back — named and drawn the way each platform does.
+  const label = look === 'mac' ? 'Zoom' : filled ? 'Restore' : 'Maximize'
+  const zoom = (
+    <button key="mode" type="button" className="desk-control" data-control="mode" aria-label={label} onClick={onZoom}>
+      <Glyph look={look} control={filled ? 'restore' : 'maximize'} />
+    </button>
+  )
+  return <div className="desk-controls">{look === 'mac' ? [close, minimize, zoom] : [minimize, zoom, close]}</div>
+}
 
 interface WindowViewProps {
   readonly window: DeskWindow
@@ -311,6 +367,7 @@ function reshape(gesture: Gesture, origin: Frame, dx: number, dy: number): Frame
 
 function WindowView({ window, layout, hidden, minimized, depth, focused, title, note, info, actions, limits, children }: WindowViewProps) {
   const desk = useDesk()
+  const look = useLook()
   // While dragging, the frame lives here and commits once on release, so a drag
   // re-renders one window rather than notifying every subscriber per pixel.
   const [live, setLive] = useState<Frame | null>(null)
@@ -382,7 +439,7 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
     handle.addEventListener('pointercancel', onUp)
   }
 
-  // Double-clicking a title bar, or the green control, fills the desk with the window and back — as on a Mac.
+  // Double-clicking a title bar, or the zoom control, fills the desk with the window and back.
   const zoom = () => {
     if (layout === 'desktop') desk.toggleMode(window.id)
   }
@@ -407,6 +464,23 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
       : frame
         ? { left: frame.x, top: frame.y, width: frame.width, height: frame.height, zIndex: 10 + depth, ...capped }
         : { zIndex: 10 + depth, ...capped }
+
+  const controls = (
+    <WindowControls
+      look={look}
+      layout={layout}
+      filled={window.mode === 'filled' && !live}
+      onClose={() => desk.close(window.id)}
+      onMinimize={() => desk.minimize(window.id)}
+      onZoom={zoom}
+    />
+  )
+  const heading = (
+    <h2 id={titleId} className="desk-title">
+      {title}
+    </h2>
+  )
+  const windowNote = note != null && note !== false && <p className="desk-window-note">{note}</p>
 
   return (
     <WindowContext.Provider value={context}>
@@ -435,26 +509,19 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
           }}
           data-draggable={layout === 'desktop' || undefined}
         >
-          <div className="desk-controls">
-            <button type="button" className="desk-control" data-control="close" aria-label="Close" onClick={() => desk.close(window.id)}>
-              <Glyph control="close" />
-            </button>
-            {layout === 'desktop' && (
-              <>
-                {/* Off the desk, still open: nothing is unmounted, so nothing inside it is lost. */}
-                <button type="button" className="desk-control" data-control="minimize" aria-label="Minimize" onClick={() => desk.minimize(window.id)}>
-                  <Glyph control="minimize" />
-                </button>
-                <button type="button" className="desk-control" data-control="mode" aria-label="Zoom" onClick={zoom}>
-                  <Glyph control="mode" />
-                </button>
-              </>
-            )}
-          </div>
-          <h2 id={titleId} className="desk-title">
-            {title}
-          </h2>
-          {note != null && note !== false && <p className="desk-window-note">{note}</p>}
+          {look === 'mac' && controls}
+          {look === 'gnome' ? (
+            // Title and note stacked in the middle of the bar, as a GNOME header bar carries them.
+            <div className="desk-titlebar-heading">
+              {heading}
+              {windowNote}
+            </div>
+          ) : (
+            <>
+              {heading}
+              {windowNote}
+            </>
+          )}
           {info != null && info !== false && (
             <InfoTip
               className="desk-window-info"
@@ -465,6 +532,7 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
             </InfoTip>
           )}
           {actions && <div className="desk-window-actions">{actions}</div>}
+          {look !== 'mac' && controls}
         </header>
         <div className="desk-body">{children}</div>
         {layout === 'desktop' && (
