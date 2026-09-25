@@ -10,6 +10,7 @@ import {
   windowType,
 } from '../../src/core/index.js'
 import type { Desk, LookChoice } from '../../src/core/index.js'
+import { createFx } from '../../src/fx/index.js'
 import {
   Alert,
   AppFrame,
@@ -38,6 +39,7 @@ import {
   Sheet,
   Sidebar,
   Slider,
+  SoundsToggle,
   Table,
   TextField,
   Thread,
@@ -467,6 +469,13 @@ interface Appearance {
   readonly side: DockSide
 }
 
+/*
+ * One per app, at module scope: one audio context, one mute. The garage makes no sound unasked —
+ * a sample that beeps is a sample people close — so Settings is the only place to hear them.
+ */
+const fx = createFx({ storageKey: 'garage.sounds-muted' })
+fx.unlock()
+
 const APPEARANCE_KEY = 'garage.appearance'
 const DEFAULT_APPEARANCE: Appearance = { look: 'auto', side: 'left' }
 
@@ -513,6 +522,15 @@ function Settings() {
         <SegmentedControl label="Look" options={LOOK_OPTIONS} value={appearance.look} onChange={look => change({ look })} />
         <span className="desk-label" aria-hidden="true">Dock position</span>
         <SegmentedControl label="Dock position" options={SIDE_OPTIONS} value={appearance.side} onChange={side => change({ side })} />
+      </section>
+      <section className="section">
+        <h3>Sounds</h3>
+        <SoundsToggle fx={fx} label="Play sounds" description="When a part needs you, when a service is ready, and when one fails" />
+        <div className="actions">
+          <Button size="small" onClick={() => fx.play('attention')}>Attention</Button>
+          <Button size="small" onClick={() => fx.play('ready')}>Ready</Button>
+          <Button size="small" onClick={() => fx.play('failed')}>Failed</Button>
+        </div>
       </section>
       <section className="section">
         <h3>Units</h3>
