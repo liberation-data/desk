@@ -14,6 +14,18 @@ export interface Message {
   readonly from: string
   /** Shown above the first message of a run. Falls back to `from`. */
   readonly authorName?: string
+  /**
+   * Shown beside the first message of a run, for messages that are not yours.
+   *
+   * A NODE, not a URL: who is speaking is drawn differently by different applications — a photo,
+   * a monogram, a mark that animates while the thing is thinking — and a component that took an
+   * image source would serve the first of those and block the rest.
+   *
+   * Only on a run start, and never on your own messages, for the same reason the author name is:
+   * the person reading a conversation knows which side is theirs, and repeating an avatar down
+   * every message of one turn is decoration where the eye is trying to follow a sentence.
+   */
+  readonly avatar?: ReactNode
   readonly body: ReactNode
   readonly at?: Date | string
   /** `sending` dims it, `failed` offers Retry. */
@@ -86,7 +98,12 @@ export function Thread({ messages, me = 'me', typing, onRetry, empty, label = 'C
               data-state={message.state ?? 'sent'}
               data-run-start={runStart || undefined}
             >
-              {runStart && !mine && <span className="desk-message-author">{message.authorName ?? message.from}</span>}
+              {runStart && !mine && (
+                <span className="desk-message-author">
+                  {message.avatar && <span className="desk-message-avatar">{message.avatar}</span>}
+                  {message.authorName ?? message.from}
+                </span>
+              )}
               <div className="desk-bubble">{message.body}</div>
               <span className="desk-message-foot">
                 {stamp && <time>{stamp}</time>}

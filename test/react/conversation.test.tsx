@@ -141,3 +141,38 @@ describe('Composer', () => {
     expect(screen.queryByRole('listitem')).toBeNull()
   })
 })
+
+describe('an avatar beside the author', () => {
+  it('is drawn once per run, not once per message', () => {
+    render(
+      <Thread
+        me="me"
+        messages={[
+          { id: '1', from: 'moon', authorName: 'Moon', avatar: <i data-testid="mark" />, body: 'First.' },
+          { id: '2', from: 'moon', authorName: 'Moon', avatar: <i data-testid="mark" />, body: 'Still me.' },
+        ]}
+      />,
+    )
+    // The same rule the author name already follows: repeating it down every message of one turn
+    // is decoration where the eye is trying to follow a sentence.
+    expect(screen.getAllByTestId('mark')).toHaveLength(1)
+  })
+
+  it('is never drawn on your own messages', () => {
+    render(
+      <Thread
+        me="me"
+        messages={[{ id: '1', from: 'me', authorName: 'You', avatar: <i data-testid="mark" />, body: 'Mine.' }]}
+      />,
+    )
+    // Your own side needs no telling apart, which is why it carries no author line either.
+    expect(screen.queryByTestId('mark')).toBeNull()
+  })
+
+  it('leaves a thread without avatars exactly as it was', () => {
+    render(<Thread me="me" messages={[{ id: '1', from: 'moon', authorName: 'Moon', body: 'Hello.' }]} />)
+
+    expect(screen.getByText('Moon')).toBeTruthy()
+    expect(document.querySelector('.desk-message-avatar')).toBeNull()
+  })
+})
