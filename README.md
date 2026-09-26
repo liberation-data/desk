@@ -129,6 +129,21 @@ edited, how many rows were found. It is text, not a control — the title names 
 this one is looking at, and in a narrow window the note is cut before the title is. Return null for a window
 with nothing to say. Controls belong in `actions`, which sits after it.
 
+A window whose content holds a real count — steps done out of steps declared, files imported out of files
+chosen — reports it from inside, and the title bar draws a bar and "3 of 8" after the note:
+
+```tsx
+function Steps({ steps }) {
+  const done = steps.filter(s => s.done).length
+  const inTitleBar = useWindowProgress({ value: done, max: steps.length, label: 'Steps done' })
+  return <>{!inTitleBar && <p>{done} of {steps.length} done</p>}{/* … */}</>
+}
+```
+
+It returns whether a title bar took it, so the same content can draw the count itself on a page with no
+desk. Report null while there is nothing to count. A bar is for something real to measure (HIG.md §7): a
+single request's wait is a `Spinner`, never this.
+
 ## Touch: one window at a time
 
 `<Desktop layout="auto">` (the default) reads the device. A touch screen that cannot hover gets

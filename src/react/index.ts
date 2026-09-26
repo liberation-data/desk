@@ -41,6 +41,8 @@ export type {
 export { SoundsToggle } from './soundsToggle.js'
 export type { SoundsToggleProps } from './soundsToggle.js'
 export { Loading, Spinner } from './progress.js'
+export { useWindowProgress } from './windowProgress.js'
+export type { WindowProgress } from './windowProgress.js'
 export type { LoadingProps, SpinnerProps, SpinnerSize } from './progress.js'
 export { Pane, Toolbar } from './pane.js'
 export type { PaneProps, ToolbarProps } from './pane.js'

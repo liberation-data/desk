@@ -186,7 +186,52 @@
   margin-left: var(--desk-space-2);
 }
 
+/*
+ * How far along, from useWindowProgress. It sits where the note would and after it when both are
+ * there, and it never shrinks: a count cut to "3 o" says nothing, where a cut note still says most.
+ */
+.desk-window-progress {
+  margin-left: auto;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-2);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--desk-muted);
+}
+
+.desk-window-note + .desk-window-progress {
+  margin-left: var(--desk-space-3);
+}
+
+.desk-window-progress + .desk-window-info {
+  margin-left: var(--desk-space-2);
+}
+
+.desk-window-progress-track {
+  width: 56px;
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--desk-muted) 28%, transparent);
+}
+
+.desk-window-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  /* What is counted is work done, so it is drawn in the colour of done. */
+  background: var(--desk-ok);
+  transition: width .3s var(--desk-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-window-progress-fill { transition: none; }
+}
+
 .desk-window-info + .desk-window-actions,
+.desk-window-progress + .desk-window-actions,
 .desk-window-note + .desk-window-actions {
   margin-left: var(--desk-space-1);
 }
