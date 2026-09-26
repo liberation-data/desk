@@ -9,6 +9,8 @@ import { arrangement } from './arrange.js'
 import { InfoTip } from './infoTip.js'
 import { useDesk, useDeskState, useLook, WindowContext } from './context.js'
 import { WindowBoundary } from './windowBoundary.js'
+import { TitleProgress } from './windowProgress.js'
+import type { WindowProgress } from './windowProgress.js'
 import type { WindowFailed, WindowLoading } from './windowBoundary.js'
 
 export type DeskLayout = 'desktop' | 'fullscreen'
@@ -372,7 +374,8 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
   // re-renders one window rather than notifying every subscriber per pixel.
   const [live, setLive] = useState<Frame | null>(null)
   const element = useRef<HTMLElement>(null)
-  const context = useMemo(() => ({ id: window.id, element }), [window.id])
+  const [progress, setProgress] = useState<WindowProgress | null>(null)
+  const context = useMemo(() => ({ id: window.id, element, setProgress }), [window.id])
   const titleId = `desk-title-${window.id}`
 
   const startGesture = (gesture: Gesture) => (event: ReactPointerEvent<HTMLElement>) => {
@@ -522,6 +525,7 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
               {windowNote}
             </>
           )}
+          {progress && <TitleProgress progress={progress} />}
           {info != null && info !== false && (
             <InfoTip
               className="desk-window-info"

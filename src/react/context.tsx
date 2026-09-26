@@ -9,6 +9,7 @@ import { DragProvider } from './dragContext.js'
 import { missingProvider } from './missingProvider.js'
 import type { Desk } from '../core/desk.js'
 import type { DeskOptions, DeskState, WindowId } from '../core/types.js'
+import type { WindowProgress } from './windowProgress.js'
 
 const DeskContext = createContext<Desk | null>(null)
 
@@ -72,6 +73,8 @@ export function useDeskState(): DeskState {
 export interface WindowContextValue {
   readonly id: WindowId
   readonly element: RefObject<HTMLElement | null>
+  /** Where `useWindowProgress` reports to: the title bar draws whatever was last set, or nothing. */
+  readonly setProgress: (progress: WindowProgress | null) => void
 }
 
 /** Present inside a window's content: which window this is, and its element. */
