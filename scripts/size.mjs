@@ -51,7 +51,13 @@ import { join } from 'node:path'
  * birth, much of that the comments saying why each sound is built as it is; 5 rather than 4.5 for
  * the reason the notes above give, that a budget with no room fails the next commit whatever it is.
  */
-const BUDGETS = { core: 13, react: 52, css: 16, fx: 5 }
+/*
+ * Raised react 52 → 56 for Tabs (0.8 KiB) — and again not for Tabs alone: react stood at 51.9 of 52,
+ * so the next component was red whatever it was, which is the failure the 48 → 52 note describes.
+ * 56 is room for the next few components; a stray dependency or a duplicated module still costs
+ * more than that and still fails.
+ */
+const BUDGETS = { core: 13, react: 56, css: 16, fx: 5 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
