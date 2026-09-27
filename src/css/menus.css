@@ -15,7 +15,7 @@
   border-bottom: 1px solid var(--desk-rule);
   color: var(--desk-ink);
   font-family: var(--desk-font);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
   user-select: none;
 }
 
@@ -33,7 +33,7 @@
 
 .desk-menubar-trailing {
   color: var(--desk-muted);
-  font-size: 12px;
+  font-size: var(--desk-text-small);
   font-variant-numeric: tabular-nums;
 }
 
@@ -139,7 +139,7 @@
   flex: none;
   width: 14px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--desk-text-small);
 }
 
 .desk-menu-label {
@@ -154,7 +154,7 @@
 .desk-menu-shortcut {
   flex: none;
   color: var(--desk-muted);
-  font-size: 12px;
+  font-size: var(--desk-text-small);
 }
 
 .desk-menu-shortcut {
@@ -176,7 +176,7 @@
 
 .desk-menu-header {
   padding: 5px 10px 2px 24px;
-  font-size: 11px;
+  font-size: var(--desk-text-caption);
   font-weight: 600;
   color: var(--desk-muted);
 }

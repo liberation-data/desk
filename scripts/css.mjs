@@ -24,6 +24,22 @@ export const PARTS = [
   'looks',
 ]
 
+/*
+ * THE TYPE SCALE IS THE ONLY SOURCE OF A FONT SIZE (HIG.md §2). A size written as a number is a size
+ * off the scale sooner or later — 11.5, 12.5 and 13.5 each arrived that way — and an app that restyles
+ * the desk by token cannot reach it. So the build refuses one, and names where it is.
+ */
+const literalSizes = PARTS.flatMap((name) =>
+  readFileSync(`src/css/${name}.css`, 'utf8')
+    .split('\n')
+    .map((line, i) => ({ where: `src/css/${name}.css:${i + 1}`, line: line.trim() }))
+    .filter(({ line }) => /font-size:/.test(line) && !/font-size:\s*var\(--desk-text-[a-z]+\)/.test(line)),
+)
+if (literalSizes.length) {
+  for (const { where, line } of literalSizes) console.error(`${where}  ${line}  — use a --desk-text-* token`)
+  process.exit(1)
+}
+
 const banner = (name) => `/* @liberation-data/desk — ${name}.css */\n`
 
 mkdirSync('dist/css', { recursive: true })

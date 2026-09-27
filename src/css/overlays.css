@@ -92,7 +92,7 @@
 .desk-sheet-title,
 .desk-alert-title {
   margin: 0 0 var(--desk-space-1);
-  font-size: 15px;
+  font-size: var(--desk-text-lead);
   font-weight: 600;
 }
 
@@ -100,7 +100,7 @@
 .desk-alert-message {
   margin: 0 0 var(--desk-space-3);
   color: var(--desk-muted);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
   line-height: 1.5;
 }
 
@@ -137,7 +137,7 @@
   background: var(--desk-surface);
   box-shadow: var(--desk-shadow-floating);
   font-family: var(--desk-font);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
   animation: desk-toast-in .2s var(--desk-ease);
 }
 
@@ -190,7 +190,7 @@
   background: color-mix(in srgb, var(--desk-info) 14%, transparent);
   color: var(--desk-info);
   font-family: var(--desk-font);
-  font-size: 11px;
+  font-size: var(--desk-text-caption);
   font-style: italic;
   font-weight: 700;
   line-height: 1;
@@ -210,7 +210,7 @@
 
 .desk-infotip-body {
   max-width: 34ch;
-  font-size: 12.5px;
+  font-size: var(--desk-text-small);
   line-height: 1.45;
   color: var(--desk-muted);
 }
