@@ -54,6 +54,8 @@ export type { SetupProgress, SetupProgressOptions, SetupRecord, SetupStore } fro
 export type { ChecklistProps, Task, TaskProgress, Tasks, TaskState } from './tasks.js'
 export { PopUpButton } from './popup.js'
 export type { PopUpButtonProps, PopUpOption } from './popup.js'
+export { Tabs } from './tabs.js'
+export type { Tab, TabsProps } from './tabs.js'
 export { Table } from './table.js'
 export type { Column, Sort, TableProps } from './table.js'
 export { Sidebar } from './sidebar.js'
