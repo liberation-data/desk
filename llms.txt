@@ -227,7 +227,7 @@ useWindowProgress({ value, max, label } | null): boolean  // a real count in thi
   renderWindow={(id) => ReactNode}                  // memoised: chrome re-renders, content does not
   title={(id) => ReactNode}
   note?={(id) => ReactNode}                         // quiet text in the title bar: what this window is looking at
-  info?={(id) => ReactNode}                         // an (i) at the end of the title bar: what this window IS
+  info?={(id) => ReactNode}                         // an (i) at the end of the title bar (start on gnome/windows): what this window IS
   limits?={(id) => ({ maxWidth?, maxHeight?, minWidth?, minHeight? } | null)}  // a window with a natural
                                                     // size is never stretched past it; filled, it centres
   actions?={(id) => ReactNode}                      // window-wide controls in the title bar

@@ -7,7 +7,7 @@ import { Desktop, DeskProvider } from '../../src/react/index.js'
 
 afterEach(cleanup)
 
-function mount(look: Look, layout: 'desktop' | 'fullscreen' = 'desktop'): Desk {
+function mount(look: Look, layout: 'desktop' | 'fullscreen' = 'desktop', withInfo = false): Desk {
   const desk = createDesk({ stage: () => ({ width: 1000, height: 700 }) })
   render(
     <DeskProvider desk={desk} look={look}>
@@ -15,6 +15,7 @@ function mount(look: Look, layout: 'desktop' | 'fullscreen' = 'desktop'): Desk {
         layout={layout}
         title={() => 'Rides'}
         note={() => 'Last 30 days'}
+        info={() => (withInfo ? <p>About rides</p> : null)}
         actions={() => <button type="button">Share</button>}
         renderWindow={id => <p>{id}</p>}
       />
@@ -39,6 +40,16 @@ describe('title bar controls by look', () => {
     // In the document in the order they are seen, not reordered by CSS, so Tab walks them as they read.
     mount(look)
     expect(sequence()).toEqual(['Rides', 'Share', 'Minimize', 'Restore', 'Close'])
+  })
+
+  it('keeps the (i) at the end of a Mac bar, beside the note', () => {
+    mount('mac', 'desktop', true)
+    expect(sequence()).toEqual(['Close', 'Minimize', 'Zoom', 'Rides', 'About Rides', 'Share'])
+  })
+
+  it.each(['gnome', 'windows'] as const)('leads the bar with the (i) on %s, whose end is the controls’', look => {
+    mount(look, 'desktop', true)
+    expect(sequence()).toEqual(['About Rides', 'Rides', 'Share', 'Minimize', 'Restore', 'Close'])
   })
 
   it.each(['gnome', 'windows'] as const)('say Restore on a window filling the desk and Maximize on a free one (%s)', look => {

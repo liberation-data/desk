@@ -119,7 +119,7 @@ same way.
 />
 ```
 
-`info` puts an (i) at the end of the title bar, holding what this window is. Every window that has one
+`info` puts an (i) at the end of the title bar — at the start on GNOME and Windows, whose end is the controls' — holding what this window is. Every window that has one
 keeps it in the same place, so somebody who wonders what they are looking at always knows where to ask;
 a window with nothing to explain has none. Explanation only, as with `InfoTip` — a warning belongs in the
 window itself.
@@ -130,7 +130,7 @@ this one is looking at, and in a narrow window the note is cut before the title 
 with nothing to say. Controls belong in `actions`, which sits after it.
 
 A window whose content holds a real count — steps done out of steps declared, files imported out of files
-chosen — reports it from inside, and the title bar draws a bar and "3 of 8" after the note:
+chosen — reports it from inside, and the title bar draws a bar and "3 of 8" in its middle (at the end on GNOME, whose middle is the title):
 
 ```tsx
 function Steps({ steps }) {

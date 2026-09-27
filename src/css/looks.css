@@ -49,6 +49,39 @@
   font-size: 11.5px;
 }
 
+/* The end of the bar is the controls', so the (i) leads it. */
+[data-look="gnome"] .desk-titlebar > .desk-popover-anchor:first-child {
+  margin-right: auto;
+}
+
+/*
+ * The middle is the heading's, so the count waits at the end of the bar, before the controls, and
+ * the heading keeps clear of both. A narrow bar keeps the count and lets the track go.
+ */
+[data-look="gnome"] .desk-window-progress {
+  position: static;
+  transform: none;
+}
+
+[data-look="gnome"] .desk-titlebar[data-progress] .desk-titlebar-heading {
+  max-width: calc(100% - 2 * 220px);
+}
+
+@container (max-width: 640px) {
+  [data-look="gnome"] .desk-window-progress-track {
+    display: none;
+  }
+
+  [data-look="gnome"] .desk-titlebar[data-progress] .desk-titlebar-heading {
+    max-width: calc(100% - 2 * 165px);
+  }
+}
+
+[data-look="gnome"] .desk-titlebar[data-progress] .desk-title,
+[data-look="gnome"] .desk-titlebar[data-progress] .desk-window-note {
+  max-width: 100%;
+}
+
 [data-look="gnome"] .desk-window .desk-controls {
   gap: 12px;
 }

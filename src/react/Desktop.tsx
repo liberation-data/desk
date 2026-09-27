@@ -485,6 +485,17 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
   )
   const windowNote = note != null && note !== false && <p className="desk-window-note">{note}</p>
 
+  // At the end of a Mac bar, beside the note; at the start of the others, whose end is the controls'.
+  const windowInfo = info != null && info !== false && (
+    <InfoTip
+      className="desk-window-info"
+      label={typeof title === 'string' ? `About ${title}` : 'About this window'}
+      align={look === 'mac' ? 'end' : 'start'}
+    >
+      {info}
+    </InfoTip>
+  )
+
   return (
     <WindowContext.Provider value={context}>
       <section
@@ -511,30 +522,26 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
             if (!(event.target as HTMLElement).closest('button')) zoom()
           }}
           data-draggable={layout === 'desktop' || undefined}
+          data-progress={progress ? true : undefined}
         >
-          {look === 'mac' && controls}
+          {look === 'mac' ? controls : windowInfo}
           {look === 'gnome' ? (
             // Title and note stacked in the middle of the bar, as a GNOME header bar carries them.
-            <div className="desk-titlebar-heading">
-              {heading}
-              {windowNote}
-            </div>
+            <>
+              <div className="desk-titlebar-heading">
+                {heading}
+                {windowNote}
+              </div>
+              {progress && <TitleProgress progress={progress} />}
+            </>
           ) : (
             <>
               {heading}
+              {progress && <TitleProgress progress={progress} />}
               {windowNote}
             </>
           )}
-          {progress && <TitleProgress progress={progress} />}
-          {info != null && info !== false && (
-            <InfoTip
-              className="desk-window-info"
-              label={typeof title === 'string' ? `About ${title}` : 'About this window'}
-              align="end"
-            >
-              {info}
-            </InfoTip>
-          )}
+          {look === 'mac' && windowInfo}
           {actions && <div className="desk-window-actions">{actions}</div>}
           {look !== 'mac' && controls}
         </header>
