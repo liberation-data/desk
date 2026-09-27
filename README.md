@@ -536,7 +536,7 @@ const toast = useToast()
 toast.show({ message: 'Ride deleted', action: { label: 'Undo', onSelect: restore } })
 ```
 
-A **popover** belongs to one control and closes when you press outside. A **sheet** belongs to one window
+A **popover** belongs to one control and closes when you press outside. It floats over its window rather than inside it, so opening one never resizes or scrolls the window; it stays within the window's edges and flips side when there is no room. A **sheet** belongs to one window
 and blocks only that window — it renders inside it, so the rest of the desk stays usable. An **alert** stops
 the app and is for what cannot be undone; Cancel comes before the action, and a destructive action is never
 the default button. A **toast** interrupts nothing, carries Undo, and waits while the pointer or focus is on

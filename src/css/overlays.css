@@ -6,32 +6,20 @@
 }
 
 .desk-popover {
-  position: absolute;
-  z-index: 1200;
+  /* Fixed, and placed by script beside its trigger: a popover overlaps its window, never grows it. */
+  position: fixed;
+  /* Above a sheet or an alert (1300): it is drawn in the body now, not inside the layer that opened it. */
+  z-index: 1350;
+  box-sizing: border-box;
   min-width: 220px;
   max-width: min(360px, calc(100vw - 24px));
+  overflow: auto;
   padding: var(--desk-space-3);
   border: 1px solid var(--desk-rule);
   border-radius: 12px;
   background: var(--desk-surface);
   box-shadow: var(--desk-shadow-floating);
   animation: desk-menu-in .14s var(--desk-ease);
-}
-
-.desk-popover[data-placement="below"] {
-  top: calc(100% + 6px);
-}
-
-.desk-popover[data-placement="above"] {
-  bottom: calc(100% + 6px);
-}
-
-.desk-popover[data-align="start"] {
-  left: 0;
-}
-
-.desk-popover[data-align="end"] {
-  right: 0;
 }
 
 /* A sheet belongs to its window: the scrim covers that window and nothing else. */

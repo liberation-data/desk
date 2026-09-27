@@ -64,6 +64,36 @@ describe('Popover', () => {
   })
 })
 
+describe('Popover placement', () => {
+  const rect = (left: number, top: number, width: number, height: number) =>
+    ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) }) as DOMRect
+
+  it('floats over its window instead of growing it, kept inside the window\'s edges', () => {
+    render(
+      <div data-desk-window="docs">
+        <Popover open onOpenChange={() => {}} label="About dates" trigger={props => <Button {...props}>i</Button>}>
+          <p>Dates are the document's own.</p>
+        </Popover>
+      </div>,
+    )
+    const dialog = screen.getByRole('dialog', { name: 'About dates' })
+    // Drawn in the body, not in the window's content, so opening it cannot change the content's size.
+    expect(dialog.parentElement).toBe(document.body)
+
+    const frame = document.querySelector<HTMLElement>('[data-desk-window]') as HTMLElement
+    const trigger = screen.getByRole('button', { name: 'i' })
+    vi.spyOn(frame, 'getBoundingClientRect').mockReturnValue(rect(0, 0, 400, 300))
+    vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue(rect(370, 260, 18, 18))
+    vi.spyOn(dialog, 'getBoundingClientRect').mockReturnValue(rect(0, 0, 240, 120))
+    act(() => { window.dispatchEvent(new Event('resize')) })
+
+    // A trigger at the bottom right: pulled in from the right edge, and flipped above for room.
+    expect(dialog.style.left).toBe(`${400 - 8 - 240}px`)
+    expect(dialog.style.top).toBe(`${260 - 6 - 120}px`)
+    expect(dialog.dataset.side).toBe('above')
+  })
+})
+
 describe('Sheet', () => {
   function Harness({ onDismiss = () => {} }: { readonly onDismiss?: () => void }) {
     const desk = createDesk()
