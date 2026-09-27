@@ -407,7 +407,8 @@
 }
 
 .desk-pane-title {
-  min-height: calc(var(--desk-control-height) + var(--desk-space-2) * 2);
+  box-sizing: border-box;
+  min-height: calc(var(--desk-control-height) + var(--desk-space-2) * 2 + 1px);
   padding: var(--desk-space-2) var(--desk-space-4);
   border-bottom: 1px solid var(--desk-rule);
 }
@@ -459,8 +460,10 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--desk-space-2);
-  /* One centre line for everything in the row, whatever each control's own height is. */
-  min-height: calc(var(--desk-control-height) + var(--desk-space-2) * 2);
+  /* One centre line for everything in the row, whatever each control's own height is. The height
+     counts the padding and the rule, so a row with a control in it is no taller than one without. */
+  box-sizing: border-box;
+  min-height: calc(var(--desk-control-height) + var(--desk-space-2) * 2 + 1px);
   padding: var(--desk-space-2) var(--desk-space-3);
   border-bottom: 1px solid var(--desk-rule);
 }
