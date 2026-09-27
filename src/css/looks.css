@@ -40,13 +40,13 @@
 }
 
 [data-look="gnome"] .desk-title {
-  font-size: 13.5px;
+  font-size: var(--desk-text-body);
   font-weight: 700;
 }
 
 [data-look="gnome"] .desk-window-note {
   margin: 0;
-  font-size: 11.5px;
+  font-size: var(--desk-text-small);
 }
 
 /* The end of the bar is the controls', so the (i) leads it. */
@@ -134,7 +134,7 @@
 
 [data-look="windows"] .desk-title {
   flex: 1 1 auto;
-  font-size: 12px;
+  font-size: var(--desk-text-small);
   font-weight: 400;
 }
 

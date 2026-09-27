@@ -13,7 +13,7 @@
   background: var(--desk-surface);
   color: var(--desk-ink);
   font-family: var(--desk-font);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
@@ -23,7 +23,7 @@
 .desk-button[data-size="small"] {
   min-height: var(--desk-control-height-small);
   padding: 0 var(--desk-space-2);
-  font-size: 12px;
+  font-size: var(--desk-text-small);
 }
 
 .desk-button[data-icon-only] {
@@ -131,7 +131,7 @@
   background: none;
   color: var(--desk-muted);
   font-family: var(--desk-font);
-  font-size: 12.5px;
+  font-size: var(--desk-text-body);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -155,7 +155,7 @@
 .desk-segmented[data-size="small"] .desk-segment {
   min-height: calc(var(--desk-control-height-small) - 4px);
   padding: 0 var(--desk-space-2);
-  font-size: 11.5px;
+  font-size: var(--desk-text-small);
 }
 
 .desk-segment[aria-checked="true"] {
@@ -247,7 +247,7 @@
 }
 
 .desk-label {
-  font-size: 12px;
+  font-size: var(--desk-text-small);
   font-weight: 500;
   color: var(--desk-muted);
 }
@@ -273,7 +273,7 @@
   background: var(--desk-field-bg);
   color: var(--desk-ink);
   font-family: var(--desk-font);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
 }
 
 .desk-input::placeholder {
@@ -286,7 +286,7 @@
 
 .desk-help,
 .desk-error {
-  font-size: 11.5px;
+  font-size: var(--desk-text-small);
   line-height: 1.4;
 }
 
@@ -330,7 +330,7 @@
 }
 
 .desk-check-label {
-  font-size: 13px;
+  font-size: var(--desk-text-body);
 }
 
 .desk-checkbox:focus-visible,
@@ -488,7 +488,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  font-size: 12px;
+  font-size: var(--desk-text-small);
   border: 1.5px dashed var(--desk-rule);
 }
 
@@ -525,13 +525,13 @@
 }
 
 .desk-task-name {
-  font-size: 13px;
+  font-size: var(--desk-text-body);
   font-weight: 600;
 }
 
 .desk-task-detail,
 .desk-task-error {
-  font-size: 12px;
+  font-size: var(--desk-text-small);
   color: var(--desk-muted);
 }
 
@@ -586,7 +586,7 @@
 }
 
 .desk-slider-value {
-  font-size: 12px;
+  font-size: var(--desk-text-small);
   font-variant-numeric: tabular-nums;
   color: var(--desk-ink);
 }
@@ -614,14 +614,14 @@
   background: var(--desk-field-bg);
   color: var(--desk-ink);
   font-family: var(--desk-font);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
   text-align: left;
   cursor: pointer;
 }
 
 .desk-popup-button[data-size="small"] {
   min-height: var(--desk-control-height-small);
-  font-size: 12px;
+  font-size: var(--desk-text-small);
 }
 
 .desk-popup-button:focus-visible {
@@ -686,7 +686,7 @@
   gap: var(--desk-space-1);
   padding: var(--desk-space-1) var(--desk-space-2);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--desk-text-body);
   cursor: default;
 }
 
@@ -757,7 +757,7 @@
   background: none;
   color: var(--desk-muted);
   font-family: var(--desk-font);
-  font-size: 12.5px;
+  font-size: var(--desk-text-body);
   white-space: nowrap;
   cursor: pointer;
   transition: background .12s var(--desk-ease), color .12s var(--desk-ease);
@@ -789,7 +789,7 @@
   padding: 0 5px;
   border-radius: 9px;
   background: color-mix(in srgb, var(--desk-ink) 8%, transparent);
-  font-size: 11px;
+  font-size: var(--desk-text-caption);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   text-align: center;
@@ -809,7 +809,7 @@
   width: 100%;
   border-collapse: collapse;
   font-family: var(--desk-font);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
 }
 
 .desk-table th {
@@ -819,7 +819,7 @@
   padding: var(--desk-space-1) var(--desk-space-2);
   border-bottom: 1px solid var(--desk-rule);
   background: var(--desk-surface);
-  font-size: 11px;
+  font-size: var(--desk-text-caption);
   font-weight: 600;
   letter-spacing: .06em;
   text-transform: uppercase;
@@ -882,7 +882,7 @@
   text-align: center;
   color: var(--desk-muted);
   font-family: var(--desk-font);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
 }
 
 /* ── Sidebar ── */
@@ -905,7 +905,7 @@
 .desk-sidebar-heading {
   margin: 0 0 var(--desk-space-1);
   padding: 0 var(--desk-space-2);
-  font-size: 11px;
+  font-size: var(--desk-text-caption);
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -923,7 +923,7 @@
   background: none;
   color: var(--desk-ink);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--desk-text-body);
   text-align: left;
   cursor: pointer;
 }
@@ -974,7 +974,7 @@
   padding: 0 5px;
   border-radius: 9px;
   background: color-mix(in srgb, var(--desk-ink) 12%, transparent);
-  font-size: 11px;
+  font-size: var(--desk-text-caption);
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
@@ -1045,7 +1045,7 @@
   border-radius: 9px;
   background: var(--desk-accent);
   color: #fff;
-  font-size: 11px;
+  font-size: var(--desk-text-caption);
   line-height: 18px;
 }
 
@@ -1053,7 +1053,7 @@
   max-width: 100%;
   padding: 1px 6px;
   border-radius: 5px;
-  font-size: 12.5px;
+  font-size: var(--desk-text-small);
   line-height: 1.3;
   overflow-wrap: anywhere;
   display: -webkit-box;
@@ -1064,7 +1064,7 @@
 
 .desk-icon-subtitle {
   max-width: 100%;
-  font-size: 11px;
+  font-size: var(--desk-text-caption);
   color: var(--desk-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1107,7 +1107,7 @@
   align-items: center;
   gap: var(--desk-space-2);
   color: var(--desk-muted);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
 }
 
 .desk-spinner-ring {
@@ -1154,7 +1154,7 @@
 .desk-loading-label {
   margin: 0;
   color: var(--desk-muted);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
 }
 
 /* Quieter than the label: it arrived second and it is the smaller fact. */
@@ -1162,7 +1162,7 @@
   max-width: 44ch;
   margin: 0;
   color: var(--desk-muted);
-  font-size: 12px;
+  font-size: var(--desk-text-small);
   opacity: 0.85;
 }
 

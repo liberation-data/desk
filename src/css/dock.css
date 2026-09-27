@@ -227,7 +227,7 @@
   border: 2px solid var(--desk-surface);
   background: var(--desk-badge);
   color: var(--desk-badge-ink);
-  font-size: 10px;
+  font-size: var(--desk-text-caption);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -243,7 +243,7 @@
   border: 1px solid var(--desk-rule);
   background: var(--desk-surface);
   color: var(--desk-ink);
-  font-size: 12px;
+  font-size: var(--desk-text-small);
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
@@ -328,7 +328,7 @@
 
 .desk-stack-title {
   margin: 0 0 8px 4px;
-  font-size: 11px;
+  font-size: var(--desk-text-caption);
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -372,12 +372,12 @@
 }
 
 .desk-stack-label {
-  font-size: 12px;
+  font-size: var(--desk-text-small);
   font-weight: 560;
 }
 
 .desk-stack-description {
-  font-size: 10.5px;
+  font-size: var(--desk-text-caption);
   line-height: 1.3;
   color: var(--desk-muted);
 }

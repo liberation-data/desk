@@ -11,7 +11,7 @@
   box-shadow: var(--desk-shadow-floating);
   color: var(--desk-ink);
   font-family: var(--desk-font);
-  font-size: 12.5px;
+  font-size: var(--desk-text-small);
   pointer-events: none;
 }
 

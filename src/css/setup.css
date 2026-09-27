@@ -18,12 +18,12 @@
   display: flex;
   align-items: center;
   gap: var(--desk-space-2);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
 }
 
 .desk-tour-count {
   color: var(--desk-muted);
-  font-size: 11.5px;
+  font-size: var(--desk-text-caption);
   font-variant-numeric: tabular-nums;
 }
 
@@ -48,7 +48,7 @@
 
 .desk-tour-caption {
   margin: 0 0 var(--desk-space-2);
-  font-size: 13.5px;
+  font-size: var(--desk-text-body);
   line-height: 1.45;
 }
 
@@ -181,7 +181,7 @@
 
 .desk-wizard-title {
   margin: 0;
-  font-size: 22px;
+  font-size: var(--desk-text-display);
   font-weight: 700;
   letter-spacing: -.02em;
   text-wrap: balance;
@@ -195,7 +195,7 @@
   margin: 0 0 var(--desk-space-4);
   max-width: 46ch;
   color: var(--desk-muted);
-  font-size: 13.5px;
+  font-size: var(--desk-text-body);
   line-height: 1.5;
   text-wrap: pretty;
 }
@@ -213,7 +213,7 @@
   border-radius: var(--desk-control-radius);
   background: color-mix(in srgb, var(--desk-bad) 14%, transparent);
   color: var(--desk-ink);
-  font-size: 13px;
+  font-size: var(--desk-text-body);
 }
 
 .desk-wizard-foot {
@@ -263,7 +263,7 @@
 }
 
 .desk-wizard-step-name {
-  font-size: 11.5px;
+  font-size: var(--desk-text-small);
   color: var(--desk-muted);
 }
 
