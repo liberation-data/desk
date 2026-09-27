@@ -420,7 +420,7 @@ sortable headings. It renders what it is given — no paging, no fetching.
 ### Overlays
 
 ```tsx
-<Popover open onOpenChange label trigger={(props) => <Button {...props} />} placement? align? />
+<Popover open onOpenChange label trigger={(props) => <Button {...props} />} placement? align? />  // floats over its window, clamped to it; never resizes it
 <Sheet open onDismiss title description? actions? />        // renders inside its own window
 <Alert open title message? confirmLabel onConfirm onCancel cancelLabel? destructive? />
 <ToastProvider>; useToast(): { show(toast): string; dismiss(id): void }

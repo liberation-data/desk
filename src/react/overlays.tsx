@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { windowElement } from '../core/commands.js'
+import { WINDOW_ATTRIBUTE, windowElement } from '../core/commands.js'
 import { Button } from './controls.js'
 import { useWindowId } from './context.js'
 import { useFocusTrap, useLayer } from './layers.js'
@@ -53,16 +53,72 @@ export function Popover({ open, onOpenChange, label, trigger, placement = 'below
     return () => document.removeEventListener('pointerdown', onPointerDown, true)
   }, [open, onOpenChange])
 
+  const place = useCallback(() => {
+    const anchor = button.current
+    const element = panel.current
+    if (anchor && element) placePopover(anchor, element, placement, align)
+  }, [placement, align])
+
+  // Measured once it exists, then kept beside its control while anything under it scrolls.
+  useLayoutEffect(() => {
+    if (!open) return
+    place()
+    addEventListener('resize', place)
+    document.addEventListener('scroll', place, true)
+    return () => {
+      removeEventListener('resize', place)
+      document.removeEventListener('scroll', place, true)
+    }
+  }, [open, place])
+
   return (
     <span className="desk-popover-anchor">
       {trigger({ ref: button, 'aria-haspopup': 'dialog', 'aria-expanded': open, onClick: () => onOpenChange(!open) })}
-      {open && (
+      {open && typeof document !== 'undefined' && createPortal(
         <div ref={panel} role="dialog" aria-label={label} className="desk-popover" data-placement={placement} data-align={align}>
           {children}
-        </div>
+        </div>,
+        document.body,
       )}
     </span>
   )
+}
+
+const POPOVER_GAP = 6
+const POPOVER_MARGIN = 8
+
+/*
+ * A popover floats OVER its window rather than inside it. Drawn in the window's content it made that
+ * content taller or wider, so opening an (i) grew a scrollbar or pushed the layout — the window
+ * changed size to make room for a note about it. Here it is fixed to the viewport, kept inside the
+ * window it belongs to, flipped to the other side when its side has no room, and scrolls within
+ * itself when neither side has.
+ */
+function placePopover(anchor: HTMLElement, element: HTMLElement, placement: 'below' | 'above', align: 'start' | 'end') {
+  const box = anchor.getBoundingClientRect()
+  const frame = anchor.closest(`[${WINDOW_ATTRIBUTE}]`)?.getBoundingClientRect()
+  const bounds = {
+    left: (frame?.left ?? 0) + POPOVER_MARGIN,
+    top: (frame?.top ?? 0) + POPOVER_MARGIN,
+    right: (frame?.right ?? innerWidth) - POPOVER_MARGIN,
+    bottom: (frame?.bottom ?? innerHeight) - POPOVER_MARGIN,
+  }
+  element.style.maxHeight = ''
+  const { width, height } = element.getBoundingClientRect()
+  const roomBelow = bounds.bottom - box.bottom - POPOVER_GAP
+  const roomAbove = box.top - bounds.top - POPOVER_GAP
+  const fits = (side: 'below' | 'above') => height <= (side === 'below' ? roomBelow : roomAbove)
+  const other = placement === 'below' ? 'above' : 'below'
+  const side = fits(placement) ? placement : fits(other) ? other : roomBelow >= roomAbove ? 'below' : 'above'
+  const below = side === 'below'
+  const room = Math.max(below ? roomBelow : roomAbove, 0)
+  const shown = Math.min(height, room)
+  const preferred = align === 'start' ? box.left : box.right - width
+  const left = Math.max(bounds.left, Math.min(preferred, bounds.right - width))
+  element.style.left = `${left}px`
+  element.style.top = `${below ? box.bottom + POPOVER_GAP : box.top - POPOVER_GAP - shown}px`
+  if (height > room) element.style.maxHeight = `${room}px`
+  element.dataset.side = side
 }
 
 /* ── Sheet: a task that belongs to one window, and blocks only that window ── */
