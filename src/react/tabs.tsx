@@ -28,6 +28,11 @@ export interface TabsProps<T extends string> {
   readonly onChange: (value: T) => void
   /** The accessible name for the strip, usually the window's, e.g. "Model Router". */
   readonly label: string
+  /**
+   * Controls for the whole window rather than one view — Refresh, say — at the end of the strip.
+   * Outside the tablist, so they are ordinary tab stops and not tabs.
+   */
+  readonly actions?: ReactNode
   /** The selected view. Rendered inside the tabpanel the selected tab controls. */
   readonly children?: ReactNode
   readonly className?: string
@@ -35,7 +40,7 @@ export interface TabsProps<T extends string> {
 
 const KEYS = { ArrowRight: 1, ArrowLeft: -1, Home: 'first', End: 'last' } as const
 
-export function Tabs<T extends string>({ tabs, value, onChange, label, children, className }: TabsProps<T>) {
+export function Tabs<T extends string>({ tabs, value, onChange, label, actions, children, className }: TabsProps<T>) {
   const id = useId()
   const strip = useRef<HTMLDivElement>(null)
   const tabId = (v: T) => `${id}-tab-${v}`
@@ -57,28 +62,31 @@ export function Tabs<T extends string>({ tabs, value, onChange, label, children,
 
   return (
     <div className={['desk-tabs', className].filter(Boolean).join(' ')}>
-      <div ref={strip} role="tablist" aria-label={label} className="desk-tablist" onKeyDown={move}>
-        {tabs.map(tab => {
-          const selected = tab.value === value
-          return (
-            <button
-              key={tab.value}
-              id={tabId(tab.value)}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              aria-controls={selected ? panelId : undefined}
-              data-value={tab.value}
-              className="desk-tab"
-              tabIndex={selected ? 0 : -1}
-              disabled={tab.disabled}
-              onClick={() => onChange(tab.value)}
-            >
-              {tab.label}
-              {tab.badge != null && <span className="desk-tab-badge">{tab.badge}</span>}
-            </button>
-          )
-        })}
+      <div className="desk-tabbar">
+        <div ref={strip} role="tablist" aria-label={label} className="desk-tablist" onKeyDown={move}>
+          {tabs.map(tab => {
+            const selected = tab.value === value
+            return (
+              <button
+                key={tab.value}
+                id={tabId(tab.value)}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-controls={selected ? panelId : undefined}
+                data-value={tab.value}
+                className="desk-tab"
+                tabIndex={selected ? 0 : -1}
+                disabled={tab.disabled}
+                onClick={() => onChange(tab.value)}
+              >
+                {tab.label}
+                {tab.badge != null && <span className="desk-tab-badge">{tab.badge}</span>}
+              </button>
+            )
+          })}
+        </div>
+        {actions != null && <div className="desk-tabs-actions">{actions}</div>}
       </div>
       <div role="tabpanel" id={panelId} aria-labelledby={tabId(value)} className="desk-tabpanel">
         {children}

@@ -721,12 +721,28 @@
  * radius, so a tab's hover wash and its underline read as one rounded shape, and a look that
  * rounds its buttons rounds its tabs to match.
  */
+.desk-tabbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--desk-space-2);
+  border-bottom: 1px solid var(--desk-rule);
+  margin-bottom: var(--desk-space-3);
+}
+
 .desk-tablist {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
-  border-bottom: 1px solid var(--desk-rule);
-  margin-bottom: var(--desk-space-3);
+  margin-right: auto;
+}
+
+/* Sits on the strip's baseline, clear of the rule, without stretching the tabs to its height. */
+.desk-tabs-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-2);
+  padding-bottom: var(--desk-space-1);
 }
 
 .desk-tab {
