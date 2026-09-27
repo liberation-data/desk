@@ -147,6 +147,7 @@ that window is key, and `<InputBar>` falls back to the app when no window wants 
 |---|---|
 | The one action a view leads with | `<Button intent="default">` |
 | Two to five options, all worth seeing | `<SegmentedControl>` |
+| The views of one window, one at a time | `<Tabs>` |
 | More options, or ones that need explaining | `<PopUpButton>` |
 | A setting that applies at once | `<Toggle>` |
 | A setting that waits for Save | `<Checkbox>` |

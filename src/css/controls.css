@@ -714,6 +714,75 @@
   flex-direction: column;
 }
 
+/* ── Tabs ── */
+
+/*
+ * The strip sits on a rule and the selected tab stands on it. The top corners take the control
+ * radius, so a tab's hover wash and its underline read as one rounded shape, and a look that
+ * rounds its buttons rounds its tabs to match.
+ */
+.desk-tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-bottom: 1px solid var(--desk-rule);
+  margin-bottom: var(--desk-space-3);
+}
+
+.desk-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--desk-space-1);
+  padding: var(--desk-space-2) var(--desk-space-3);
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--desk-control-radius) var(--desk-control-radius) 0 0;
+  background: none;
+  color: var(--desk-muted);
+  font-family: var(--desk-font);
+  font-size: 12.5px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .12s var(--desk-ease), color .12s var(--desk-ease);
+}
+
+.desk-tab:hover:not(:disabled):not([aria-selected="true"]) {
+  background: color-mix(in srgb, var(--desk-ink) 6%, transparent);
+  color: var(--desk-ink);
+}
+
+.desk-tab[aria-selected="true"] {
+  border-bottom-color: var(--desk-accent);
+  color: var(--desk-ink);
+  font-weight: 600;
+}
+
+.desk-tab:focus-visible {
+  outline: 2px solid var(--desk-accent);
+  outline-offset: -2px;
+}
+
+.desk-tab:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.desk-tab-badge {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--desk-ink) 8%, transparent);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.desk-tabpanel {
+  min-width: 0;
+}
+
 /* ── Table ── */
 
 .desk-table-wrap {
