@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import type { Ref, UIEvent, ReactNode } from 'react'
 
 /*
@@ -32,6 +33,52 @@ export function Toolbar({ children, trailing, label, className }: ToolbarProps) 
   )
 }
 
+export interface PaneHeaderProps {
+  /** What the pane is: "Keys and connections". */
+  readonly title: ReactNode
+  /** What acts on everything in the pane — Refresh — on the title's line, at the trailing end. */
+  readonly actions?: ReactNode
+  readonly className?: string
+}
+
+/**
+ * A pane's title, and the controls for all of it, on one line.
+ *
+ * Sized from the type scale and padded to the window's clear edge, so every pane in an app titles
+ * itself the same way without each one choosing a size.
+ */
+export function PaneHeader({ title, actions, className }: PaneHeaderProps) {
+  return (
+    <div className={['desk-pane-title', className].filter(Boolean).join(' ')}>
+      <h2 className="desk-pane-title-text">{title}</h2>
+      {actions != null && <div className="desk-pane-title-actions">{actions}</div>}
+    </div>
+  )
+}
+
+export interface SectionProps {
+  /** Names the group, and the region for assistive technology. */
+  readonly title: ReactNode
+  /** What acts on this group only, on the title's line. */
+  readonly actions?: ReactNode
+  readonly children: ReactNode
+  readonly className?: string
+}
+
+/** A titled group inside a pane. Sections in a padded pane are spaced by the pane, not by themselves. */
+export function Section({ title, actions, children, className }: SectionProps) {
+  const id = useId()
+  return (
+    <section aria-labelledby={id} className={['desk-section', className].filter(Boolean).join(' ')}>
+      <div className="desk-section-head">
+        <h3 id={id} className="desk-section-title">{title}</h3>
+        {actions != null && <div className="desk-section-actions">{actions}</div>}
+      </div>
+      {children}
+    </section>
+  )
+}
+
 export interface PaneProps {
   /** Stays put at the top: a Toolbar, usually. */
   readonly header?: ReactNode
@@ -44,10 +91,15 @@ export interface PaneProps {
   /** The scrolling element itself: for reading where it sits, or sending it to the bottom. */
   readonly bodyRef?: Ref<HTMLDivElement>
   readonly onScroll?: (event: UIEvent<HTMLDivElement>) => void
+  /**
+   * Keeps the HIG's 16px clear at the edges and lays the children out with a gap between them.
+   * Leave it off for content that runs to the edge: a table, a log, a list with its own rules.
+   */
+  readonly padded?: boolean
   readonly className?: string
 }
 
-export function Pane({ header, footer, children, label, bodyRef, onScroll, className }: PaneProps) {
+export function Pane({ header, footer, children, label, bodyRef, onScroll, padded, className }: PaneProps) {
   return (
     <div className={['desk-pane', className].filter(Boolean).join(' ')}>
       {header != null && <div className="desk-pane-header">{header}</div>}
@@ -55,6 +107,7 @@ export function Pane({ header, footer, children, label, bodyRef, onScroll, class
         ref={bodyRef}
         className="desk-pane-body"
         onScroll={onScroll}
+        {...(padded ? { 'data-padded': '' } : {})}
         {...(label ? { role: 'region', 'aria-label': label, tabIndex: 0 } : {})}
       >
         {children}

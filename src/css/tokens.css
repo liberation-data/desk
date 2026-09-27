@@ -34,6 +34,16 @@
   --desk-space-6: 32px;
   --desk-space-7: 48px;
 
+  /* The type scale (HIG.md §2). Nothing between these sizes. */
+  --desk-text-caption: 11px;
+  --desk-text-small: 12px;
+  --desk-text-body: 13px;
+  --desk-text-lead: 15px;
+  --desk-text-title: 17px;
+  --desk-text-display: 22px;
+  --desk-text-hero: 28px;
+  --desk-weight-title: 600;
+
   /* State, kept apart from the accent. */
   --desk-ok: #2f9e68;
   --desk-warn: #b7791f;

@@ -53,7 +53,8 @@ can be undone, or ask first — never both, and never neither.
   places.
 - Siblings are laid out with `gap`, not margins.
 - Running text is at most **68 characters** wide.
-- Keep **16 px** clear at the edges of every window body.
+- Keep **16 px** clear at the edges of every window body. `Pane padded` does this; a pane that runs its
+  content to the edge (a table, a log) leaves it off.
 
 ### Typography
 
@@ -63,6 +64,11 @@ can be undone, or ask first — never both, and never neither.
   - 13 is body text in windows, the default.
   - 11 is the smallest size anywhere, and is for labels and captions only.
   - 17 titles a section; 22 and 28 title an empty state or a sheet. A window title is 13, semibold.
+  - 17 is `PaneHeader`, 15 is a `Section` inside it.
+  - The sizes are tokens, `--desk-text-caption` … `--desk-text-hero`. Use the token or a `desk-text-*`
+    class, never a px value. Differing from the scale is done by redefining a token, where it can be seen.
+- A title and the controls that act on everything under it share one line: `PaneHeader` `actions`,
+  `Section` `actions`, `Tabs` `actions`. A Refresh never gets a row of its own.
 - Weights: regular (400), medium (500) for emphasis in running text, semibold (600) for titles. Bold (700)
   only for badges and figures that must read at a glance.
 - Uppercase is for short labels only, with +0.06–0.09 em letter-spacing. Never for sentences.

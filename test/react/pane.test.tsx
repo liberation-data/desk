@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { Button, InfoTip, Pane, Toolbar } from '../../src/react/index.js'
+import { Button, InfoTip, Pane, PaneHeader, Section, Toolbar } from '../../src/react/index.js'
 
 afterEach(cleanup)
 
@@ -28,6 +28,39 @@ describe('Pane', () => {
     expect(document.querySelector('.desk-pane-header')).toBeNull()
     expect(document.querySelector('.desk-pane-footer')).toBeNull()
     expect(screen.queryByRole('region')).toBeNull()
+  })
+})
+
+describe('PaneHeader', () => {
+  it('puts the title and its actions on one row', () => {
+    render(<Pane header={<PaneHeader title="Keys and connections" actions={<Button>Refresh</Button>} />}><p>body</p></Pane>)
+    const row = document.querySelector('.desk-pane-header > .desk-pane-title')
+    expect(row?.querySelector('h2')?.textContent).toBe('Keys and connections')
+    expect(row?.querySelector('.desk-pane-title-actions')?.textContent).toBe('Refresh')
+  })
+
+  it('has no actions container when it was given none', () => {
+    render(<PaneHeader title="Session" />)
+    expect(document.querySelector('.desk-pane-title-actions')).toBeNull()
+  })
+})
+
+describe('a padded pane', () => {
+  it('marks only the body as padded, and only when asked', () => {
+    render(<Pane label="Settings" padded><p>body</p></Pane>)
+    expect(screen.getByRole('region', { name: 'Settings' }).hasAttribute('data-padded')).toBe(true)
+    cleanup()
+    render(<Pane label="Log"><p>a line</p></Pane>)
+    expect(screen.getByRole('region', { name: 'Log' }).hasAttribute('data-padded')).toBe(false)
+  })
+})
+
+describe('Section', () => {
+  it('is a region named by its title, with actions on the title row', () => {
+    render(<Section title="Handlers" actions={<Button>Add</Button>}><p>none yet</p></Section>)
+    const section = screen.getByRole('region', { name: 'Handlers' })
+    expect(section.querySelector('.desk-section-head .desk-section-actions')?.textContent).toBe('Add')
+    expect(section.textContent).toContain('none yet')
   })
 })
 

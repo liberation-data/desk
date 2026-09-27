@@ -389,6 +389,66 @@
   outline-offset: -2px;
 }
 
+/* The HIG's clear edge, and siblings laid out by gap rather than by margins of their own. */
+.desk-pane-body[data-padded] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--desk-space-4);
+  padding: var(--desk-space-4);
+}
+
+/* A title and what acts on everything under it, on one line. */
+.desk-pane-title,
+.desk-section-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--desk-space-2);
+}
+
+.desk-pane-title {
+  min-height: calc(var(--desk-control-height) + var(--desk-space-2) * 2);
+  padding: var(--desk-space-2) var(--desk-space-4);
+  border-bottom: 1px solid var(--desk-rule);
+}
+
+.desk-pane-title-text,
+.desk-section-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-weight: var(--desk-weight-title);
+  line-height: 1.3;
+}
+
+.desk-pane-title-text {
+  font-size: var(--desk-text-title);
+}
+
+.desk-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--desk-space-2);
+}
+
+.desk-section-title {
+  font-size: var(--desk-text-lead);
+}
+
+.desk-pane-title-actions,
+.desk-section-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--desk-space-2);
+  margin-left: auto;
+}
+
+/* Text inside a window picks a step of the scale by name, never a size of its own. */
+.desk-text-body { font-size: var(--desk-text-body); }
+.desk-text-small { font-size: var(--desk-text-small); }
+.desk-text-caption { font-size: var(--desk-text-caption); }
+.desk-text-muted { color: var(--desk-muted); }
+
 /* A window whose whole content is a pane does not scroll itself: the pane's middle does. */
 .desk-body:has(> .desk-pane) {
   overflow: hidden;
