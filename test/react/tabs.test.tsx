@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { useState } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Tabs } from '../../src/react/index.js'
 
 afterEach(cleanup)
@@ -77,6 +77,21 @@ describe('Tabs', () => {
     render(<Garage />)
     await userEvent.click(screen.getByRole('tab', { name: 'Parts' }))
     expect(screen.getByRole('tabpanel').textContent).toBe('Showing rides')
+  })
+
+  it('puts actions at the end of the strip, outside the tablist', async () => {
+    const onRefresh = vi.fn()
+    render(
+      <Tabs label="Garage" tabs={TABS} value="rides" onChange={() => {}}
+            actions={<button type="button" onClick={onRefresh}>Refresh</button>}>
+        <p>Showing rides</p>
+      </Tabs>,
+    )
+    const refresh = screen.getByRole('button', { name: 'Refresh' })
+    expect(screen.getByRole('tablist').contains(refresh)).toBe(false)
+    expect(screen.getByRole('tabpanel').contains(refresh)).toBe(false)
+    await userEvent.click(refresh)
+    expect(onRefresh).toHaveBeenCalledOnce()
   })
 
   it('shows a badge beside the label', () => {

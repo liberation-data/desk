@@ -263,7 +263,8 @@ Each control carries its own behaviour and accessibility; the look comes only fr
 style props on purpose. `intent="default"` marks the one action a view leads with. A segmented control is one
 tab stop whose arrow keys move the selection past disabled options. Tabs look similar and are not the same
 thing: a segmented control chooses a value and what it governs stays on screen, while tabs switch the view
-beneath them, which sits in a panel the selected tab names. A toggle is a `switch` for settings that
+beneath them, which sits in a panel the selected tab names. `actions` puts controls for the whole window,
+such as Refresh, at the end of the strip, so a window with tabs needs no header row above them. A toggle is a `switch` for settings that
 apply at once — a checkbox is for one that waits for Save. A text field always has a label (`labelHidden`
 keeps it for screen readers), and an `error` marks it invalid and replaces the help text. A choice group
 is the handful of cards a setup step turns on — an icon, a label, a line of why — with native radios
