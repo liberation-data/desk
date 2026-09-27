@@ -254,7 +254,12 @@ window; `lazyWindow` retries its import on reload, unlike `React.lazy`, which ca
 
 ```tsx
 <Pane label?={string} header?={ReactNode} footer?={ReactNode} bodyRef?={Ref} onScroll?={fn}>{scrolling content}</Pane>
+<Pane padded …>   // 16px clear edge, children spaced by gap: for a page of content, not a table or a log
+<PaneHeader title={ReactNode} actions?={ReactNode} />   // the pane's title and its Refresh, on one row
+<Section title={ReactNode} actions?={ReactNode}>{content}</Section>   // a titled group inside a pane
 <Toolbar label?={string} trailing?={ReactNode}>{controls}</Toolbar>   // className="desk-grow" takes spare room
+// text size by class, never px: desk-text-body | desk-text-small | desk-text-caption, plus desk-text-muted.
+// the scale is tokens: --desk-text-caption 11, -small 12, -body 13, -lead 15, -title 17, -display 22, -hero 28.
 <InfoTip label={string} placement?={'below'|'above'} align?={'start'|'end'}>{explanation}</InfoTip>
 // the (i) wears --desk-info (the title bar's green) so it is seen; retint it there, not in the selector.
 ```

@@ -243,6 +243,22 @@ hand over the scrolling element itself, for a view that follows its own tail.
 `Toolbar` is one aligned row — every control on the same centre line whatever its own height, `trailing`
 pushed to the end, and `className="desk-grow"` on the one item that should take the spare room.
 
+A pane that titles itself and holds a page of content, rather than a table or a log, takes a `PaneHeader`
+and `padded`:
+
+```tsx
+<Pane padded header={<PaneHeader title="Keys and connections" actions={<Button onClick={load}>Refresh</Button>} />}>
+  <p>Keys are kept in this world and never leave it.</p>
+  <Section title="Handlers" actions={<Button>Add</Button>}>…</Section>
+</Pane>
+```
+
+`PaneHeader` puts the title and what acts on the whole pane on one line, at the title size. `padded` keeps
+the HIG's 16px clear edge and spaces the children with a gap, so none of them sets a margin. `Section` is a
+titled group inside it. Text that is not body text picks a step of the scale by class — `desk-text-small`,
+`desk-text-caption`, `desk-text-muted` — and the sizes themselves are tokens (`--desk-text-body`,
+`--desk-text-title`, …), so a window that has to differ does it by token, on purpose.
+
 `InfoTip` is an (i) holding what the view would explain if asked, so a window does not open with a
 paragraph everyone reads once. Explanation only: a warning belongs in front of people, not behind a
 disclosure.
