@@ -187,11 +187,20 @@
 }
 
 /*
- * How far along, from useWindowProgress. It sits where the note would and after it when both are
- * there, and it never shrinks: a count cut to "3 o" says nothing, where a cut note still says most.
+ * How far along, from useWindowProgress. Centred on the bar, so the end of the bar stays the note's
+ * and the (i)'s whether or not a count is running. It never shrinks: a count cut to "3 o" says
+ * nothing, where a cut note still says most. Title and note are held back from the middle so
+ * neither runs under it.
  */
+.desk-titlebar {
+  position: relative;
+  container-type: inline-size;
+}
+
 .desk-window-progress {
-  margin-left: auto;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -199,14 +208,33 @@
   font-size: 11.5px;
   font-variant-numeric: tabular-nums;
   color: var(--desk-muted);
+  pointer-events: none;
 }
 
-.desk-window-note + .desk-window-progress {
-  margin-left: var(--desk-space-3);
+.desk-titlebar[data-progress] .desk-title {
+  max-width: calc(50% - 140px);
 }
 
-.desk-window-progress + .desk-window-info {
-  margin-left: var(--desk-space-2);
+.desk-titlebar[data-progress] .desk-window-note {
+  max-width: calc(50% - 110px);
+}
+
+/* Too narrow to share the middle: the count joins the end of the bar, before the note. */
+@container (max-width: 520px) {
+  .desk-window-progress {
+    position: static;
+    transform: none;
+    margin-left: auto;
+  }
+
+  .desk-window-progress + .desk-window-note {
+    margin-left: var(--desk-space-3);
+  }
+
+  .desk-titlebar[data-progress] .desk-title,
+  .desk-titlebar[data-progress] .desk-window-note {
+    max-width: none;
+  }
 }
 
 .desk-window-progress-track {
@@ -231,7 +259,6 @@
 }
 
 .desk-window-info + .desk-window-actions,
-.desk-window-progress + .desk-window-actions,
 .desk-window-note + .desk-window-actions {
   margin-left: var(--desk-space-1);
 }

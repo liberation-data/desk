@@ -44,6 +44,28 @@ describe('a window’s progress', () => {
     expect(took).toBe(true)
   })
 
+  it('comes before the note, so the end of the bar stays the note’s and the (i)’s', () => {
+    const desk = createDesk()
+    render(
+      <DeskProvider desk={desk}>
+        <Desktop
+          title={id => id}
+          note={() => '/api/v1/next'}
+          info={() => <p>About</p>}
+          renderWindow={() => <Steps initial={{ value: 3, max: 8, label: 'Steps done' }} />}
+        />
+      </DeskProvider>,
+    )
+    act(() => desk.open('next'))
+    const bar = document.querySelector('.desk-titlebar')
+    expect(bar?.hasAttribute('data-progress')).toBe(true)
+    const children = [...(bar?.children ?? [])]
+    const at = (name: string) => children.findIndex(child => child.classList.contains(name) || child.querySelector(`.${name}`) != null)
+    expect(at('desk-window-progress')).toBeGreaterThan(-1)
+    expect(at('desk-window-progress')).toBeLessThan(at('desk-window-note'))
+    expect(at('desk-window-note')).toBeLessThan(at('desk-window-info'))
+  })
+
   it('follows the count, and leaves when the window reports null', () => {
     mount({ value: 3, max: 8, label: 'Steps done' })
     act(() => report({ value: 4, max: 8, label: 'Steps done' }))
