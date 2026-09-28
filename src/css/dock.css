@@ -132,6 +132,28 @@
     transform: translateX(-8px) scale(1.14);
     margin: 5px 0;
   }
+
+  /*
+   * The magnified item moves toward the desk, away from a pointer resting near its outer edge. Without
+   * this the pointer falls off, the item drops back under it, and it shakes. Its hover reaches back
+   * over the ground it left.
+   */
+  .desk-dock-item:hover:not(:disabled)::before {
+    content: "";
+    position: absolute;
+  }
+
+  .desk-dock[data-side="bottom"] .desk-dock-item:hover:not(:disabled)::before {
+    inset: 0 0 -14px;
+  }
+
+  .desk-dock[data-side="left"] .desk-dock-item:hover:not(:disabled)::before {
+    inset: 0 0 0 -14px;
+  }
+
+  .desk-dock[data-side="right"] .desk-dock-item:hover:not(:disabled)::before {
+    inset: 0 -14px 0 0;
+  }
 }
 
 .desk-dock-icon {
@@ -284,6 +306,8 @@
   box-sizing: border-box;
   width: max-content;
   max-width: min(420px, calc(100vw - 32px));
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
   padding: 12px;
   border-radius: 18px;
   border: 1px solid var(--desk-rule);

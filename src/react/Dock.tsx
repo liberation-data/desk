@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
 import { focusedId, instancesOf, isMinimized, windowType } from '../core/desk.js'
 import type { DeskState, WindowId } from '../core/types.js'
@@ -247,6 +247,26 @@ function stackBadge(items: readonly DockItem[]): ReactNode | null {
   return (numbers as number[]).reduce((total, n) => total + n, 0)
 }
 
+const VIEW_MARGIN = 12
+
+/**
+ * How far a panel must move to sit VIEW_MARGIN inside the viewport, as a CSS `translate`. Measured
+ * from its centre and untransformed size, so the opening animation's scale does not skew it.
+ */
+function fitInView(el: HTMLElement): string {
+  const rect = el.getBoundingClientRect()
+  if (rect.width === 0) return ''
+  const shift = (centre: number, size: number, room: number) => {
+    const start = centre - size / 2
+    const over = start + size - (room - VIEW_MARGIN)
+    // Too big to fit is left to max-height: never push its start off screen to make room for its end.
+    return over > 0 ? -Math.min(over, Math.max(0, start - VIEW_MARGIN)) : Math.max(0, VIEW_MARGIN - start)
+  }
+  const x = shift(rect.left + rect.width / 2, el.offsetWidth, window.innerWidth)
+  const y = shift(rect.top + rect.height / 2, el.offsetHeight, window.innerHeight)
+  return x === 0 && y === 0 ? '' : `${x}px ${y}px`
+}
+
 function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) {
   const desk = useDesk()
   const state = useDeskState()
@@ -266,6 +286,11 @@ function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) 
     document.addEventListener('pointerdown', onPointerDown)
     return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [open, setOpenStack])
+
+  // Anchored to its slot, a stack from a low item would open past the bottom of the screen.
+  useLayoutEffect(() => {
+    if (open && panel.current) panel.current.style.translate = fitInView(panel.current)
+  }, [open])
 
   const close = () => {
     onOpenChange(false)
