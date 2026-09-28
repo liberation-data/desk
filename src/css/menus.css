@@ -142,7 +142,9 @@
   font-size: var(--desk-text-small);
 }
 
-.desk-menu-label {
+/* A detail is caller text of any length: it gives way before the label, down to 60% of the row. */
+.desk-menu-label,
+.desk-menu-detail {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -157,15 +159,9 @@
   font-size: var(--desk-text-small);
 }
 
-/* A detail is caller text of any length. Rigid, a long one squeezed the label to nothing and ran
-   past the menu's edge; capped, it gives way first and the label keeps at least 40% of the row. */
 .desk-menu-detail {
   flex: 0 1 auto;
-  min-width: 0;
   max-width: 60%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .desk-menu-shortcut {
