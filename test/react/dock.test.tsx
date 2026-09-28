@@ -100,6 +100,22 @@ describe('Dock', () => {
     expect(document.activeElement).toBe(garage)
   })
 
+  it('lifts a stack that would open past the bottom of the screen back inside it', () => {
+    // jsdom has no layout: a 300px-tall stack from a slot 600px down, in a 768px window.
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(80, 600, 400, 300))
+    const height = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(300)
+    const width = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(400)
+    try {
+      mount(ENTRIES)
+      fireEvent.click(screen.getByRole('button', { name: 'Garage' }))
+      expect(screen.getByRole('dialog', { name: 'Garage' }).style.translate).toBe(`0px ${768 - 12 - 900}px`)
+    } finally {
+      rect.mockRestore()
+      height.mockRestore()
+      width.mockRestore()
+    }
+  })
+
   it('closes a stack when the pointer goes down outside it', () => {
     mount(ENTRIES)
     fireEvent.click(screen.getByRole('button', { name: 'Garage' }))

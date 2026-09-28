@@ -184,7 +184,7 @@ export function useContextMenu({ items, label, disabled }: ContextMenuOptions): 
                 >
                   <span className="desk-menu-check" aria-hidden="true">{resolved.checked ? '✓' : ''}</span>
                   <span className="desk-menu-label">{item.label}</span>
-                  {item.detail && <span className="desk-menu-detail">{item.detail}</span>}
+                  {item.detail && <span className="desk-menu-detail" title={item.detail}>{item.detail}</span>}
                   {item.shortcut && <kbd className="desk-menu-shortcut">{formatShortcut(item.shortcut, apple)}</kbd>}
                 </div>
               )

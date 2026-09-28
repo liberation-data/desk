@@ -142,7 +142,9 @@
   font-size: var(--desk-text-small);
 }
 
-.desk-menu-label {
+/* A detail is caller text of any length: it gives way before the label, down to 60% of the row. */
+.desk-menu-label,
+.desk-menu-detail {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -155,6 +157,11 @@
   flex: none;
   color: var(--desk-muted);
   font-size: var(--desk-text-small);
+}
+
+.desk-menu-detail {
+  flex: 0 1 auto;
+  max-width: 60%;
 }
 
 .desk-menu-shortcut {

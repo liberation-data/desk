@@ -221,6 +221,17 @@ describe('MenuBar', () => {
     expect(document.activeElement).toBe(title('Garage'))
   })
 
+  it('keeps the full text of a detail on hover, since a long one is cut to fit the row', () => {
+    const reason = 'failing since 28 Sep 10:14, 3 times — ForsetiClient[transactionId=45117] could not acquire EXCLUSIVE NODE(756)'
+    render(
+      <DeskProvider desk={createDesk()}>
+        <MenuBar menus={[{ id: 'jobs', label: 'Jobs', items: [menuAction('Ingesting a book', () => {}, { detail: reason })] }]} />
+      </DeskProvider>,
+    )
+    fireEvent.click(title('Jobs'))
+    expect(within(menu()).getByText(reason).getAttribute('title')).toBe(reason)
+  })
+
   it('renders leading and trailing content', () => {
     mount()
     expect(within(screen.getByRole('menubar')).getByText('Sun 14 Sep')).toBeTruthy()

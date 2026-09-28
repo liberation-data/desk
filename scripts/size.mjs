@@ -57,7 +57,13 @@ import { join } from 'node:path'
  * 56 is room for the next few components; a stray dependency or a duplicated module still costs
  * more than that and still fails.
  */
-const BUDGETS = { core: 13, react: 56, css: 16, fx: 5 }
+/*
+ * Raised css 16 → 18. The menu detail that can no longer run past the menu's edge took css to 15.9
+ * of 16, and that only after trimming its rule and its comment to fit — the same 0.1 spare the notes
+ * above describe, where the next commit to touch any stylesheet is red whatever it does. The parts
+ * line still shows where growth lands.
+ */
+const BUDGETS = { core: 13, react: 56, css: 18, fx: 5 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
