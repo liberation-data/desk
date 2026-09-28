@@ -157,6 +157,17 @@
   font-size: var(--desk-text-small);
 }
 
+/* A detail is caller text of any length. Rigid, a long one squeezed the label to nothing and ran
+   past the menu's edge; capped, it gives way first and the label keeps at least 40% of the row. */
+.desk-menu-detail {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .desk-menu-shortcut {
   margin-left: 18px;
   font-family: var(--desk-font);
