@@ -59,6 +59,7 @@ import {
   useToast,
   useWindowInput,
   lazyWindow,
+  Led,
   windowMenuItems,
   withAppBridge,
   windowResults,
@@ -299,9 +300,10 @@ function Parts() {
         {parts.map(p => {
           const ratio = p.used / p.life
           const tone = ratio >= 0.9 ? 'bad' : ratio >= 0.75 ? 'warn' : 'ok'
+          const lamp = { bad: { color: 'red', label: 'Due now' }, warn: { color: 'amber', label: 'Due soon' }, ok: { color: 'green', label: 'Plenty of life' } } as const
           return (
             <div className="wear" key={p.part} data-tour={p.part === 'Chain' ? 'part-chain' : undefined}>
-              <div className="wear-head"><b>{p.part}</b><span className="muted">{p.bike}</span>
+              <div className="wear-head"><Led color={lamp[tone].color} label={lamp[tone].label} /><b>{p.part}</b><span className="muted">{p.bike}</span>
                 <span className="r muted">{p.used.toLocaleString()} / {p.life.toLocaleString()} {p.unit ?? 'km'}</span></div>
               <div className="meter" data-tone={tone}><i style={{ width: `${Math.min(100, ratio * 100)}%` }} /></div>
             </div>
@@ -816,12 +818,12 @@ function Setup({ progress, onDone }: { readonly progress: SetupProgress<SetupAns
           <div className="match">
             <span className="match-q">When a ride log says “{firstName}”, is that you?</span>
             <div className="match-row">
-              <span className="lamp warn" />
+              <Led color="amber" />
               <span className="match-who">{firstName}</span>
               <span className="match-res">could be anyone in the bunch</span>
             </div>
             <div className="match-row">
-              <span className={`lamp ${named ? 'good' : 'warn'}`} />
+              <Led color={named ? 'green' : 'amber'} />
               <span className="match-who">{named ? rider.trim() : 'First Last'}</span>
               <span className="match-res">{named ? 'is one rider: you' : 'add your surname so the log can tell'}</span>
             </div>

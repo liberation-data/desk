@@ -401,6 +401,16 @@ SearchCommand = 'desk.search'                          // a menu item can open i
 <Loading label slow?={ReactNode} slowAfterMs?={3000} size?={'large'} />  // a view with nothing on it yet
 ```
 
+### Status lamps
+
+```tsx
+<Led color={'off'|'green'|'amber'|'red'} label? />   // label read aloud; omit it when words sit beside the lamp
+```
+
+The colour is named for what it looks like; what it means is the app's to say, in words too — a lamp is
+never the only thing carrying a state. Its colours are `--desk-led-*`, bright on both grounds, not the
+`--desk-ok`/`--desk-warn`/`--desk-bad` text tokens, which are dark on a light ground and look switched off.
+
 Both are one `role="status"`. `Loading` shows `slow` once the wait passes `slowAfterMs`, inside that same
 region, so its arrival is the announcement; the timer restarts when `slow` or `slowAfterMs` changes. There
 is no determinate bar: a bar needs a fraction the browser can see, and work with real steps is a

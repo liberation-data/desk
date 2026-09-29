@@ -133,6 +133,16 @@ describe('the garage sample', () => {
     expect(screen.getByRole('menubar')).toBeTruthy()
   })
 
+  it('lights each part by its wear, and says what the lamp means', async () => {
+    const user = userEvent.setup()
+    await arrive(user)
+    await user.click(within(dock()).getByRole('button', { name: 'Garage' }))
+    await user.click(within(screen.getByRole('dialog', { name: 'Garage' })).getByRole('button', { name: /Parts & Wear/ }))
+    // The road chain is at 2,860 of 3,000 km.
+    const due = await screen.findAllByRole('img', { name: 'Due now' })
+    expect(due[0]?.getAttribute('data-color')).toBe('red')
+  })
+
   it('has one switch for its sounds, in Settings, that it remembers', async () => {
     const user = userEvent.setup()
     await arrive(user)

@@ -253,6 +253,8 @@ td {
   font-size: 13px;
 }
 
+.wear-head .desk-led { align-self: center; }
+
 .meter {
   height: 6px;
   border-radius: 3px;
@@ -578,23 +580,6 @@ td {
 
 .match-res {
   color: var(--desk-muted);
-}
-
-.lamp {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.lamp.good {
-  background: var(--ok);
-  box-shadow: 0 0 7px color-mix(in srgb, var(--ok) 60%, transparent);
-}
-
-.lamp.warn {
-  background: var(--warn);
-  box-shadow: 0 0 7px color-mix(in srgb, var(--warn) 60%, transparent);
 }
 
 .detect {
