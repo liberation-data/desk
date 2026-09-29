@@ -310,6 +310,25 @@ Each is one `role="status"`, and `slow` arrives inside that same region so a scr
 explanation as news. Under `prefers-reduced-motion` the ring stops turning and breathes instead: nothing
 travels, and the view still reads as alive rather than as one that has died mid-load.
 
+## Status lamps
+
+```tsx
+import { Led } from '@liberation-data/desk/react'
+
+<Led color="green" /> Connected                           // words beside it: the lamp stays out of the reading
+<Led color="amber" label="Still reading" />               // nothing beside it: the label is read aloud
+```
+
+Off, green, amber or red. The colour is named for what it looks like, because what it means belongs to the
+app: amber is "still reading" for a document and "checking" for a key. It is never the only thing carrying a
+state — somebody who cannot tell green from red still has to be told.
+
+It has its own colours, `--desk-led-green`, `--desk-led-amber`, `--desk-led-red` and `--desk-led-off`, rather
+than the state tokens. Those are tuned to be read as text, which on a light ground means dark, and a dark green
+lamp on white looks switched off. A lamp stays bright on both grounds; on a light one it takes a thin darker rim
+(`--desk-led-rim`), because the glow that makes it look lit on a dark one (`--desk-led-glow`) has nothing to
+glow against.
+
 ## Setup assistant
 
 ![A setup assistant on its welcome step](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/setup.png)

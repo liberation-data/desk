@@ -48,6 +48,14 @@
   --desk-ok: #2f9e68;
   --desk-warn: #b7791f;
   --desk-bad: #c6483f;
+  /* Lamps (`Led`). Bright on both grounds: a lamp tuned dark enough to read as text looks switched
+     off. On a light ground it takes a rim, since its glow has nothing to glow against. */
+  --desk-led-green: #22c55e;
+  --desk-led-amber: #f59e0b;
+  --desk-led-red: #ef4444;
+  --desk-led-off: color-mix(in srgb, var(--desk-ink) 22%, transparent);
+  --desk-led-rim: 1px;
+  --desk-led-glow: 3px;
 
   --desk-control-height: 28px;
   --desk-control-height-small: 22px;
@@ -84,6 +92,11 @@
     --desk-info: #3ecf8e;
     --desk-warn: #fbbf24;
     --desk-bad: #f87171;
+    --desk-led-green: #3ecf8e;
+    --desk-led-amber: #fbbf24;
+    --desk-led-red: #f87171;
+    --desk-led-rim: 0px;
+    --desk-led-glow: 7px;
     --desk-field-bg: rgb(0 0 0 / 35%);
   }
 }
@@ -103,5 +116,10 @@
   --desk-info: #3ecf8e;
   --desk-warn: #fbbf24;
   --desk-bad: #f87171;
+  --desk-led-green: #3ecf8e;
+  --desk-led-amber: #fbbf24;
+  --desk-led-red: #f87171;
+  --desk-led-rim: 0px;
+  --desk-led-glow: 7px;
   --desk-field-bg: rgb(0 0 0 / 35%);
 }

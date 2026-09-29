@@ -1166,6 +1166,39 @@
   opacity: 0.85;
 }
 
+/*
+ * A LAMP (`Led`). Beside the controls for the spinner's reason: an app importing the parts it draws
+ * cannot end up with a lamp and no rule to light it. Lit, it is the bright colour with a highlight,
+ * ringed in a darker shade of itself on a light ground and glowing on a dark one.
+ */
+.desk-led {
+  box-sizing: border-box;
+  flex: none;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: var(--desk-led-off);
+  box-shadow: inset 0 1px 1px rgb(0 0 0 / 35%);
+}
+
+.desk-led[data-color="green"] { --desk-led: var(--desk-led-green); }
+.desk-led[data-color="amber"] { --desk-led: var(--desk-led-amber); }
+.desk-led[data-color="red"] { --desk-led: var(--desk-led-red); }
+
+.desk-led:not([data-color="off"]) {
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, #fff 50%, var(--desk-led)), var(--desk-led) 60%);
+  box-shadow:
+    0 0 0 var(--desk-led-rim) color-mix(in srgb, var(--desk-led) 72%, #000),
+    0 0 var(--desk-led-glow) color-mix(in srgb, var(--desk-led) 70%, transparent);
+}
+
+/* Its colour is the point: a forced palette would draw every lamp the same. */
+@media (forced-colors: active) {
+  .desk-led { forced-color-adjust: none; }
+}
+
 @keyframes desk-spin { to { transform: rotate(360deg); } }
 
 /* A FADE, NOT A FREEZE. §2 Motion asks for movement to go and fades to stay, and a ring that has
