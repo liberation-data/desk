@@ -245,6 +245,8 @@ the stage.
 - The trailing side may also carry, in this order: a **note** saying what this window is looking at — the
   request behind it, the file it is editing — and an **(i)** holding what the window is. Both are quiet, and
   the note is cut before the title is when the window is narrow.
+- A window with views — tabs, a sidebar — describes the view that is showing. Its note names what that view
+  is looking at, and its (i) what that view is; a view with nothing of its own leaves the window's.
 - An (i) is for explanation only, and always in the same corner, so somebody who wonders what they are
   looking at knows where to ask without hunting. A warning never goes behind one: put it in the window,
   where it will be read.

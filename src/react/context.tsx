@@ -75,6 +75,10 @@ export interface WindowContextValue {
   readonly element: RefObject<HTMLElement | null>
   /** Where `useWindowProgress` reports to: the title bar draws whatever was last set, or nothing. */
   readonly setProgress: (progress: WindowProgress | null) => void
+  /** Where `useWindowNote` reports to: `null` or `undefined` leaves the note `Desktop` gave the window. */
+  readonly setNote: (note: ReactNode) => void
+  /** Where `useWindowInfo` reports to, the same way. */
+  readonly setInfo: (info: ReactNode) => void
 }
 
 /** Present inside a window's content: which window this is, and its element. */
