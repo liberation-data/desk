@@ -222,6 +222,8 @@ useLook(): 'mac' | 'gnome' | 'windows'              // resolved; the device's ou
 useDeskState(): DeskState
 useWindowId(): string | null                        // inside a window's content
 useWindowProgress({ value, max, label } | null): boolean  // a real count in this window's title bar; false outside one
+useWindowNote(note: ReactNode): boolean             // this view's note in place of the window's; null defers, false hides
+useWindowInfo(info: ReactNode): boolean             // this view's (i) in place of the window's; null defers
 
 <Desktop
   renderWindow={(id) => ReactNode}                  // memoised: chrome re-renders, content does not

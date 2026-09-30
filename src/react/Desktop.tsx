@@ -367,7 +367,7 @@ function reshape(gesture: Gesture, origin: Frame, dx: number, dy: number): Frame
   }
 }
 
-function WindowView({ window, layout, hidden, minimized, depth, focused, title, note, info, actions, limits, children }: WindowViewProps) {
+function WindowView({ window, layout, hidden, minimized, depth, focused, title, note: givenNote, info: givenInfo, actions, limits, children }: WindowViewProps) {
   const desk = useDesk()
   const look = useLook()
   // While dragging, the frame lives here and commits once on release, so a drag
@@ -375,7 +375,12 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
   const [live, setLive] = useState<Frame | null>(null)
   const element = useRef<HTMLElement>(null)
   const [progress, setProgress] = useState<WindowProgress | null>(null)
-  const context = useMemo(() => ({ id: window.id, element, setProgress }), [window.id])
+  // What the content reports in place of the note and the (i) it was given: nothing, until it does.
+  const [reportedNote, setNote] = useState<ReactNode>(undefined)
+  const [reportedInfo, setInfo] = useState<ReactNode>(undefined)
+  const context = useMemo(() => ({ id: window.id, element, setProgress, setNote, setInfo }), [window.id])
+  const note = reportedNote ?? givenNote
+  const info = reportedInfo ?? givenInfo
   const titleId = `desk-title-${window.id}`
 
   const startGesture = (gesture: Gesture) => (event: ReactPointerEvent<HTMLElement>) => {

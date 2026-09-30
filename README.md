@@ -144,6 +144,20 @@ It returns whether a title bar took it, so the same content can draw the count i
 desk. Report null while there is nothing to count. A bar is for something real to measure (HIG.md §7): a
 single request's wait is a `Spinner`, never this.
 
+A window with views of its own — tabs, say — describes whichever one is showing. The view reports its note and
+its (i) from inside, in place of what `Desktop` gave the window:
+
+```tsx
+function Runs() {
+  useWindowNote('/api/v1/runs')
+  useWindowInfo(<p>Every run this world has made.</p>)
+  return <RunList />
+}
+```
+
+`null` or `undefined` leaves the window's own; `false` takes the note away. The window's own comes back when the
+view unmounts, so switching tabs switches the title bar with them.
+
 ## Touch: one window at a time
 
 `<Desktop layout="auto">` (the default) reads the device. A touch screen that cannot hover gets
