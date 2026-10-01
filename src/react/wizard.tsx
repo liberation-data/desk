@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
 import { Button } from './controls.js'
 
 /*
@@ -38,6 +38,12 @@ export interface WizardStep {
   /** Continue's label while `onContinue` runs. Default: "Working…". */
   readonly busyLabel?: string
 }
+
+/*
+ * What keeps Return for itself. A button under the keyboard is pressed by it, a link is followed,
+ * a text area takes a new line and a select opens: Continue is the default, not a thief.
+ */
+const KEEPS_RETURN = 'button, a, textarea, select, summary, [contenteditable]'
 
 export interface WizardProps {
   readonly steps: readonly WizardStep[]
@@ -100,8 +106,23 @@ export function Wizard({ steps, index, onIndexChange, onFinish, label = 'Setup',
     }
   }
 
+  /*
+   * RETURN PERFORMS CONTINUE, from a field or from the heading a step arrives on — and under
+   * exactly the conditions the button would: not while the step is unanswered, not while it is
+   * working. A held key is one press, or it would run through every step that asks nothing; and a
+   * Return that finishes an input method's composition belongs to the composition.
+   */
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== 'Enter' || event.defaultPrevented || event.repeat || event.nativeEvent.isComposing) return
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return
+    if ((event.target as Element).closest(KEEPS_RETURN)) return
+    if (!canContinue || busy) return
+    event.preventDefault()
+    void next()
+  }
+
   return (
-    <section className={['desk-wizard', className].filter(Boolean).join(' ')} aria-label={label}>
+    <section className={['desk-wizard', className].filter(Boolean).join(' ')} aria-label={label} onKeyDown={onKeyDown}>
       <div className="desk-wizard-content" data-direction={direction} key={step.id}>
         {step.glyph && <div className="desk-wizard-glyph" aria-hidden="true">{step.glyph}</div>}
         <h1 ref={heading} tabIndex={-1} className="desk-wizard-title">{step.title}</h1>

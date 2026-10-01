@@ -19,7 +19,7 @@ resizes. Nothing is laid out behind anyone's back.
 four a grid. After that they are ordinary windows. Move or resize one and only that one changes.
 
 Drag a window by its title bar to free it where it sits. Drop it against the left or right edge and it takes
-that half. Resize from the sides, the bottom or the corner. Double-click the title bar, or press the green
+that half. Resize from any edge or corner. Double-click the title bar, or press the green
 control, to fill the desk and back.
 
 **Minimize** (⌘M, or the amber control) takes a window off the desk without closing it. It stays open and
@@ -367,6 +367,8 @@ a step cannot be passed until it is answered; `skip` is the quiet way past a ste
 is a step with nothing to do but wait, which offers no Back. `onContinue` is the work Continue does before
 moving on — create the account, check the key: while it runs Continue shows `busyLabel` and nothing can be
 pressed twice; throw to stay on the step with the message shown in it, or return `false` to stay quietly.
+Return performs Continue from a field or from the step's heading, under the same conditions as the button;
+a focused button, link, select or text area keeps Return for itself.
 Focus moves to each step's heading as it arrives, so it is announced — and only when the step changes, so a
 field in the pane keeps what is typed.
 

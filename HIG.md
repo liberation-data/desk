@@ -202,8 +202,9 @@ Nobody has to arrange windows, and nobody is stopped from arranging them.
 3. **An arrangement is placed, not held.** After Arrange every window is an ordinary window; moving or
    resizing one changes that window and nothing else. Nothing reflows into the space — as on a Mac.
 4. Dragging a filled window by its title bar frees it where it sits, so it never jumps under the pointer.
-5. A window resizes from its left, right and bottom edges and its bottom-right corner. There is no top
-   edge: the title bar is there, and dragging it moves the window.
+5. A window resizes from all four edges and all four corners. The top edge and corners are shallow
+   enough to pass above the title bar's controls, so the rest of the bar still moves the window and a
+   click on close still closes it.
 6. Dragging a window against the left or right edge gives it that half of the desk, with a preview of where
    it will land.
 7. Double-clicking a title bar, or pressing the green control, **zooms**: a free window fills the desk, a
@@ -450,6 +451,8 @@ reach an empty desktop without knowing what to do next.
 - A setup assistant (`Wizard`) takes the whole pane, one step at a time, with Back and Continue where the eye
   already is. The progress row says how far there is to go.
 - A step that can wait offers a quiet way past it ("Set up later"), never a hidden one.
+- **Return performs Continue,** once the step is answered — from the last field, without reaching for the
+  pointer. A button that has focus keeps Return for itself.
 - **Checking happens on Continue.** A key, an address or an account is checked when Continue is pressed;
   Continue says what it is doing ("Checking the key…"), cannot be pressed twice, and a refusal keeps the
   person on the step with a message that says what to do — not an error on the next step.

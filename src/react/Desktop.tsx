@@ -346,24 +346,23 @@ function arrangeNow(desk: Desk, element: HTMLElement) {
   if (focused) desk.focus(focused)
 }
 
-type Gesture = 'move' | 'resize' | 'left' | 'right' | 'bottom'
+type Side = 'top' | 'bottom' | 'left' | 'right'
+type Corner = `${'top' | 'bottom'}-${'left' | 'right'}`
+type Gesture = 'move' | Side | Corner
 
 /** The frame a gesture makes of `origin` after the pointer has travelled dx, dy. */
 function reshape(gesture: Gesture, origin: Frame, dx: number, dy: number): Frame {
-  switch (gesture) {
-    case 'move':
-      return { ...origin, x: origin.x + dx, y: Math.max(0, origin.y + dy) }
-    case 'resize':
-      return { ...origin, width: Math.max(MIN_WIDTH, origin.width + dx), height: Math.max(MIN_HEIGHT, origin.height + dy) }
-    case 'right':
-      return { ...origin, width: Math.max(MIN_WIDTH, origin.width + dx) }
-    case 'bottom':
-      return { ...origin, height: Math.max(MIN_HEIGHT, origin.height + dy) }
-    case 'left': {
-      // The right edge stays put, however far the left one is pulled.
-      const shift = Math.min(dx, origin.width - MIN_WIDTH)
-      return { ...origin, x: origin.x + shift, width: origin.width - shift }
-    }
+  if (gesture === 'move') return { ...origin, x: origin.x + dx, y: Math.max(0, origin.y + dy) }
+  // A corner pulls its two sides at once; the sides opposite stay put, however far they are pulled.
+  const sides = gesture.split('-') as Side[]
+  const left = Math.min(dx, origin.width - MIN_WIDTH)
+  const top = Math.max(-origin.y, Math.min(dy, origin.height - MIN_HEIGHT))
+  return {
+    ...origin,
+    ...(sides.includes('left') && { x: origin.x + left, width: origin.width - left }),
+    ...(sides.includes('right') && { width: Math.max(MIN_WIDTH, origin.width + dx) }),
+    ...(sides.includes('top') && { y: origin.y + top, height: origin.height - top }),
+    ...(sides.includes('bottom') && { height: Math.max(MIN_HEIGHT, origin.height + dy) }),
   }
 }
 
@@ -553,11 +552,12 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
         <div className="desk-body">{children}</div>
         {layout === 'desktop' && (
           <>
-            {/* No top edge: the title bar is there, and it moves the window. */}
-            <div className="desk-edge" data-edge="left" aria-hidden="true" onPointerDown={startGesture('left')} />
-            <div className="desk-edge" data-edge="right" aria-hidden="true" onPointerDown={startGesture('right')} />
-            <div className="desk-edge" data-edge="bottom" aria-hidden="true" onPointerDown={startGesture('bottom')} />
-            <div className="desk-grip" aria-hidden="true" onPointerDown={startGesture('resize')} />
+            {(['top', 'left', 'right', 'bottom'] as const).map(side => (
+              <div key={side} className="desk-edge" data-edge={side} aria-hidden="true" onPointerDown={startGesture(side)} />
+            ))}
+            {(['top-left', 'top-right', 'bottom-left', 'bottom-right'] as const).map(corner => (
+              <div key={corner} className="desk-grip" data-corner={corner} aria-hidden="true" onPointerDown={startGesture(corner)} />
+            ))}
           </>
         )}
       </section>

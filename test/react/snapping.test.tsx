@@ -146,7 +146,7 @@ describe('resizing a window', () => {
       desk.open('a', { frame: drawn.a })
       desk.open('b', { frame: drawn.b })
     })
-    const grip = document.querySelector<HTMLElement>('[data-desk-window="a"] .desk-grip') as HTMLElement
+    const grip = document.querySelector<HTMLElement>('[data-desk-window="a"] [data-corner="bottom-right"]') as HTMLElement
     fireEvent.pointerDown(grip, { button: 0, clientX: 494, clientY: 700, pointerId: 1 })
     act(() => {
       grip.dispatchEvent(new PointerEvent('pointermove', { clientX: 394, clientY: 600, bubbles: true }))
@@ -156,6 +156,51 @@ describe('resizing a window', () => {
     })
     expect(frameOf(desk, 'a')).toMatchObject({ x: 0, y: 0, width: 394, height: 600 })
     expect(frameOf(desk, 'b')).toEqual(drawn.b)
+  })
+
+  it('resizes both ways from the bottom-left corner, keeping the right edge where it was', () => {
+    const desk = mount()
+    act(() => {
+      desk.open('a', { frame: drawn.a })
+      desk.open('b', { frame: drawn.b })
+    })
+    const grip = document.querySelector<HTMLElement>('[data-desk-window="b"] [data-corner="bottom-left"]') as HTMLElement
+    fireEvent.pointerDown(grip, { button: 0, clientX: 506, clientY: 700, pointerId: 1 })
+    act(() => {
+      grip.dispatchEvent(new PointerEvent('pointermove', { clientX: 606, clientY: 600, bubbles: true }))
+    })
+    act(() => {
+      grip.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+    })
+    expect(frameOf(desk, 'b')).toEqual({ x: 606, y: 0, width: 394, height: 600 })
+    expect(frameOf(desk, 'a')).toEqual(drawn.a)
+  })
+})
+
+describe('resizing from a top corner', () => {
+  const pull = (corner: string, to: { x: number; y: number }) => {
+    const handle = document.querySelector<HTMLElement>(`[data-desk-window="a"] [data-corner="${corner}"]`) as HTMLElement
+    fireEvent.pointerDown(handle, { button: 0, clientX: 0, clientY: 0, pointerId: 1 })
+    act(() => {
+      handle.dispatchEvent(new PointerEvent('pointermove', { clientX: to.x, clientY: to.y, bubbles: true }))
+    })
+    act(() => {
+      handle.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+    })
+  }
+
+  it('resizes both ways from the top-left, keeping the bottom-right corner where it was', () => {
+    const desk = mount()
+    act(() => desk.open('a', { frame: { x: 100, y: 200, width: 400, height: 300 } }))
+    pull('top-left', { x: -40, y: -60 })
+    expect(frameOf(desk, 'a')).toEqual({ x: 60, y: 140, width: 440, height: 360 })
+  })
+
+  it('resizes both ways from the top-right, keeping the bottom-left corner where it was', () => {
+    const desk = mount()
+    act(() => desk.open('a', { frame: { x: 100, y: 200, width: 400, height: 300 } }))
+    pull('top-right', { x: 50, y: 30 })
+    expect(frameOf(desk, 'a')).toEqual({ x: 100, y: 230, width: 450, height: 270 })
   })
 })
 
@@ -192,6 +237,27 @@ describe('resizing from an edge', () => {
     expect(frameOf(desk, 'b')).toEqual({ x: 606, y: 0, width: 394, height: 700 })
   })
 
+  it('heightens from the top edge, keeping the bottom edge where it was', () => {
+    const desk = mount()
+    act(() => desk.open('a', { frame: { x: 100, y: 200, width: 400, height: 300 } }))
+    pull('a', 'top', { x: 300, y: 200 }, { x: 320, y: 150 })
+    expect(frameOf(desk, 'a')).toEqual({ x: 100, y: 150, width: 400, height: 350 })
+  })
+
+  it('stops the top edge at the top of the desk', () => {
+    const desk = mount()
+    act(() => desk.open('a', { frame: { x: 100, y: 200, width: 400, height: 300 } }))
+    pull('a', 'top', { x: 300, y: 200 }, { x: 300, y: -100 })
+    expect(frameOf(desk, 'a')).toEqual({ x: 100, y: 0, width: 400, height: 500 })
+  })
+
+  it('stops the top edge at the smallest a window can be', () => {
+    const desk = mount()
+    act(() => desk.open('a', { frame: { x: 100, y: 200, width: 400, height: 300 } }))
+    pull('a', 'top', { x: 300, y: 200 }, { x: 300, y: 900 })
+    expect(frameOf(desk, 'a')).toMatchObject({ height: 160, y: 200 + 300 - 160 })
+  })
+
   it('stops the left edge at the smallest a window can be', () => {
     const desk = pair()
     pull('b', 'left', { x: 506, y: 300 }, { x: 990, y: 300 })
@@ -202,11 +268,6 @@ describe('resizing from an edge', () => {
     const desk = pair()
     pull('a', 'bottom', { x: 200, y: 700 }, { x: 260, y: 500 })
     expect(frameOf(desk, 'a')).toEqual({ x: 0, y: 0, width: 494, height: 500 })
-  })
-
-  it('has no top edge, where the title bar is', () => {
-    pair()
-    expect(document.querySelector('[data-edge="top"]')).toBeNull()
   })
 })
 
