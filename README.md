@@ -19,7 +19,7 @@ resizes. Nothing is laid out behind anyone's back.
 four a grid. After that they are ordinary windows. Move or resize one and only that one changes.
 
 Drag a window by its title bar to free it where it sits. Drop it against the left or right edge and it takes
-that half. Resize from the sides, the bottom or the corner. Double-click the title bar, or press the green
+that half. Resize from any edge or corner. Double-click the title bar, or press the green
 control, to fill the desk and back.
 
 **Minimize** (⌘M, or the amber control) takes a window off the desk without closing it. It stays open and

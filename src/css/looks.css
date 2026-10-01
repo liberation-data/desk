@@ -132,6 +132,12 @@
   align-self: center;
 }
 
+/* Close is flush to the corner here, so the corner takes no more of it than the top edge does. */
+[data-look="windows"] .desk-grip[data-corner="top-right"] {
+  width: 5px;
+  height: 5px;
+}
+
 [data-look="windows"] .desk-title {
   flex: 1 1 auto;
   font-size: var(--desk-text-small);

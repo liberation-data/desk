@@ -301,8 +301,12 @@
   font-size: var(--desk-text-small);
 }
 
-/* Edges a window resizes from. Inside the window, so nothing clips them. */
-.desk-edge {
+/*
+ * Edges and corners a window resizes from: invisible, only the cursor says they are there. Inside the
+ * window, so nothing clips them. The top ones are shallow enough to pass above the title bar's controls.
+ */
+.desk-edge,
+.desk-grip {
   position: absolute;
   touch-action: none;
 }
@@ -323,22 +327,54 @@
   right: 0;
 }
 
+.desk-edge[data-edge="top"],
 .desk-edge[data-edge="bottom"] {
   left: 0;
   right: 0;
-  bottom: 0;
   height: 5px;
   cursor: ns-resize;
 }
 
-.desk-grip {
-  position: absolute;
-  right: 0;
+.desk-edge[data-edge="top"] {
+  top: 0;
+}
+
+.desk-edge[data-edge="bottom"] {
   bottom: 0;
+}
+
+.desk-grip {
   width: 16px;
   height: 16px;
+}
+
+/* Clear of the Mac's close control, 12px in and 8px down, and of GNOME's at the other end. */
+.desk-grip[data-corner^="top"] {
+  top: 0;
+  width: 10px;
+  height: 10px;
+}
+
+.desk-grip[data-corner^="bottom"] {
+  bottom: 0;
+}
+
+.desk-grip[data-corner$="left"] {
+  left: 0;
+}
+
+.desk-grip[data-corner$="right"] {
+  right: 0;
+}
+
+.desk-grip[data-corner="top-left"],
+.desk-grip[data-corner="bottom-right"] {
   cursor: nwse-resize;
-  touch-action: none;
+}
+
+.desk-grip[data-corner="top-right"],
+.desk-grip[data-corner="bottom-left"] {
+  cursor: nesw-resize;
 }
 
 /* Where a dragged window would land if it were dropped now. */
