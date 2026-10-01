@@ -377,6 +377,13 @@ at all.
 - More, or options that need explaining: a **pop-up menu** or a list of radio choices.
 - An on/off setting that takes effect immediately: a **toggle**. One that waits for Save: a **checkbox**.
 
+### Disclosure
+
+- Fold away the settings most people leave at their defaults: a **disclosure**, labelled with a noun.
+- The folded line says what is set, as a **chip** for each setting off its default. Nothing set, nothing said.
+- A chip's × puts that one setting back, and is named for what it clears.
+- Folding never discards input: a folded field keeps its value and is still sent.
+
 ### Lists and tables
 
 - A list row has one primary line and at most one secondary line.
