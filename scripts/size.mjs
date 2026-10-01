@@ -63,7 +63,13 @@ import { join } from 'node:path'
  * above describe, where the next commit to touch any stylesheet is red whatever it does. The parts
  * line still shows where growth lands.
  */
-const BUDGETS = { core: 13, react: 56, css: 18, fx: 5 }
+/*
+ * Raised react 56 → 60. A wizard that takes Return and a window that resizes from every corner left
+ * react at 55.9 of 56, so the segmented control's sliding thumb (0.7 KiB, most of it the comment
+ * saying why it is one thumb and not a fill per option) was red before it was written — the same 0.1
+ * spare the notes above describe. 60 is room for the next few components, and no more than that.
+ */
+const BUDGETS = { core: 13, react: 60, css: 18, fx: 5 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
