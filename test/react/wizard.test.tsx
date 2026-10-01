@@ -180,3 +180,74 @@ describe('Continue that does work', () => {
     expect(screen.queryByRole('alert')).toBeNull()
   })
 })
+
+describe('Return performs Continue', () => {
+  it('continues from a field, once the step is answered', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    await user.click(continueButton())
+    await user.type(screen.getByRole('textbox', { name: 'Your name' }), 'Jasper{Enter}')
+    expect(heading().textContent).toBe('Connect a weather service')
+  })
+
+  it('continues from a step with nothing to fill in', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    await user.keyboard('{Enter}')
+    expect(heading().textContent).toBe('Who is riding?')
+  })
+
+  it('does nothing while the step is unanswered', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    await user.click(continueButton())
+    await user.type(screen.getByRole('textbox', { name: 'Your name' }), 'J{Enter}')
+    expect(heading().textContent).toBe('Who is riding?')
+  })
+
+  it('leaves a focused button to do its own thing', async () => {
+    const user = userEvent.setup()
+    const onSkipKey = vi.fn()
+    render(<Harness onSkipKey={onSkipKey} />)
+    await user.click(continueButton())
+    await user.type(screen.getByRole('textbox', { name: 'Your name' }), 'Jasper')
+    await user.click(continueButton())
+    await user.type(screen.getByRole('textbox', { name: 'API key' }), 'abcd')
+    screen.getByRole('button', { name: 'Set up later' }).focus()
+    await user.keyboard('{Enter}')
+    expect(onSkipKey).toHaveBeenCalledOnce()
+    expect(heading().textContent).toBe('Connect a weather service')
+  })
+
+  it('does not run through the steps when the key is held', () => {
+    render(<Harness />)
+    fireEvent.keyDown(heading(), { key: 'Enter', repeat: true })
+    expect(heading().textContent).toBe('Welcome to the garage')
+  })
+
+  it('leaves Return to an input method that is still composing', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    await user.click(continueButton())
+    const field = screen.getByRole('textbox', { name: 'Your name' })
+    await user.type(field, 'Jasper')
+    fireEvent.keyDown(field, { key: 'Enter', isComposing: true })
+    expect(heading().textContent).toBe('Who is riding?')
+  })
+
+  it('does the work once, however often Return is pressed', async () => {
+    const create = vi.fn(() => new Promise(() => {}))
+    function Account() {
+      const [index, setIndex] = useState(0)
+      const steps: WizardStep[] = [
+        { id: 'account', name: 'Account', title: 'Create your account', onContinue: create },
+        { id: 'ready', name: 'Ready', title: 'Ready' },
+      ]
+      return <Wizard steps={steps} index={index} onIndexChange={setIndex} onFinish={() => {}} />
+    }
+    render(<Account />)
+    fireEvent.keyDown(heading(), { key: 'Enter' })
+    fireEvent.keyDown(heading(), { key: 'Enter' })
+    expect(create).toHaveBeenCalledOnce()
+  })
+})

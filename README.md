@@ -367,6 +367,8 @@ a step cannot be passed until it is answered; `skip` is the quiet way past a ste
 is a step with nothing to do but wait, which offers no Back. `onContinue` is the work Continue does before
 moving on — create the account, check the key: while it runs Continue shows `busyLabel` and nothing can be
 pressed twice; throw to stay on the step with the message shown in it, or return `false` to stay quietly.
+Return performs Continue from a field or from the step's heading, under the same conditions as the button;
+a focused button, link, select or text area keeps Return for itself.
 Focus moves to each step's heading as it arrives, so it is announced — and only when the step changes, so a
 field in the pane keeps what is typed.
 

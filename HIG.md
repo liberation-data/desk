@@ -451,6 +451,8 @@ reach an empty desktop without knowing what to do next.
 - A setup assistant (`Wizard`) takes the whole pane, one step at a time, with Back and Continue where the eye
   already is. The progress row says how far there is to go.
 - A step that can wait offers a quiet way past it ("Set up later"), never a hidden one.
+- **Return performs Continue,** once the step is answered — from the last field, without reaching for the
+  pointer. A button that has focus keeps Return for itself.
 - **Checking happens on Continue.** A key, an address or an account is checked when Continue is pressed;
   Continue says what it is doing ("Checking the key…"), cannot be pressed twice, and a refusal keeps the
   person on the step with a message that says what to do — not an error on the next step.
