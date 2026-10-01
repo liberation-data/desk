@@ -301,6 +301,18 @@ keeps it for screen readers), and an `error` marks it invalid and replaces the h
 is the handful of cards a setup step turns on — an icon, a label, a line of why — with native radios
 underneath, so it is one tab stop and the arrow keys move the choice.
 
+```tsx
+<Disclosure label="Filter" open={open} onOpenChange={setOpen}
+            summary={tag && <Chip onRemove={() => setTag('')} removeLabel="Clear the tag">tagged {tag}</Chip>}>
+  {the filter fields}
+</Disclosure>
+```
+
+A disclosure folds the settings most people leave alone behind one line, and its `summary` says what they
+are set to: a chip for each one off its default, so the folded line is never a mystery. The body stays
+mounted while folded, so a field keeps its value. A chip is one thing that is set or chosen; with `onRemove`
+it ends in a × that takes it away, named by `removeLabel`.
+
 ## Waiting
 
 ```tsx

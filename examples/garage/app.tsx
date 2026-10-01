@@ -42,6 +42,8 @@ import {
   SoundsToggle,
   Table,
   TextField,
+  Chip,
+  Disclosure,
   Thread,
   Toggle,
   TourBar,
@@ -513,6 +515,7 @@ function Settings() {
   const [remind, setRemind] = useState(true)
   const [threshold, setThreshold] = useState(90)
   const [commutes, setCommutes] = useState(true)
+  const [tuning, setTuning] = useState(false)
   const [name, setName] = useState('Jasper')
   const [wheel, setWheel] = useState('622')
   const wheelError = /^\d+$/.test(wheel) ? undefined : 'Enter a size in millimetres, like 622'
@@ -541,17 +544,27 @@ function Settings() {
       <section className="section">
         <h3>Service reminders</h3>
         <Toggle checked={remind} onChange={setRemind} label="Warn me before a part wears out" description="A badge on the dock" />
-        <Slider
-          label="Warn at"
-          value={threshold}
-          onChange={setThreshold}
-          min={50}
-          max={100}
-          step={5}
-          disabled={!remind}
-          format={v => `${v}% worn`}
-        />
-        <Checkbox checked={commutes} onChange={setCommutes} label="Count commutes towards wear" description="Short rides under 30 km" />
+        <Disclosure
+          label="Fine-tune"
+          open={tuning}
+          onOpenChange={setTuning}
+          summary={<>
+            <Chip>warn at {threshold}% worn</Chip>
+            {commutes && <Chip onRemove={() => setCommutes(false)} removeLabel="Stop counting commutes">commutes count</Chip>}
+          </>}
+        >
+          <Slider
+            label="Warn at"
+            value={threshold}
+            onChange={setThreshold}
+            min={50}
+            max={100}
+            step={5}
+            disabled={!remind}
+            format={v => `${v}% worn`}
+          />
+          <Checkbox checked={commutes} onChange={setCommutes} label="Count commutes towards wear" description="Short rides under 30 km" />
+        </Disclosure>
       </section>
       <section className="section">
         <h3>Rider</h3>

@@ -396,6 +396,10 @@ SearchCommand = 'desk.search'                          // a menu item can open i
                                                   // cards for a setup step; native radios, arrow keys move the choice
 <PopUpButton value={T|null} onChange options={{value,label,description?,icon?,disabled?}[]}
              label labelHidden? placeholder? disabled? size? />
+<Disclosure label open onOpenChange summary?={ReactNode} className?>{folded controls}</Disclosure>
+                                                  // one caret button; summary sits beside it folded or open;
+                                                  // the body stays mounted while folded, so fields keep their values
+<Chip onRemove? removeLabel? className?>{a word or two}</Chip>               // one thing set or chosen; × only with onRemove
 ```
 
 ### Waiting
