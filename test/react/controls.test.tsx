@@ -83,6 +83,55 @@ describe('SegmentedControl', () => {
     fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'ArrowRight' })
     expect(screen.getByRole('radio', { name: 'All' }).getAttribute('aria-checked')).toBe('true')
   })
+
+  describe('the thumb under the selection', () => {
+    // jsdom lays nothing out, so each option is given a box: 60 wide, side by side, 2 down.
+    const boxes = () => {
+      const at = (el: HTMLElement) => OPTIONS.findIndex(o => o.value === el.dataset.value)
+      vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) { return 2 + at(this) * 60 })
+      vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockReturnValue(2)
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(60)
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(28)
+    }
+    const thumb = () => document.querySelector('.desk-segment-thumb') as HTMLElement
+
+    afterEach(() => vi.restoreAllMocks())
+
+    it('is one mark, and not one more option', () => {
+      render(<Harness />)
+      expect(document.querySelectorAll('.desk-segment-thumb')).toHaveLength(1)
+      expect(thumb().getAttribute('aria-hidden')).toBe('true')
+      expect(screen.getAllByRole('radio')).toHaveLength(OPTIONS.length)
+    })
+
+    it('sits on the selected option, at its size', () => {
+      boxes()
+      render(<Harness />)
+      expect(thumb().style.transform).toBe('translate(2px, 2px)')
+      expect(thumb().style.width).toBe('60px')
+      expect(thumb().style.height).toBe('28px')
+    })
+
+    it('follows the selection', () => {
+      boxes()
+      render(<Harness />)
+      fireEvent.click(screen.getByRole('radio', { name: 'MTB' }))
+      expect(thumb().style.transform).toBe('translate(182px, 2px)')
+    })
+
+    it('is placed without sliding there, and slides only when the selection changes', () => {
+      boxes()
+      render(<Harness />)
+      expect(thumb().style.transition).toBe('none')
+      fireEvent.click(screen.getByRole('radio', { name: 'Road' }))
+      expect(thumb().style.transition).toBe('')
+    })
+
+    it('is not shown when the value is none of the options', () => {
+      render(<SegmentedControl label="Filter by bike" options={OPTIONS} value={'tandem' as 'all'} onChange={() => {}} />)
+      expect(thumb().style.opacity).toBe('0')
+    })
+  })
 })
 
 describe('Toggle', () => {

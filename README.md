@@ -291,7 +291,8 @@ import { Button, SegmentedControl, TextField, Toggle } from '@liberation-data/de
 
 Each control carries its own behaviour and accessibility; the look comes only from tokens, and there are few
 style props on purpose. `intent="default"` marks the one action a view leads with. A segmented control is one
-tab stop whose arrow keys move the selection past disabled options. Tabs look similar and are not the same
+tab stop whose arrow keys move the selection past disabled options. Its selection is a raised thumb, lighter
+than the track on a dark ground and on a light one, which slides to the option chosen. Tabs look similar and are not the same
 thing: a segmented control chooses a value and what it governs stays on screen, while tabs switch the view
 beneath them, which sits in a panel the selected tab names. `actions` puts controls for the whole window,
 such as Refresh, at the end of the strip, so a window with tabs needs no header row above them. A toggle is a `switch` for settings that

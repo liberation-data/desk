@@ -111,23 +111,43 @@
   height: 100%;
 }
 
+/*
+ * A track with one raised thumb on it. The track is a tint of the ink and the thumb is the surface
+ * lifted towards white, so the thumb is the lighter of the two on a dark ground and on a light one;
+ * filled with the surface alone it was the DARKEST thing on a dark ground, and read as a hole.
+ * No border on either: the shadow is what says raised, and it says it where the fills are close.
+ *
+ * The thumb is as tall as a button and the track is its 2px inset around that.
+ */
 .desk-segmented {
+  position: relative;
   display: inline-flex;
   gap: 2px;
   padding: 2px;
-  border: 1px solid var(--desk-rule);
   border-radius: calc(var(--desk-control-radius) + 2px);
-  background: color-mix(in srgb, var(--desk-ink) 5%, transparent);
+  background: color-mix(in srgb, var(--desk-ink) 8%, transparent);
+}
+
+.desk-segment-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: var(--desk-control-radius);
+  background: color-mix(in srgb, var(--desk-surface), white 24%);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 22%), 0 0 0 .5px rgb(0 0 0 / 10%);
+  transition: transform .22s var(--desk-ease), width .22s var(--desk-ease);
+  pointer-events: none;
 }
 
 .desk-segment {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--desk-space-1);
-  min-height: calc(var(--desk-control-height) - 6px);
+  min-height: var(--desk-control-height);
   padding: 0 var(--desk-space-3);
   border: 0;
-  border-radius: calc(var(--desk-control-radius) - 1px);
+  border-radius: var(--desk-control-radius);
   background: none;
   color: var(--desk-muted);
   font-family: var(--desk-font);
@@ -153,16 +173,19 @@
 }
 
 .desk-segmented[data-size="small"] .desk-segment {
-  min-height: calc(var(--desk-control-height-small) - 4px);
+  min-height: var(--desk-control-height-small);
   padding: 0 var(--desk-space-2);
   font-size: var(--desk-text-small);
 }
 
 .desk-segment[aria-checked="true"] {
-  background: var(--desk-surface);
-  border: 1px solid var(--desk-rule);
   color: var(--desk-ink);
   font-weight: 500;
+}
+
+/* A forced palette takes the fill and the shadow, which is all the thumb is; it keeps an outline. */
+@media (forced-colors: active) {
+  .desk-segment-thumb { outline: 2px solid Highlight; outline-offset: -2px; }
 }
 
 .desk-segment:hover:not(:disabled):not([aria-checked="true"]) {
@@ -300,6 +323,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .desk-button,
+  .desk-segment-thumb,
   .desk-toggle,
   .desk-toggle-knob {
     transition: none;

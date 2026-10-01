@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useId, useRef } from 'react'
+import { forwardRef, useEffect, useId, useLayoutEffect, useRef } from 'react'
 import type { ButtonHTMLAttributes, InputHTMLAttributes, KeyboardEvent, ReactNode } from 'react'
 
 /*
@@ -67,6 +67,42 @@ export interface SegmentedControlProps<T extends string> {
 
 export function SegmentedControl<T extends string>({ options, value, onChange, label, size = 'regular', disabled, width = 'fit' }: SegmentedControlProps<T>) {
   const group = useRef<HTMLDivElement>(null)
+  const thumb = useRef<HTMLSpanElement>(null)
+  const shown = useRef<T | null>(null)
+
+  /*
+   * THE SELECTION IS ONE THUMB THAT MOVES, not a background each option turns on and off. A fill
+   * that swaps says two things changed; a thumb that slides says one thing went from here to there.
+   *
+   * It is laid over the selected option's own box, read after layout, so it is right whatever the
+   * labels, the size or an app's padding make of the track. Placed without sliding the first time
+   * — a control should not arrive mid-gesture — and left alone when nothing was chosen, so a
+   * re-render halfway through a slide does not cut it short.
+   */
+  const place = () => {
+    const style = thumb.current?.style
+    const at = group.current?.querySelector<HTMLElement>('[aria-checked="true"]')
+    if (!style) return
+    style.opacity = at ? '' : '0'
+    if (!at) return
+    style.transform = `translate(${at.offsetLeft}px, ${at.offsetTop}px)`
+    style.width = `${at.offsetWidth}px`
+    style.height = `${at.offsetHeight}px`
+  }
+
+  useLayoutEffect(() => {
+    if (thumb.current && shown.current !== value) thumb.current.style.transition = shown.current === null ? 'none' : ''
+    shown.current = value
+    place()
+  })
+
+  // The track changing size moves every option in it: a row that fills its window, a font arriving.
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined' || !group.current) return
+    const observer = new ResizeObserver(place)
+    observer.observe(group.current)
+    return () => observer.disconnect()
+  }, [])
 
   const move = (event: KeyboardEvent<HTMLDivElement>) => {
     const keys = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as const
@@ -84,6 +120,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
 
   return (
     <div ref={group} role="radiogroup" aria-label={label} className="desk-segmented" data-size={size} data-width={width} onKeyDown={move}>
+      <span ref={thumb} className="desk-segment-thumb" aria-hidden="true" />
       {options.map(option => {
         const selected = option.value === value
         return (
