@@ -374,6 +374,8 @@ at all.
 - Two to five mutually exclusive options that are all worth seeing: a **segmented control**.
   The selected option is a raised thumb on a recessed track: lighter than the track on either ground, with
   a shadow, and as tall as a button. It slides to the option chosen, so a change reads as one thing moving.
+  On a dark ground the thumb is the surface made lighter with a share of the accent, so it sits in the
+  theme's palette rather than going grey; on a light ground it is white.
 - More, or options that need explaining: a **pop-up menu** or a list of radio choices.
 - An on/off setting that takes effect immediately: a **toggle**. One that waits for Save: a **checkbox**.
 

@@ -113,9 +113,14 @@
 
 /*
  * A track with one raised thumb on it. The track is a tint of the ink and the thumb is the surface
- * lifted towards white, so the thumb is the lighter of the two on a dark ground and on a light one;
- * filled with the surface alone it was the DARKEST thing on a dark ground, and read as a hole.
+ * lifted, so the thumb is the lighter of the two on a dark ground and on a light one; filled with
+ * the surface alone it was the DARKEST thing on a dark ground, and read as a hole.
  * No border on either: the shadow is what says raised, and it says it where the fills are close.
+ *
+ * On a light ground it is lifted towards white. On a dark one that mix took the hue out and left a
+ * grey in no theme, so there the surface's LIGHTNESS is raised in OKLCH, keeping its hue, and a
+ * share of the accent is mixed in. On the thumb, not a root token: a host sets --desk-surface on
+ * its own wrapper. `--desk-segment-thumb` replaces either fill.
  *
  * The thumb is as tall as a button and the track is its 2px inset around that.
  */
@@ -133,10 +138,23 @@
   top: 0;
   left: 0;
   border-radius: var(--desk-control-radius);
-  background: color-mix(in srgb, var(--desk-surface), white 24%);
+  background: var(--desk-segment-thumb, color-mix(in srgb, var(--desk-surface), white 24%));
   box-shadow: 0 1px 3px rgb(0 0 0 / 22%), 0 0 0 .5px rgb(0 0 0 / 10%);
   transition: transform .22s var(--desk-ease), width .22s var(--desk-ease);
   pointer-events: none;
+}
+
+/* Relative colour is what raises lightness alone. A browser without it keeps the mix above. */
+@supports (color: oklch(from white l c h)) {
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .desk-segment-thumb {
+      background: var(--desk-segment-thumb, color-mix(in oklab, oklch(from var(--desk-surface) calc(l + .09) c h), var(--desk-accent) 14%));
+    }
+  }
+
+  :root[data-theme="dark"] .desk-segment-thumb {
+    background: var(--desk-segment-thumb, color-mix(in oklab, oklch(from var(--desk-surface) calc(l + .09) c h), var(--desk-accent) 14%));
+  }
 }
 
 .desk-segment {
