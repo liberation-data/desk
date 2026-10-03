@@ -1241,6 +1241,40 @@
   .desk-led { forced-color-adjust: none; }
 }
 
+/* PAGE DOTS (`PageDots`): where you are in a run of pages. Ink, not the accent; the why is in pageDots.tsx. */
+.desk-page-dots {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.desk-page-dot {
+  flex: none;
+  display: block;
+  width: 6px;
+  height: 6px;
+  margin: 0 3px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--desk-ink) 28%, transparent);
+  transition: width 0.2s var(--desk-ease), transform 0.2s var(--desk-ease);
+}
+
+.desk-page-dot[data-size="medium"] { transform: scale(0.75); }
+.desk-page-dot[data-size="small"] { transform: scale(0.5); }
+
+.desk-page-dot[data-current] {
+  width: 15px;
+  background: var(--desk-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-page-dot { transition: none; }
+}
+
+@media (forced-colors: active) {
+  .desk-page-dot[data-current] { background: Highlight; }
+}
+
 @keyframes desk-spin { to { transform: rotate(360deg); } }
 
 /* A FADE, NOT A FREEZE. §2 Motion asks for movement to go and fades to stay, and a ring that has

@@ -62,6 +62,7 @@ import {
   useWindowInput,
   lazyWindow,
   Led,
+  PageDots,
   windowMenuItems,
   withAppBridge,
   windowResults,
@@ -604,12 +605,23 @@ function Shortcuts() {
   )
 }
 
+const ABOUT_PAGES = [
+  'Open things from the dock. Each window fills the desk, over the one before.',
+  'Window → Arrange (⌥⌘A) lays the open windows out side by side.',
+  'Stacks fan out; Back closes what you opened, in the order you opened it.',
+]
+
 function About() {
   const state = useDeskState()
+  const [page, setPage] = useState(0)
   return (
     <div className="pad prose">
       <p><b>Garage</b> is a sample app for <code>@liberation-data/desk</code>. All of its data is made up.</p>
-      <p>Open things from the dock. Each window fills the desk, over the one before; Window → Arrange (⌥⌘A) lays them out side by side. Stacks fan out; Back closes what you opened.</p>
+      <p>{ABOUT_PAGES[page]}</p>
+      <div className="row">
+        <div className="grow"><PageDots count={ABOUT_PAGES.length} value={page} label="Tip" /></div>
+        <Button size="small" onClick={() => setPage((page + 1) % ABOUT_PAGES.length)}>Next tip</Button>
+      </div>
       <p className="muted">Focused: <code>{focusedId(state) ?? 'nothing'}</code> · open: {state.windows.length}</p>
     </div>
   )

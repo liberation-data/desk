@@ -386,6 +386,12 @@ at all.
 - A chip's × puts that one setting back, and is named for what it clears.
 - Folding never discards input: a folded field keeps its value and is still sent.
 
+### Paging
+
+- Position in a short run of pages is **page dots**, the current one drawn longer. They say where, not how to move: a button beside them moves on.
+- The row keeps its width. Past seven, dots at an edge with more beyond it shrink; never draw one dot per page for a long run.
+- The exact position is always available in words: the row reads as "Tip 12 of 100".
+
 ### Lists and tables
 
 - A list row has one primary line and at most one secondary line.
