@@ -356,6 +356,22 @@ lamp on white looks switched off. A lamp stays bright on both grounds; on a ligh
 (`--desk-led-rim`), because the glow that makes it look lit on a dark one (`--desk-led-glow`) has nothing to
 glow against.
 
+## Page dots
+
+```tsx
+import { PageDots } from '@liberation-data/desk/react'
+
+<PageDots count={tips.length} value={index} label="Tip" />
+```
+
+Where you are in a short run of pages: a row of dots, the current one drawn longer. It takes less room than
+"3 of 9" and sits in a footer beside the button that moves on. It is a picture, not a control: nothing in
+it is pressed, and the row reads aloud as "Tip 3 of 9", so the dots are never the only thing saying it.
+
+It does not grow with the count. Past `max` (default 7) only a window of dots is drawn, around the current
+one, and the dots at an edge with more beyond it shrink — a hundred pages take the room of seven and still
+show which way there is further to go. Fewer than two pages draws nothing.
+
 ## Setup assistant
 
 ![A setup assistant on its welcome step](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/setup.png)
