@@ -69,7 +69,13 @@ import { join } from 'node:path'
  * saying why it is one thumb and not a fill per option) was red before it was written — the same 0.1
  * spare the notes above describe. 60 is room for the next few components, and no more than that.
  */
-const BUDGETS = { core: 13, react: 60, css: 18, fx: 5 }
+/*
+ * Raised css 18 → 20. The outline is 0.4 KiB and css stood at 17.9 of 18 before it — the same 0.1
+ * spare the notes above describe, so the outline was red before it was written. Its rules repeat
+ * the sidebar's hover, focus and disabled states, which gzip already folds; merging the selectors
+ * would not have fitted it in 0.1. The parts line still shows where growth lands.
+ */
+const BUDGETS = { core: 13, react: 60, css: 20, fx: 5 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
