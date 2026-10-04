@@ -120,6 +120,7 @@ describe('the garage sample', () => {
     for (const [stack, item] of [
       ['Garage', 'Bikes'],
       ['Garage', 'Parts & Wear'],
+      ['Garage', 'Manual'],
       ['Plan', 'Routes'],
       ['Plan', 'Weather'],
       ['Plan', 'Calendar'],
@@ -168,6 +169,19 @@ describe('the garage sample', () => {
     await user.click(screen.getByText('Dandenongs loop'))
     await user.click(within(dock()).getByRole('button', { name: 'Map' }))
     expect(screen.getAllByText('Dandenongs loop').length).toBeGreaterThan(1)
+  })
+
+  it('reads the manual by its outline, a heading at a time', async () => {
+    const user = userEvent.setup()
+    await arrive(user)
+    await user.click(within(dock()).getByRole('button', { name: 'Garage' }))
+    await user.click(within(screen.getByRole('dialog', { name: 'Garage' })).getByRole('button', { name: /Manual/ }))
+    const outline = screen.getByRole('tree', { name: 'Manual' })
+    await user.click(within(outline).getByRole('treeitem', { name: 'Quick links' }))
+    expect(screen.getByRole('heading', { name: 'Quick links' })).toBeTruthy()
+    expect(screen.getByText(/Single use on eleven and twelve speed/)).toBeTruthy()
+    // Nothing is written under Bleeding yet: it is listed, and cannot be opened.
+    expect((within(outline).getByRole('treeitem', { name: 'Bleeding' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('marks a service job done, with a way back', async () => {

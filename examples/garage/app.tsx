@@ -37,6 +37,7 @@ import {
   SearchPalette,
   SegmentedControl,
   Sheet,
+  Outline,
   Sidebar,
   Slider,
   SoundsToggle,
@@ -103,6 +104,7 @@ const PATHS = {
   gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
   keys: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
+  book: '<path d="M12 6c-2-1.5-5-1.5-8-.8v12c3-.7 6-.7 8 .8 2-1.500 5-1.500 8-.8v-12c-3-.7-6-.7-8 .8zM12 6v12"/>',
   chat: '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.6-.7L3 21l1.9-4.9A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/>',
 } as const
 
@@ -313,6 +315,36 @@ function Parts() {
           )
         })}
         {parts.length === 0 && <p className="muted">Nothing fitted to that bike yet.</p>}
+      </div>
+    </div>
+  )
+}
+
+/*
+ * The workshop manual: headings inside headings, which is what an outline is for. A heading with
+ * nothing written under it yet is listed and cannot be opened.
+ */
+const MANUAL = [
+  { id: 'drivetrain', label: 'Drivetrain', depth: 1, text: 'Everything between the pedals and the rear wheel. Clean it before you measure it.' },
+  { id: 'chain', label: 'Chain', depth: 2, text: 'Measure stretch with a checker at three points. Replace at 0.5% on eleven speeds and above.' },
+  { id: 'chain-fit', label: 'Fitting a new chain', depth: 3, text: 'Size it against the old one, link for link, before you break the old one apart.' },
+  { id: 'chain-link', label: 'Quick links', depth: 4, text: 'Single use on eleven and twelve speed. Seat it with a firm push on the pedal.' },
+  { id: 'cassette', label: 'Cassette', depth: 2, text: 'A new chain on a worn cassette skips under load. Check the smallest three sprockets first.' },
+  { id: 'brakes', label: 'Brakes', depth: 1, text: 'Pads, then rotors, then fluid, in that order.' },
+  { id: 'pads', label: 'Pads', depth: 2, text: 'Replace below 1 mm of compound. Bed new pads in with ten firm stops.' },
+  { id: 'bleed', label: 'Bleeding', depth: 2, disabled: true },
+  { id: 'wheels', label: 'Wheels and tyres', depth: 1, text: 'Check sealant every three months, and spoke tension whenever a wheel goes out of true.' },
+] as const
+
+function Manual() {
+  const [at, setAt] = useState<string>('drivetrain')
+  const page = MANUAL.find(entry => entry.id === at)
+  return (
+    <div className="split">
+      <Outline label="Manual" rows={MANUAL} value={at} onChange={setAt} className="split-side" />
+      <div className="pad split-main">
+        <h2 className="desk-text-title">{page?.label}</h2>
+        <p className="lede">{page && 'text' in page ? page.text : ''}</p>
       </div>
     </div>
   )
@@ -1055,6 +1087,7 @@ export const SURFACES = {
   card: { title: 'Ride Card', icon: 'log', description: 'A generated app, in a window' },
   bikes: { title: 'Bikes', icon: 'bike', description: 'The whole stable' },
   parts: { title: 'Parts & Wear', icon: 'chain', description: 'How worn each part is' },
+  manual: { title: 'Manual', icon: 'book', description: 'How each job is done' },
   routes: { title: 'Routes', icon: 'route', description: 'Saved loops' },
   weather: { title: 'Weather', icon: 'weather', description: 'The next three days' },
   calendar: { title: 'Calendar', icon: 'calendar', description: 'Rides and workshop' },
@@ -1119,7 +1152,7 @@ function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonl
     dockItem(item('map')),
     dockItem(item('chat')),
     dockSeparator('sep-stacks'),
-    dockStack({ id: 'garage', label: 'Garage', items: [item('bikes'), item('parts'), item('service', due ? { badge: due } : {})] }),
+    dockStack({ id: 'garage', label: 'Garage', items: [item('bikes'), item('parts'), item('manual'), item('service', due ? { badge: due } : {})] }),
     dockStack({ id: 'plan', label: 'Plan', items: [item('routes'), item('weather'), item('calendar')] }),
     dockStack({ id: 'system', label: 'System', items: [item('settings'), item('shortcuts'), item('about')] }),
     dockSeparator('sep-pins'),
@@ -1192,6 +1225,7 @@ function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonl
         return <AppFrame title="Ride Card" srcDoc={RIDE_CARD_APP} listens={['ride.selected']} says={['ride.selected']} accepts="ride" opens={['map']} />
       case 'bikes': return <Bikes />
       case 'parts': return <Parts />
+      case 'manual': return <Manual />
       case 'routes': return <Routes />
       case 'weather': return <Weather />
       case 'calendar': return <Calendar />

@@ -584,6 +584,7 @@ arriving.
        sort={sort} onSortChange={setSort} empty={<p>No rides yet</p>} />
 
 <Sidebar label="Bikes" sections={SECTIONS} value={bike} onChange={setBike} />
+<Outline label="Manual" rows={HEADINGS} value={heading} onChange={setHeading} />
 
 <PopUpButton label="Distance" options={UNITS} value={units} onChange={setUnits} />
 <Checkbox checked={commutes} onChange={setCommutes} label="Count commutes towards wear" />
@@ -592,7 +593,11 @@ arriving.
 
 A **table** renders what it is given — no paging, no fetching — and is one tab stop: arrow keys move the
 selection, Enter or a double click opens a row, and a sortable heading says which way it is sorted. A
-**sidebar** is navigation, so where you are is `aria-current` and stays put. A **pop-up button** is what a
+**sidebar** is navigation, so where you are is `aria-current` and stays put. An **outline** is a
+hierarchy — a document's headings, a schema — given as a flat list in reading order with a `depth` on each
+row. It is a tree to the keyboard: up and down through the rows, left out to the parent, right in to the first
+child. Depth shows as weight, colour and a small indent, and stops changing at the fourth level, so a deep
+hierarchy cannot indent itself out of the list. A row is one line, cut with an ellipsis and whole on hover. A **pop-up button** is what a
 segmented control becomes when there are too many options to show at once; unlike a menu it takes focus, and
 typing jumps to an option. A **checkbox** is for a setting that waits for Save (a Toggle applies at once),
 and can stand for a mixed set. A **slider** reads its value in words for people who cannot see it.
