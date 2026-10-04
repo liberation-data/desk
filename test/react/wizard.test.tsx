@@ -130,6 +130,47 @@ describe('Wizard', () => {
   })
 })
 
+describe('a step replaced where it stands', () => {
+  /* The steps an app passes can change under the same index: a first screen that asks for a token
+     gives way to Welcome once the token is known. That is arriving on a step, as much as Continue is. */
+  function Replaced({ onEnterWelcome = () => {} }: { readonly onEnterWelcome?: () => void }) {
+    const [known, setKnown] = useState(false)
+    const [index, setIndex] = useState(0)
+    const first: WizardStep = known
+      ? { id: 'welcome', name: 'Welcome', title: 'Welcome to the garage', onEnter: onEnterWelcome }
+      : { id: 'token', name: 'Token', title: 'Paste your token', onContinue: () => { setKnown(true); return false } }
+    const steps: WizardStep[] = [first, { id: 'rider', name: 'Rider', title: 'Who is riding?' }]
+    return <Wizard steps={steps} index={index} onIndexChange={setIndex} onFinish={() => {}} />
+  }
+
+  it('moves focus to the step that took its place, so Return still continues', async () => {
+    const user = userEvent.setup()
+    render(<Replaced />)
+    await user.click(continueButton())
+    expect(heading().textContent).toBe('Welcome to the garage')
+    expect(document.activeElement).toBe(heading())
+    await user.keyboard('{Enter}')
+    expect(heading().textContent).toBe('Who is riding?')
+  })
+
+  it('enters the step that took its place', async () => {
+    const entered = vi.fn()
+    render(<Replaced onEnterWelcome={entered} />)
+    expect(entered).not.toHaveBeenCalled()
+    await userEvent.setup().click(continueButton())
+    expect(entered).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves focus where it is while the same step re-renders', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    await user.click(continueButton())
+    const field = screen.getByLabelText('Your name')
+    await user.type(field, 'Jasper')
+    expect(document.activeElement).toBe(field)
+  })
+})
+
 describe('Continue that does work', () => {
   function Account({ create }: { readonly create: () => Promise<unknown> }) {
     const [index, setIndex] = useState(0)

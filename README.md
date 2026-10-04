@@ -402,7 +402,8 @@ pressed twice; throw to stay on the step with the message shown in it, or return
 Return performs Continue from a field or from the step's heading, under the same conditions as the button;
 a focused button, link, select or text area keeps Return for itself.
 Focus moves to each step's heading as it arrives, so it is announced — and only when the step changes, so a
-field in the pane keeps what is typed.
+field in the pane keeps what is typed. A step is known by its `id`: replacing the step at an index with a
+different one is an arrival too, and runs its `onEnter`.
 
 ```tsx
 const setup = useTasks([
