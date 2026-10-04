@@ -929,6 +929,74 @@
 
 /* ── Sidebar ── */
 
+/*
+ * Outline. Depth is weight, colour and a small indent together, and all three stop at the fourth
+ * level, so a deep hierarchy cannot indent itself out of the list's width.
+ */
+.desk-outline {
+  display: flex;
+  flex-direction: column;
+  padding: var(--desk-space-2);
+  font-family: var(--desk-font);
+  overflow-y: auto;
+}
+
+.desk-outline-row {
+  display: flex;
+  align-items: center;
+  flex: none;
+  width: 100%;
+  min-height: 28px;
+  padding: var(--desk-space-1) var(--desk-space-2);
+  padding-inline-start: calc(var(--desk-space-2) + var(--desk-outline-indent, 0px));
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--desk-ink);
+  font: inherit;
+  font-size: var(--desk-text-body);
+  text-align: start;
+  cursor: pointer;
+}
+
+.desk-outline-row[data-depth="1"] { font-weight: 600; }
+.desk-outline-row[data-depth="2"] { --desk-outline-indent: var(--desk-space-3); }
+.desk-outline-row[data-depth="3"] { --desk-outline-indent: calc(var(--desk-space-3) * 2); color: var(--desk-muted); }
+.desk-outline-row[data-depth="4"] { --desk-outline-indent: calc(var(--desk-space-3) * 3); color: var(--desk-muted); }
+
+.desk-outline-row:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--desk-ink) 7%, transparent);
+}
+
+/* Named with the hover it has to outrank: the chosen row stays the chosen colour under the pointer. */
+.desk-outline-row[data-current],
+.desk-outline-row[data-current]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--desk-accent) 18%, transparent);
+  color: var(--desk-ink);
+}
+
+.desk-outline-row:focus-visible {
+  outline: 2px solid var(--desk-accent);
+  outline-offset: -2px;
+}
+
+.desk-outline-row:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.desk-outline-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (pointer: coarse) {
+  .desk-outline-row { min-height: 44px; }
+}
+
 .desk-sidebar {
   display: flex;
   flex-direction: column;

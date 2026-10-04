@@ -448,7 +448,15 @@ interface Sort { key: string; direction: 'ascending' | 'descending' }
 
 <Sidebar sections={{ id, label?, items: { id, label, icon?, badge?, disabled? }[] }[]}
          value onChange label footer? />
+
+<Outline rows={{ id, label, depth, disabled? }[]} value={string | null} onChange label />
 ```
+
+Outline: a hierarchy as a flat list in reading order, each row saying its `depth` (1 is the top). Use it
+for a document's headings, a schema, a folder — not `Sidebar`, which is a few places at one level. One tab
+stop; up and down move through the rows, left goes out to the parent and right in to the first child, Home
+and End to the ends. Depth is drawn with weight, colour and indent, and stops changing at the fourth level
+(`OUTLINE_MAX_DEPTH`). A `disabled` row is listed and cannot be chosen.
 
 Table: one tab stop, arrow keys move the selection, Enter or double click activates, `aria-sort` on
 sortable headings. It renders what it is given — no paging, no fetching.

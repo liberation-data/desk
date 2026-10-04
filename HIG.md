@@ -398,6 +398,12 @@ at all.
 - The row's main action happens on press. Secondary actions appear on hover *and* in a context menu *and* via
   keyboard — never on hover alone.
 - Empty lists show an empty state, not a blank.
+- A hierarchy is an **outline**, not a sidebar with deeper items: a sidebar is a few places at one level.
+  - Depth is shown by weight, colour and indent together: the top level semibold, the next indented one
+    step, the third and fourth indented further and muted. Never by size; 13 is body text at every level.
+  - Nothing changes after the fourth level. A hierarchy of any depth fits the list it is shown in.
+  - A row is one line. A title too long for it is cut with an ellipsis, and whole on hover.
+  - No connector lines and no plus or minus boxes.
 
 ---
 
