@@ -276,7 +276,7 @@ explanation only — never a warning, which belongs in front of people.
 <Dock entries={DockEntry[]} label?="Dock" placement?={'overlay' | 'inline'} side?={'left' | 'right' | 'bottom'}
   pins?={{ accepts, onPin: (drag, before: id | null) => void, onMove?: (id, before: id | null) => void }} />
 dockItem({ id, label, icon, window?, description?, badge?, onSelect?, disabled?, contextMenu?: () => MenuItem[], movable? })
-dockStack({ id, label, items: DockItem[], icon? })
+dockStack({ id, label, items: DockItem[], icon?, contextMenu?: () => MenuItem[], movable? })
 dockSeparator(id)
 ```
 
@@ -284,7 +284,7 @@ An item opens `window ?? id` and shows a dot while that window is open, accent w
 defaults to `left`. A stack fans out toward the desk. One tab stop; arrow keys along it (Up/Down at a side,
 Left/Right at the bottom); Escape folds a stack away.
 Pins: the app stores kept items and passes them back as entries. A drop on the dock keeps at the end; on a
-`movable` item, in front of it. Movable items drag along the dock (type DOCK_ITEM, payload id).
+`movable` item or stack, in front of it. Movable items and stacks drag along the dock (type DOCK_ITEM, payload id).
 
 ### Menu bar
 
@@ -301,7 +301,7 @@ const { target, menu, open } = useContextMenu({ label, items: () => MenuItem[], 
 // spread `target` (onContextMenu, onKeyDown) on the element; render `menu` anywhere (portal).
 // Right-click opens at the pointer; Menu key / Shift+F10 at the element. Commands run from that element.
 
-<IconView label items={{id, label, icon, subtitle?, badge?, disabled?}[]} onOpen={item => …}
+<IconView label items={{id, label, icon, subtitle?, badge?, disabled?, draggable?}[]} onOpen={item => …}
   openOn?="double"|"single" selected? onSelectionChange? contextMenu?={item => MenuItem[]}
   drag?={{ type, payload: item => unknown }} empty? className? />
 // click selects, double-click / Return opens (single: click opens); arrows, Home/End, type-ahead. Needs a DeskProvider.

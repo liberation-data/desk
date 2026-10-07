@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDesk } from '../../src/core/index.js'
-import { DeskProvider, Dock, dockItem, menuAction, useDraggable } from '../../src/react/index.js'
+import { DeskProvider, Dock, dockItem, dockStack, menuAction, useDraggable } from '../../src/react/index.js'
 import type { DockEntry, DockPins } from '../../src/react/index.js'
 
 afterEach(cleanup)
@@ -90,5 +90,39 @@ describe('Dock pins', () => {
     fireEvent.contextMenu(gone)
     fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from Dock' }))
     expect(remove).toHaveBeenCalledOnce()
+  })
+
+  const KEPT_STACK = [
+    ...ENTRIES,
+    dockStack({ id: 'plan', label: 'Plan', items: [{ id: 'calendar', label: 'Calendar', icon }], movable: true }),
+  ]
+
+  it('puts what is dropped on a kept stack in front of it, and leaves a fixed stack alone', () => {
+    const onPin = vi.fn()
+    mount([...KEPT_STACK, dockStack({ id: 'system', label: 'System', items: [{ id: 'logs', label: 'Logs', icon }] })], { accepts: 'app', onPin })
+    expect(screen.getByRole('button', { name: 'System' }).hasAttribute('data-desk-drop')).toBe(false)
+    carry(screen.getByTestId('weather'), screen.getByRole('button', { name: 'Plan' }))
+    expect(onPin).toHaveBeenCalledWith(expect.objectContaining({ payload: 'weather' }), 'plan')
+  })
+
+  it('moves a kept stack along the dock, and the drag does not open it', () => {
+    const onMove = vi.fn()
+    mount(KEPT_STACK, { accepts: 'app', onPin: () => {}, onMove })
+    const plan = screen.getByRole('button', { name: 'Plan' })
+    carry(plan, screen.getByRole('button', { name: 'Ride Log' }))
+    fireEvent.click(plan)
+    expect(onMove).toHaveBeenCalledWith('plan', 'ride-log')
+    expect(screen.queryByRole('dialog', { name: 'Plan' })).toBeNull()
+  })
+
+  it('offers a stack menu, and still opens the stack on a click', () => {
+    const remove = vi.fn()
+    mount([dockStack({ id: 'plan', label: 'Plan', items: [{ id: 'calendar', label: 'Calendar', icon }], contextMenu: () => [menuAction('Remove from Dock', remove)] })])
+    const plan = screen.getByRole('button', { name: 'Plan' })
+    fireEvent.contextMenu(plan)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from Dock' }))
+    expect(remove).toHaveBeenCalledOnce()
+    fireEvent.click(plan)
+    expect(screen.getByRole('dialog', { name: 'Plan' })).toBeTruthy()
   })
 })
