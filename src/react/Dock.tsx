@@ -49,6 +49,10 @@ export interface DockStack {
   readonly items: readonly DockItem[]
   /** Defaults to the first four item icons, the way a folder previews its contents. */
   readonly icon?: ReactNode
+  /** What a right-click (or the Menu key) offers for the stack itself: Remove from Dock. */
+  readonly contextMenu?: () => readonly MenuItem[]
+  /** A kept stack: it takes drops and can be carried along the dock, as a `movable` item can. */
+  readonly movable?: boolean
 }
 
 export type DockEntry =
@@ -150,6 +154,7 @@ export function Dock({ entries, label = 'Dock', placement = 'overlay', side = 'l
             tabIndex={entry.id === firstFocusable ? 0 : -1}
             open={openStack === entry.id}
             setOpenStack={setOpenStack}
+            pins={pins}
           />
         )
       })}
@@ -231,6 +236,7 @@ interface StackButtonProps {
   readonly open: boolean
   /** The dock's own state setter: stable across renders, so effects below do not re-run. */
   readonly setOpenStack: (id: string | null) => void
+  readonly pins: DockPins | undefined
 }
 
 /**
@@ -267,7 +273,7 @@ function fitInView(el: HTMLElement): string {
   return x === 0 && y === 0 ? '' : `${x}px ${y}px`
 }
 
-function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) {
+function StackButton({ stack, tabIndex, open, setOpenStack, pins }: StackButtonProps) {
   const desk = useDesk()
   const state = useDeskState()
   const { running, focused, minimized } = statusOf(state, stack.items)
@@ -304,6 +310,19 @@ function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) 
   }
 
   const badges = stackBadge(stack.items)
+  const context = useContextMenu({ label: stack.label, items: stack.contextMenu ?? (() => []), disabled: !stack.contextMenu })
+  // A kept stack sits among the kept items: something carried lands in front of it, and it can be carried.
+  const droppable = Boolean(pins && stack.movable)
+  const { dropProps } = useDropTarget({ accepts: pinAccepts(pins), onDrop: drag => deliver(pins, drag, stack.id), disabled: !droppable })
+  const source = useDragSource<string>({ type: DOCK_ITEM, disabled: !(droppable && pins?.onMove) })
+  const preview = stack.icon ?? (
+    <span className="desk-dock-preview">
+      {stack.items.slice(0, 4).map(i => (
+        <span key={i.id}>{i.icon}</span>
+      ))}
+    </span>
+  )
+  const drag = droppable && pins?.onMove ? source.dragProps(stack.id, <span className="desk-dock-icon">{preview}</span>) : {}
 
   return (
     <span className="desk-dock-slot">
@@ -321,16 +340,15 @@ function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) 
         data-running={running || undefined}
         data-focused={focused || undefined}
         data-minimized={minimized || undefined}
+        {...dropProps}
+        {...drag}
         onClick={() => onOpenChange(!open)}
+        onContextMenu={context.target.onContextMenu}
+        // The menu's keys first; Escape and the rest are the stack's own, on its panel.
+        onKeyDown={context.target.onKeyDown}
       >
         <span className="desk-dock-icon" aria-hidden="true">
-          {stack.icon ?? (
-            <span className="desk-dock-preview">
-              {stack.items.slice(0, 4).map(i => (
-                <span key={i.id}>{i.icon}</span>
-              ))}
-            </span>
-          )}
+          {preview}
         </span>
         {badges != null && <Badge>{badges}</Badge>}
         <span className="desk-dock-tip" aria-hidden="true">
@@ -380,6 +398,7 @@ function StackButton({ stack, tabIndex, open, setOpenStack }: StackButtonProps) 
           </div>
         </div>
       )}
+      {context.menu}
     </span>
   )
 }

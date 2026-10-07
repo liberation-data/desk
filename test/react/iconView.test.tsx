@@ -93,4 +93,19 @@ describe('IconView', () => {
     expect(onSelectionChange).toHaveBeenCalledWith('ride')
     expect(icon('Weather').getAttribute('aria-selected')).toBe('true')
   })
+
+  it('picks up every icon when it has a drag, except one that says it is not draggable', () => {
+    render(
+      <DeskProvider desk={createDesk()}>
+        <IconView
+          items={[ITEMS[0]!, { ...ITEMS[1]!, draggable: false }]}
+          label="Apps"
+          onOpen={() => {}}
+          drag={{ type: 'app', payload: item => item.id }}
+        />
+      </DeskProvider>,
+    )
+    expect(icon('Ride Log').hasAttribute('data-desk-draggable')).toBe(true)
+    expect(icon('Route Planner').hasAttribute('data-desk-draggable')).toBe(false)
+  })
 })

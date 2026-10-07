@@ -227,6 +227,9 @@ item it goes in front of that one, and the fixed items are never split. A `movab
 the dock to a new place. `contextMenu` gives any item a right-click menu; an item that is `disabled` but has
 a menu stays reachable, so something that can no longer open can still be removed.
 
+A stack can be kept the same way: `dockStack({ …, movable: true, contextMenu })` takes drops, is carried
+along the dock, and offers its own right-click menu.
+
 ## Inside a window: a pane
 
 ```tsx
@@ -689,6 +692,9 @@ A Finder's icons, in rows that follow the window's width. A click selects and a 
 `openOn="single"` opens on one click, for a launcher. Arrows move through the grid (up and down by however
 many fit in a row), Home and End go to the ends, typing a name jumps to it, Return opens, and the Menu key
 opens the item's context menu. With `drag`, an icon can be carried to a drop target such as the dock.
+
+With `drag`, every icon can be picked up except one whose item says `draggable: false`: something no
+target would take stays where it is.
 
 ## Commands and the responder chain
 
