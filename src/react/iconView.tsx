@@ -22,6 +22,8 @@ export interface IconViewItem {
   readonly subtitle?: string
   readonly badge?: ReactNode
   readonly disabled?: boolean
+  /** False leaves this one where it is when the view has `drag`: nothing would take it. */
+  readonly draggable?: boolean
 }
 
 export interface IconViewProps<T extends IconViewItem> {
@@ -148,7 +150,7 @@ export function IconView<T extends IconViewItem>({
           onSelect={() => select(item.id)}
           onOpen={() => onOpen(item)}
           menu={contextMenu ? () => contextMenu(item) : null}
-          dragProps={drag ? source.dragProps(drag.payload(item), <span className="desk-icon-drag">{item.icon}</span>) : null}
+          dragProps={drag && item.draggable !== false ? source.dragProps(drag.payload(item), <span className="desk-icon-drag">{item.icon}</span>) : null}
         />
       ))}
     </ul>
