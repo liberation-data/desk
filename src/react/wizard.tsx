@@ -68,6 +68,9 @@ export function Wizard({ steps, index, onIndexChange, onFinish, label = 'Setup',
 
   // Only when the step changes: a step whose body has a field re-renders on every
   // keystroke, and moving focus to the heading then would eat what was being typed.
+  // A step is known by its id, not only by where it stands: an app may replace the step at an
+  // index — a token screen giving way to Welcome — and that is an arrival like any other. Its
+  // heading is a new element, so without this the focus the old one held falls to the page.
   useEffect(() => {
     setDirection(index >= previous.current ? 'forward' : 'back')
     setBusy(false)
@@ -78,7 +81,7 @@ export function Wizard({ steps, index, onIndexChange, onFinish, label = 'Setup',
     // Focus the new step's heading, so a screen reader announces it and the
     // keyboard starts at the top of the pane rather than back at the buttons.
     heading.current?.focus()
-  }, [index])
+  }, [index, step?.id])
 
   if (!step) return null
 
