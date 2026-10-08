@@ -4,6 +4,7 @@ import { createDesk } from '../core/desk.js'
 import type { Desk } from '../core/desk.js'
 import type { Bus } from '../core/events.js'
 import type { LookChoice } from '../core/look.js'
+import type { Holdable } from '../core/services.js'
 import type { DeskOptions } from '../core/types.js'
 import { DeskProvider } from './context.js'
 import { BusProvider } from './events.js'
@@ -19,12 +20,14 @@ export interface DeskShellProps {
   readonly toasts?: boolean
   /** The platform chrome: `auto` (the default) matches the device. See `DeskProviderProps.look`. */
   readonly look?: LookChoice
+  /** What the desk keeps going while it is on screen. See `DeskProviderProps.services`. */
+  readonly services?: readonly Holdable[]
   readonly children: ReactNode
 }
 
 /** Everything an app needs around it, in one component: the desk, its bus, and toasts. */
-export function DeskShell({ desk, options, bus, toasts = true, look = 'auto', children }: DeskShellProps) {
+export function DeskShell({ desk, options, bus, toasts = true, look = 'auto', services = [], children }: DeskShellProps) {
   const [made] = useState(() => desk ?? createDesk(options))
   const inner = toasts ? <ToastProvider>{children}</ToastProvider> : children
-  return <DeskProvider desk={made} look={look}>{bus ? <BusProvider bus={bus}>{inner}</BusProvider> : inner}</DeskProvider>
+  return <DeskProvider desk={made} look={look} services={services}>{bus ? <BusProvider bus={bus}>{inner}</BusProvider> : inner}</DeskProvider>
 }

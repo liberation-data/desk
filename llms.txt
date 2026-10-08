@@ -210,13 +210,47 @@ topicMatches(pattern, topic): boolean              // 'ride.*' and '*' are the o
 InputCommands = { submit: 'desk.input.submit', describe: 'desk.input.describe' }
 ```
 
+### Services
+
+Something the desk keeps going that is not a window: a value anything can read and, optionally, a
+process that keeps it true. For a dock count on a window that is shut, or data a window should not
+wait for when it opens.
+
+```ts
+createService<T>({ id, initial, run? }): Service<T>
+interface Service<T> {
+  id: string
+  now(): T
+  set(next: T): void                                 // tells readers only when the value is new
+  subscribe(listener: () => void): () => void
+  hold(): () => void                                 // counted; the release may be called twice
+  running(): boolean                                 // true while anything holds it
+}
+run({ now, set, live }): (() => void) | void         // started on the first hold; the return runs on the last release
+holdAll(services): () => void
+```
+
+A service does not fetch, cache or retry: `run` brings its own way of getting data. Check `live()`
+after every await. A stopped service keeps its value unless `run`'s cleanup sets it back.
+
+### Attention
+
+Whether somebody is looking at a window now, for a service that counts what arrived unseen.
+
+```ts
+attentionOn(desk, id, counted = true): Attention     // { counted, front, visible, focused }
+attended(a): boolean                                 // front && visible && focused
+becomesNews(a): boolean                              // counted && !attended(a)
+watchAttention(desk, id, onAttended): () => void     // at once if attended, then on desk change, tab shown, browser focused
+```
+
 ## React: `@liberation-data/desk/react`
 
 ### Shell
 
 ```tsx
-<DeskShell desk?={Desk} options?={DeskOptions} bus?={Bus} toasts?={true} look?={'auto'}>
-<DeskProvider desk={desk} look?={'auto'}>           // or options={…} to make one
+<DeskShell desk?={Desk} options?={DeskOptions} bus?={Bus} toasts?={true} look?={'auto'} services?={Service[]}>
+<DeskProvider desk={desk} look?={'auto'} services?={Service[]}>  // or options={…} to make one
 useDesk(): Desk
 useLook(): 'mac' | 'gnome' | 'windows'              // resolved; the device's outside a desk
 useDeskState(): DeskState
@@ -351,6 +385,14 @@ forward. `dropProps` carries `data-ready` and `data-over`, which the stylesheet 
 useBus(): Bus
 usePublish(): <T>(topic, payload) => DeskEvent<T>     // stamped with the window it came from
 useDeskEvent<T>(topic, handler, { replay? })          // replay: deliver the last event immediately
+```
+
+### Services
+
+```tsx
+<DeskShell services={[rides, unread]}>                // held from mount to unmount; the array is read once
+useService(service): T                               // the value, live, and the service held while mounted
+useServiceValue(service): T                          // the value, live, without holding: for a badge
 ```
 
 ### Generated apps
@@ -561,7 +603,9 @@ in the accessibility tree.
 ## Facts an agent should not guess
 
 - React 19 is a peer dependency; the core entry point imports no React and touches no DOM except through
-  the command helpers.
+  the command helpers and `attentionOn`/`watchAttention`, which read the page when there is one.
+- A service runs only while held. Give it to the desk (`services`) or read it with `useService`; a
+  service nobody holds never starts its `run`. `useServiceValue` does not hold.
 - Focus follows the key window when it changes, but never on first render.
 - First run (HIG §8): check on Continue with `onContinue`, not on the next step; show waiting work with
   `useTasks` + `Checklist`; open the chosen window last so it is in front; offer the tour (`offer`) once on
@@ -569,7 +613,7 @@ in the accessibility tree.
 - A `DeskProvider` already carries an event bus; `BusProvider` is only for supplying or sharing one.
 - `renderWindow` must be stable (module scope or `useCallback`) for the memoisation to hold.
 - `parse`/`syncWithLocation` warn once when no `isKnown` is given: unknown ids from a URL are then trusted.
-- `npm run size` enforces a gzipped budget: core 13 KiB, react 52 KiB, css 16 KiB, fx 5 KiB.
+- `npm run size` enforces a gzipped budget: core 16 KiB, react 62 KiB, css 20 KiB, fx 5 KiB.
 - `fx.play` never resumes audio itself: outside a press a browser's resume may never settle. Call
   `fx.unlock()` at startup, or nothing sounds until a press after the sound was due.
 - The package is ESM only, with `"sideEffects": ["**/*.css"]`.

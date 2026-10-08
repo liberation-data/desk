@@ -577,6 +577,50 @@ carries its own bus, so this needs no extra provider. `replay`
 delivers the last event on the topic straight away — the window that the event concerns is often opened by
 that very event, and would otherwise miss it by a frame.
 
+## Services: what outlives a window
+
+A window's data goes when the window does. A count on the dock for a window that is shut, or a list
+a window should not wait for when it opens, has to live somewhere else. That is a service: a value
+anything can read and, optionally, a process that keeps it true.
+
+```tsx
+import { createService } from '@liberation-data/desk'
+import { DeskShell, useService } from '@liberation-data/desk/react'
+
+const rides = createService<Ride[] | null>({
+  id: 'rides',
+  initial: null,
+  run: ({ set, live }) => {
+    void fetchRides().then(found => { if (live()) set(found) })
+  },
+})
+
+<DeskShell services={[rides]}>…</DeskShell>       // read before any window asks
+
+function Rides() {
+  const found = useService(rides)                 // already there when the window opens
+  return found ? <RideList rides={found} /> : <Loading label="Loading the rides" />
+}
+```
+
+A service **runs while somebody holds it**. The desk holds the ones it was given for as long as it is
+on screen, and `useService` holds one for as long as the component is mounted, so a window drawn
+without a desk still gets its data. Holds are counted: the process starts on the first and stops on
+the last. `useServiceValue` reads without holding, which is what a dock badge wants.
+
+It does not fetch, cache or retry. `run` brings its own way of getting data; check `live()` after
+every await so an answer that lands after the service stopped is dropped.
+
+For a service that counts what arrived unseen, `watchAttention(desk, id, onSeen)` says when a window
+is being looked at: it is the key window, the tab is showing, and the browser has focus.
+
+```ts
+const unread = createService({ id: 'unread', initial: 0 })
+
+const stop = watchAttention(desk, 'chat', () => unread.set(0))
+if (becomesNews(attentionOn(desk, 'chat', unread.running()))) unread.set(unread.now() + 1)
+```
+
 ## Conversation
 
 ![A chat window with a thread of messages and a composer](https://raw.githubusercontent.com/liberation-data/desk/main/docs/screenshots/chat.png)
@@ -898,7 +942,7 @@ npm install
 npm test            # vitest
 npm run typecheck
 npm run example     # the Garage sample in examples/garage
-npm run size        # the gzipped budget: core 13 KiB, react 52, css 16, fx 5
+npm run size        # the gzipped budget: core 16 KiB, react 62, css 20, fx 5
 npm run check       # everything CI runs
 npm run check:browser   # the generated-app bridge in real Chrome, against a running sample
 npm run build       # dist/

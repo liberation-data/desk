@@ -181,6 +181,11 @@ The desk wears the chrome of a platform: **Mac**, **GNOME** or **Windows** (`loo
 A window is one task or one thing: a list of rides, a map, a conversation. If two things are always used
 together, they are one window; if people want them side by side, they are two.
 
+Not everything an app keeps going is a window. What has to be true while a window is shut, such as a
+count on its dock item, or ready when it opens, such as the list it shows first, belongs to a service
+the desk holds. A window that opens on a spinner for data the app could already have had is a service
+that was not written.
+
 ### The key window
 
 - Exactly one window has focus — the **key window**. It has a full-contrast title; other windows have muted

@@ -25,6 +25,10 @@ export {
   windowElement,
 } from './commands.js'
 export type { ChainOptions, CommandHandler, CommandId, CommandOptions } from './commands.js'
+export { createService, holdAll } from './services.js'
+export type { Holdable, Service, ServiceOptions, ServiceRun } from './services.js'
+export { attended, attentionOn, becomesNews, watchAttention } from './attention.js'
+export type { Attention } from './attention.js'
 export { createBus, InputCommands, topicMatches } from './events.js'
 export type { Bus, DeskEvent, EventHandler, InputDescription, SubscribeOptions } from './events.js'
 export { bindShortcuts, formatShortcut, isApplePlatform, isInstalledApp, matchesShortcut, parseShortcut } from './shortcuts.js'
