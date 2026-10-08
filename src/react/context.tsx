@@ -1,9 +1,11 @@
-import { createContext, useContext, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import { createBus } from '../core/events.js'
 import type { Bus } from '../core/events.js'
 import { createDesk } from '../core/desk.js'
 import { deviceLook, resolveLook } from '../core/look.js'
+import { holdAll } from '../core/services.js'
+import type { Holdable } from '../core/services.js'
 import type { Look, LookChoice } from '../core/look.js'
 import { DragProvider } from './dragContext.js'
 import { missingProvider } from './missingProvider.js'
@@ -28,12 +30,19 @@ export interface DeskProviderProps {
    * chose. The app keeps that choice where it keeps its other preferences; the desk does not store it.
    */
   readonly look?: LookChoice
+  /**
+   * What the desk keeps going while it is on screen: each is held from mount to unmount. Read once,
+   * so the array need not be stable.
+   */
+  readonly services?: readonly Holdable[]
   readonly children: ReactNode
 }
 
-export function DeskProvider({ desk, options, look = 'auto', children }: DeskProviderProps) {
+export function DeskProvider({ desk, options, look = 'auto', services, children }: DeskProviderProps) {
   const [value] = useState(() => desk ?? createDesk(options))
   const [bus] = useState(createBus)
+  const [held] = useState(() => services ?? [])
+  useEffect(() => holdAll(held), [held])
   const resolved = resolveLook(look)
   // On the root, not the desk: menus and popovers are portalled out of it, and are chrome too.
   useLayoutEffect(() => {

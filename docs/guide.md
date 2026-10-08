@@ -141,6 +141,22 @@ a frame later, and would otherwise miss it.
 The desk's input bar uses the same idea for text: `useWindowInput` in a window takes whatever is typed while
 that window is key, and `<InputBar>` falls back to the app when no window wants it.
 
+### What outlives a window
+
+An event is something that happened. A **service** is something that is still true: a count on the
+dock for a window that is shut, or a list a window should not have to wait for when it opens.
+
+```tsx
+const rides = createService<Ride[] | null>({ id: 'rides', initial: null, run: ({ set, live }) => { … } })
+
+<DeskShell services={[rides]}>     // the desk holds it, so it is read before any window asks
+const found = useService(rides)    // in the window: already there
+```
+
+It runs while somebody holds it, which is the desk or any component reading it. It does not fetch for
+you; `run` does that however your app does. Use `useServiceValue` for a badge, which should show the
+value without being the thing that keeps the service running.
+
 ## 7. Choosing a component
 
 | The situation | Use |

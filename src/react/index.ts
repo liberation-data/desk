@@ -19,6 +19,7 @@ export { useCanPerform, useCommand, usePerform, useShortcuts } from './commands.
 export type { UseCommandOptions } from './commands.js'
 export { Desktop } from './Desktop.js'
 export type { DeskLayout, DesktopProps } from './Desktop.js'
+export { useService, useServiceValue } from './services.js'
 export { useDocumentTitle } from './documentTitle.js'
 export type { DocumentTitleOptions } from './documentTitle.js'
 export { lazyWindow } from './windowBoundary.js'

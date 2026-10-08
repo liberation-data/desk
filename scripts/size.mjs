@@ -75,7 +75,14 @@ import { join } from 'node:path'
  * the sidebar's hover, focus and disabled states, which gzip already folds; merging the selectors
  * would not have fitted it in 0.1. The parts line still shows where growth lands.
  */
-const BUDGETS = { core: 13, react: 60, css: 20, fx: 5 }
+/*
+ * Raised core 13 → 16 for services and attention (2.2 KiB): what the desk keeps going that is not a
+ * window, and the rule for whether somebody is looking at one. Both are core because neither needs
+ * React: a service is held by a test or a router as readily as by a component. Raised react 60 → 62
+ * for the two hooks that read a service and the desk holding its own (0.3 KiB), because 60 stood at
+ * 0.1 spare, which is the failure the notes above describe.
+ */
+const BUDGETS = { core: 16, react: 62, css: 20, fx: 5 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
