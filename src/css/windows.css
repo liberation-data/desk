@@ -443,8 +443,11 @@
   color: var(--desk-ink);
 }
 
-/* As tall as the room it is given, so a short section is still a whole sheet. */
+/* As tall as the room it is given, so a short section is still a whole sheet. Never shorter than
+   its text: in a padded pane it is a flex item, and a min-height of its own replaces the automatic
+   one that stops an item shrinking below its content, so long text ran out past the sheet's end. */
 .desk-page[data-fill] {
+  flex: none;
   min-height: 100%;
 }
 
