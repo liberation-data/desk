@@ -32,6 +32,11 @@ export interface OutlineProps {
   /** The chosen row, or null when none is. */
   readonly value: string | null
   readonly onChange: (id: string) => void
+  /**
+   * The rows on show along with the chosen one: the headings a page holds after the one it starts
+   * at. They are marked as the chosen row is, and the chosen row stays the one the keyboard is on.
+   */
+  readonly showing?: readonly string[]
   /** Names the outline for assistive technology: "Sections". */
   readonly label: string
   readonly className?: string
@@ -39,7 +44,9 @@ export interface OutlineProps {
 
 const drawnDepth = (depth: number) => Math.min(Math.max(1, Math.floor(depth)), OUTLINE_MAX_DEPTH)
 
-export function Outline({ rows, value, onChange, label, className }: OutlineProps) {
+const NONE: readonly string[] = []
+
+export function Outline({ rows, value, onChange, showing = NONE, label, className }: OutlineProps) {
   const tree = useRef<HTMLDivElement>(null)
   const enabled = rows.filter(row => !row.disabled)
   // One tab stop: the chosen row, or the first that can be chosen when none is.
@@ -85,7 +92,7 @@ export function Outline({ rows, value, onChange, label, className }: OutlineProp
   }
 
   return (
-    <div ref={tree} role="tree" aria-label={label} className={['desk-outline', className].filter(Boolean).join(' ')} onKeyDown={onKeyDown}>
+    <div ref={tree} role="tree" aria-label={label} aria-multiselectable={showing.length > 0 || undefined} className={['desk-outline', className].filter(Boolean).join(' ')} onKeyDown={onKeyDown}>
       {rows.map(row => {
         const current = row.id === value
         return (
@@ -94,10 +101,11 @@ export function Outline({ rows, value, onChange, label, className }: OutlineProp
             type="button"
             role="treeitem"
             aria-level={Math.max(1, Math.floor(row.depth))}
-            aria-selected={current}
+            aria-selected={current || showing.includes(row.id)}
             data-row={row.id}
             data-depth={drawnDepth(row.depth)}
             data-current={current || undefined}
+            data-showing={(!current && showing.includes(row.id)) || undefined}
             className="desk-outline-row"
             disabled={row.disabled}
             tabIndex={row.id === tabStop ? 0 : -1}

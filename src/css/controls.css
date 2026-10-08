@@ -970,7 +970,9 @@
 
 /* Named with the hover it has to outrank: the chosen row stays the chosen colour under the pointer. */
 .desk-outline-row[data-current],
-.desk-outline-row[data-current]:hover:not(:disabled) {
+.desk-outline-row[data-current]:hover:not(:disabled),
+.desk-outline-row[data-showing],
+.desk-outline-row[data-showing]:hover:not(:disabled) {
   background: color-mix(in srgb, var(--desk-accent) 18%, transparent);
   color: var(--desk-ink);
 }

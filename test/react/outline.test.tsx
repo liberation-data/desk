@@ -33,6 +33,21 @@ describe('Outline', () => {
     expect(row('Field Guide').getAttribute('aria-selected')).toBe('true')
   })
 
+  it('marks the rows on show along with the chosen one, and keeps the keyboard on the chosen one', () => {
+    render(<Outline label="Sections" rows={ROWS} value="guide" showing={['water', 'camp']} onChange={() => {}} />)
+    const marked = screen.getAllByRole('treeitem').filter(item => item.getAttribute('aria-selected') === 'true')
+    expect(marked.map(item => item.textContent)).toEqual(['Field Guide', 'Finding water', 'Making camp'])
+    expect(row('Finding water').hasAttribute('data-showing')).toBe(true)
+    expect(row('Field Guide').hasAttribute('data-showing')).toBe(false) // it is the chosen row, and says so
+    expect(screen.getByRole('tree').getAttribute('aria-multiselectable')).toBe('true')
+    expect(screen.getAllByRole('treeitem').filter(item => item.tabIndex === 0).map(item => item.textContent)).toEqual(['Field Guide'])
+  })
+
+  it('says nothing about several rows when only one is on show', () => {
+    render(<Held />)
+    expect(screen.getByRole('tree').hasAttribute('aria-multiselectable')).toBe(false)
+  })
+
   it('chooses a row on a press', () => {
     const onChange = vi.fn()
     render(<Held onChange={onChange} />)
