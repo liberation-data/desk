@@ -105,6 +105,9 @@ Colour has **roles**, not names. Components use roles; a theme assigns colours t
 - **Translucent glass** (`--desk-dock-glass`, backdrop blur) is for things that float over content: the dock,
   stacks, menus, popovers. It shows that the content is still there underneath.
 - **Opaque surfaces** are for things people read and work in: window bodies, sheets, tables.
+- **A page** (`Page`, `--desk-page`) is for text read at length: a document's section, an answer, a report.
+  It is a neutral sheet, a shade off the window in a light theme and a terminal's grey in a dark one. Not
+  for forms, tables or a line or two of explanation, which sit on the window's own surface.
 - Never put body text directly on glass without a surface behind it. A panel that carries labels — a stack,
   a menu — sits on an opaque surface, so a busy window underneath never reads through its words.
 

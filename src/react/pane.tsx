@@ -116,3 +116,32 @@ export function Pane({ header, footer, children, label, bodyRef, onScroll, padde
     </div>
   )
 }
+
+export interface PageProps {
+  /** The text: paragraphs, headings, lists, a rendered document. */
+  readonly children: ReactNode
+  /** Names the sheet for assistive technology: the document's title, or "Answer". */
+  readonly label?: string
+  /** At least as tall as the room it is given, so a short section is still a whole sheet. */
+  readonly fill?: boolean
+  readonly className?: string
+}
+
+/**
+ * A sheet for text that is read at length: a document's section, an answer, a report.
+ *
+ * A window's surface takes the theme's colour, which is right for chrome and tiring behind
+ * paragraphs. A page lies on a neutral ground of its own (`--desk-page`), a shade off the window in
+ * a light theme and a terminal's grey in a dark one, so the sheet reads as a sheet in both.
+ */
+export function Page({ children, label, fill, className }: PageProps) {
+  return (
+    <article
+      className={['desk-page', className].filter(Boolean).join(' ')}
+      {...(fill ? { 'data-fill': '' } : {})}
+      {...(label ? { 'aria-label': label } : {})}
+    >
+      {children}
+    </article>
+  )
+}

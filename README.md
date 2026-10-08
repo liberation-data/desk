@@ -276,6 +276,22 @@ titled group inside it. Text that is not body text picks a step of the scale by 
 `desk-text-caption`, `desk-text-muted` — and the sizes themselves are tokens (`--desk-text-body`,
 `--desk-text-title`, …), so a window that has to differ does it by token, on purpose.
 
+Text that is read at length, such as a document's section, an answer or a report, lies on a `Page`:
+
+```tsx
+<Pane label="Field guide">
+  <Page fill label="Finding water">
+    <h2>Finding water</h2>
+    <p>Follow the birds at dusk; they fly toward water.</p>
+  </Page>
+</Pane>
+```
+
+A window's surface takes the theme's colour, which is right for chrome and tiring behind paragraphs. A
+page is a sheet on a neutral ground of its own, `--desk-page`: a shade off the window in a light theme
+and a terminal's grey in a dark one. `fill` makes it at least as tall as the room it is given, so a short
+section is still a whole sheet.
+
 `InfoTip` is an (i) holding what the view would explain if asked, so a window does not open with a
 paragraph everyone reads once. Explanation only: a warning belongs in front of people, not behind a
 disclosure.

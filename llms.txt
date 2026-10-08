@@ -260,6 +260,7 @@ window; `lazyWindow` retries its import on reload, unlike `React.lazy`, which ca
 <PaneHeader title={ReactNode} actions?={ReactNode} />   // the pane's title and its Refresh, on one row
 <Section title={ReactNode} actions?={ReactNode}>{content}</Section>   // a titled group inside a pane
 <Toolbar label?={string} trailing?={ReactNode}>{controls}</Toolbar>   // className="desk-grow" takes spare room
+<Page label?={string} fill?>{long text}</Page>   // a sheet for text read at length, on --desk-page; fill = at least the room's height
 // text size by class, never px: desk-text-body | desk-text-small | desk-text-caption, plus desk-text-muted.
 // the scale is tokens: --desk-text-caption 11, -small 12, -body 13, -lead 15, -title 17, -display 22, -hero 28.
 <InfoTip label={string} placement?={'below'|'above'} align?={'start'|'end'}>{explanation}</InfoTip>
