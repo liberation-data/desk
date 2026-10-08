@@ -439,7 +439,9 @@
   padding: var(--desk-space-5) var(--desk-space-6);
   border: 1px solid var(--desk-rule);
   border-radius: var(--desk-control-radius);
-  background: var(--desk-page);
+  /* Mixed here and not in the token: an app that sets its accent below the root would otherwise
+     get the root's accent in its page. */
+  background: color-mix(in srgb, var(--desk-accent) var(--desk-page-tint), var(--desk-page));
   color: var(--desk-ink);
 }
 
