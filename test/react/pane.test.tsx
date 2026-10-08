@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { Button, InfoTip, Pane, PaneHeader, Section, Toolbar } from '../../src/react/index.js'
+import { Button, InfoTip, Page, Pane, PaneHeader, Section, Toolbar } from '../../src/react/index.js'
 
 afterEach(cleanup)
 
@@ -61,6 +61,23 @@ describe('Section', () => {
     const section = screen.getByRole('region', { name: 'Handlers' })
     expect(section.querySelector('.desk-section-head .desk-section-actions')?.textContent).toBe('Add')
     expect(section.textContent).toContain('none yet')
+  })
+})
+
+describe('Page', () => {
+  it('is an article named by its label, holding the text it was given', () => {
+    render(<Page label="Field guide"><p>Follow the birds at dusk.</p></Page>)
+    const page = screen.getByRole('article', { name: 'Field guide' })
+    expect(page.classList.contains('desk-page')).toBe(true)
+    expect(page.textContent).toBe('Follow the birds at dusk.')
+  })
+
+  it('fills the room it is given only when asked', () => {
+    render(<Page fill><p>a line</p></Page>)
+    expect(screen.getByRole('article').hasAttribute('data-fill')).toBe(true)
+    cleanup()
+    render(<Page><p>a line</p></Page>)
+    expect(screen.getByRole('article').hasAttribute('data-fill')).toBe(false)
   })
 })
 

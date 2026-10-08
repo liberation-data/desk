@@ -433,6 +433,21 @@
   padding: var(--desk-space-4);
 }
 
+/* A sheet for text read at length, on a ground of its own so it parts from the window's. */
+.desk-page {
+  box-sizing: border-box;
+  padding: var(--desk-space-5) var(--desk-space-6);
+  border: 1px solid var(--desk-rule);
+  border-radius: var(--desk-control-radius);
+  background: var(--desk-page);
+  color: var(--desk-ink);
+}
+
+/* As tall as the room it is given, so a short section is still a whole sheet. */
+.desk-page[data-fill] {
+  min-height: 100%;
+}
+
 /* A title and what acts on everything under it, on one line. */
 .desk-pane-title,
 .desk-section-head {
