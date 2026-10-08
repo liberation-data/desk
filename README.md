@@ -664,7 +664,7 @@ row. It is a tree to the keyboard: up and down through the rows, left out to the
 child. Depth shows as weight, colour and a small indent, and stops changing at the fourth level, so a deep
 hierarchy cannot indent itself out of the list. A row is one line, cut with an ellipsis and whole on hover.
 When what is on show runs past the chosen row — a page that holds three headings — name the others in
-`showing` and they are marked with it. A **pop-up button** is what a
+`showing` and they are marked with it; marked rows that touch read as one block, round only at its two ends. A **pop-up button** is what a
 segmented control becomes when there are too many options to show at once; unlike a menu it takes focus, and
 typing jumps to an option. A **checkbox** is for a setting that waits for Save (a Toggle applies at once),
 and can stand for a mixed set. A **slider** reads its value in words for people who cannot see it.
