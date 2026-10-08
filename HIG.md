@@ -411,6 +411,8 @@ at all.
 - A hierarchy is an **outline**, not a sidebar with deeper items: a sidebar is a few places at one level.
   - Depth is shown by weight, colour and indent together: the top level semibold, the next indented one
     step, the third and fourth indented further and muted. Never by size; 13 is body text at every level.
+  - When the page beside it holds more than the chosen row, every row on the page is marked, in the one
+    colour. The outline says what is in front of the reader, not only where they started.
   - Nothing changes after the fourth level. A hierarchy of any depth fits the list it is shown in.
   - A row is one line. A title too long for it is cut with an ellipsis, and whole on hover.
   - No connector lines and no plus or minus boxes.
