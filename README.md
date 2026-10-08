@@ -289,7 +289,8 @@ Text that is read at length, such as a document's section, an answer or a report
 
 A window's surface takes the theme's colour, which is right for chrome and tiring behind paragraphs. A
 page is a sheet on a neutral ground of its own, `--desk-page`: a shade off the window in a light theme
-and a terminal's grey in a dark one. `fill` makes it at least as tall as the room it is given, so a short
+and a terminal's grey in a dark one. A trace of the accent is mixed into it, `--desk-page-tint`, so the
+sheet belongs to the theme it is read in; set that to `0%` for the neutral alone. `fill` makes it at least as tall as the room it is given, so a short
 section is still a whole sheet.
 
 `InfoTip` is an (i) holding what the view would explain if asked, so a window does not open with a
