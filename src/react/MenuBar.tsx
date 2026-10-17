@@ -129,6 +129,15 @@ export const stepMenu = (items: readonly Resolved[], from: number, delta: 1 | -1
   return -1
 }
 
+/**
+ * Bring the row the keyboard moved to into view, in a menu taller than the space it has and so
+ * scrolled. Nearest, so a row already in view does not move; keyboard moves only, so a row the
+ * pointer is resting on half-hidden at the edge does not jump out from under it.
+ */
+export const revealMenuItem = (id: string): void => {
+  document.getElementById(id)?.scrollIntoView?.({ block: 'nearest' })
+}
+
 /** The next selectable item whose label starts with `letter`, after `from`; -1 when there is none. */
 export const typeAhead = (items: readonly Resolved[], from: number, letter: string) => {
   for (let i = 1; i <= items.length; i++) {
@@ -192,13 +201,17 @@ export function MenuBar({ menus, status = [], leading, trailing, label = 'Menu b
   useEffect(() => {
     if (!open) return
     const menuIndex = all.findIndex(m => m.id === open.id)
+    const move = (active: number) => {
+      setOpen({ ...open, active })
+      revealMenuItem(`${baseId}-menu-${open.id}-${active}`)
+    }
     const onKey = (event: KeyboardEvent) => {
       const handled = (() => {
         switch (event.key) {
-          case 'ArrowDown': setOpen({ ...open, active: step(open.items, open.active, 1) }); return true
-          case 'ArrowUp': setOpen({ ...open, active: step(open.items, open.active < 0 ? open.items.length : open.active, -1) }); return true
-          case 'Home': setOpen({ ...open, active: step(open.items, -1, 1) }); return true
-          case 'End': setOpen({ ...open, active: step(open.items, open.items.length, -1) }); return true
+          case 'ArrowDown': move(step(open.items, open.active, 1)); return true
+          case 'ArrowUp': move(step(open.items, open.active < 0 ? open.items.length : open.active, -1)); return true
+          case 'Home': move(step(open.items, -1, 1)); return true
+          case 'End': move(step(open.items, open.items.length, -1)); return true
           case 'ArrowRight': openMenu(menuIndex + 1, open.via); return true
           case 'ArrowLeft': openMenu(menuIndex - 1, open.via); return true
           case 'Enter':
@@ -209,7 +222,7 @@ export function MenuBar({ menus, status = [], leading, trailing, label = 'Menu b
             if (event.key.length !== 1 || event.metaKey || event.ctrlKey || event.altKey) return false
             const index = typeAhead(open.items, open.active, event.key)
             if (index < 0) return false
-            setOpen({ ...open, active: index })
+            move(index)
             return true
           }
         }

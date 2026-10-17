@@ -98,6 +98,11 @@
   box-sizing: border-box;
   min-width: 220px;
   max-width: min(360px, calc(100vw - 24px));
+  /* A long menu stops at a height that still reads as a menu, or above the bottom of the screen if
+     that comes first, and scrolls. The 48px is the menu bar, the gap under it and a margin. */
+  max-height: min(480px, calc(100dvh - 48px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 5px;
   border-radius: 10px;
   border: 1px solid var(--desk-rule);

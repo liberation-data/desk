@@ -187,6 +187,29 @@ describe('MenuBar', () => {
     expect(onAbout).toHaveBeenCalledOnce()
   })
 
+  it('scrolls a row the keyboard reaches into view, and leaves a row the pointer rests on where it is', () => {
+    // A long menu stops at a height and scrolls, so a row moved to by the keyboard can be below the fold.
+    const reveal = vi.fn()
+    Element.prototype.scrollIntoView = reveal
+    try {
+      const { desk } = mount()
+      act(() => { desk.open('rides'); desk.open('notes') })
+      act(() => title('Window').focus())
+      key('ArrowDown')
+      key('ArrowDown')
+      const active = document.getElementById(menu().getAttribute('aria-activedescendant') ?? '')
+      expect(active?.textContent).toContain('Next window')
+      expect(reveal).toHaveBeenLastCalledWith({ block: 'nearest' })
+      expect(reveal.mock.contexts.at(-1)).toBe(active)
+
+      reveal.mockClear()
+      fireEvent.pointerMove(item('Arrange'))
+      expect(reveal).not.toHaveBeenCalled()
+    } finally {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView
+    }
+  })
+
   it('moves between menus with arrow keys, and Escape returns focus to the title', () => {
     mount()
     act(() => title('Garage').focus())
