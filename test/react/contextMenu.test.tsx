@@ -74,6 +74,15 @@ describe('useContextMenu', () => {
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
+  it('stays open while its own list scrolls, and closes when the page behind it scrolls', () => {
+    render(<RideLog onOpen={() => {}} onPin={() => {}} />)
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Ride Log' }))
+    fireEvent.scroll(menu())
+    expect(screen.queryByRole('menu')).not.toBeNull()
+    fireEvent.scroll(document.body)
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
   it('jumps to an item by its first letter', () => {
     const onPin = vi.fn()
     render(<RideLog onOpen={() => {}} onPin={onPin} />)

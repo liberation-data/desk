@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import { perform } from '../core/commands.js'
 import { formatShortcut, isApplePlatform } from '../core/shortcuts.js'
 import { useOptionalDesk } from './context.js'
-import { resolveMenuItems, selectable, stepMenu, typeAhead } from './MenuBar.js'
+import { resolveMenuItems, revealMenuItem, selectable, stepMenu, typeAhead } from './MenuBar.js'
 import type { MenuItem, ResolvedMenuItem } from './MenuBar.js'
 
 /*
@@ -114,21 +114,28 @@ export function useContextMenu({ items, label, disabled }: ContextMenuOptions): 
       if (!panel.current?.contains(event.target as Node)) close(false)
     }
     const onAway = () => close(false)
+    // Something else scrolling moves what the menu was opened on; the menu's own long list scrolling does not.
+    const onScroll = (event: Event) => {
+      if (!panel.current?.contains(event.target as Node)) close(false)
+    }
     document.addEventListener('pointerdown', onPointerDown, true)
     addEventListener('blur', onAway)
     addEventListener('resize', onAway)
-    document.addEventListener('scroll', onAway, true)
+    document.addEventListener('scroll', onScroll, true)
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true)
       removeEventListener('blur', onAway)
       removeEventListener('resize', onAway)
-      document.removeEventListener('scroll', onAway, true)
+      document.removeEventListener('scroll', onScroll, true)
     }
   }, [state, close])
 
   const onMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (!state) return
-    const move = (active: number) => setState({ ...state, active })
+    const move = (active: number) => {
+      setState({ ...state, active })
+      revealMenuItem(`${menuId}-${active}`)
+    }
     switch (event.key) {
       case 'ArrowDown': move(stepMenu(state.items, state.active, 1)); break
       case 'ArrowUp': move(stepMenu(state.items, state.active < 0 ? state.items.length : state.active, -1)); break
