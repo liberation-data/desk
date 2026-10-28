@@ -31,6 +31,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      # To start CI and the release dry run on the release branch, when no RELEASE_PR_TOKEN opens the PR.
+      actions: write
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       BUMP: ${{ inputs.bump }}
@@ -111,7 +113,8 @@ jobs:
       - name: Open the release PR
         env:
           # A PR opened with GITHUB_TOKEN starts no workflows, so CI doesn't run on it by itself. A RELEASE_PR_TOKEN
-          # secret, when set, opens it instead, and CI runs.
+          # secret, when set, opens it instead, and CI runs. Without one, this step starts CI and the release dry run on
+          # the release branch by hand: GITHUB_TOKEN may do that, and their checks land on the PR's commit.
           GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN || github.token }}
           CURRENT: ${{ steps.version.outputs.current }}
           LAST: ${{ steps.version.outputs.last }}
@@ -129,10 +132,6 @@ jobs:
             else
               echo "There is no earlier vX.Y.Z tag."
             fi
-            if [[ "$HAS_PR_TOKEN" != true ]]; then
-              echo
-              echo "This PR was opened with GITHUB_TOKEN, so CI hasn't started on it. Push an empty commit to the branch, or close and reopen the PR, to start it."
-            fi
           } > "$body"
           git switch -c "$branch"
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
@@ -142,7 +141,9 @@ jobs:
           echo "Opened $url"
           echo "Release v$VERSION: $url" >> "$GITHUB_STEP_SUMMARY"
           if [[ "$HAS_PR_TOKEN" != true ]]; then
-            note="Opened with GITHUB_TOKEN, so CI doesn't run on it by itself. Push an empty commit to $branch, or close and reopen the PR, to start it."
-            echo "::notice::$note"
-            echo "$note" >> "$GITHUB_STEP_SUMMARY"
+            if ! { gh workflow run ci.yml --ref "$branch" && gh workflow run publish.yml --ref "$branch"; }; then
+              echo "::error::The PR is open, but CI and the release dry run couldn't be started on it (above). Run them on $branch from the Actions tab, or push an empty commit to $branch. Don't run Prepare release again: $branch exists."
+              exit 1
+            fi
+            echo "Started CI and the release dry run on $branch." >> "$GITHUB_STEP_SUMMARY"
           fi
