@@ -1,9 +1,12 @@
+# Typecheck, tests, build and the size budget, on every push to main and every pull request. publish.yml calls it as
+# the gate before a release.
 name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 jobs:
   check:

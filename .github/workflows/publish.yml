@@ -1,39 +1,261 @@
-name: Publish
-
-# Push a tag like v0.2.0 whose version matches package.json.
+# Releases @liberation-data/desk to npm. See RELEASING.md.
 #
-# Publishes with npm trusted publishing: npm is told, in the package's settings,
-# that this repository's publish.yml may publish it, and GitHub proves that on
-# each run. There is no token to store or rotate, and provenance is automatic.
+# Merging a version bump to main publishes it, and so does a push of a tag vX.Y.Z: the run checks the version, runs
+# the full CI gate (ci.yml), packs the package from a clean `npm ci`, checks it, publishes that tarball with provenance
+# and creates the GitHub release, tagging the commit if it isn't tagged yet. A manual run and a pull request that
+# changes the release machinery are dry runs: they do everything but publish, and leave the package as an artifact.
+#
+# It publishes with npm trusted publishing: npm is told, in the package's settings, that this repository's publish.yml
+# may publish it, and GitHub proves that on each run. That is why the file keeps this name.
+name: Release
+
 on:
   push:
+    # A push to main that changes package.json releases its version when that version is new: not tagged yet, not on
+    # npm, and later than every vX.Y.Z tag and npm's latest. Any other change to package.json releases nothing, and
+    # says why.
+    branches: [main]
+    paths: [package.json]
+    # A tag pushed by hand releases too. GitHub doesn't apply `paths` to a tag push.
     tags: ['v*']
+  # Always a dry run. Pick the branch or tag to try in "Use workflow from".
+  workflow_dispatch:
+  # A dry run, so a change to the release machinery is tested on its pull request.
+  pull_request:
+    paths:
+      - .github/workflows/publish.yml
+      - .github/workflows/prepare-release.yml
+      - RELEASING.md
+      - package.json
+      - package-lock.json
+      - tsconfig.json
+      - tsconfig.build.json
+      - scripts/css.mjs
+      - scripts/release-version.mjs
+
+permissions:
+  contents: read
+
+# Real releases, pushes, queue one after another per ref. A dry run gets a group of its own: GitHub keeps one pending
+# run per group, so a dry run queued in the release group would cancel a release waiting there.
+concurrency:
+  group: ${{ github.event_name == 'push' && format('release-{0}', github.ref) || format('release-dry-run-{0}', github.run_id) }}
+  cancel-in-progress: false
 
 jobs:
-  publish:
+  check:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      publish: ${{ steps.version.outputs.publish }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # Node for scripts/release-version.mjs, which compares versions by semver precedence.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-          cache: npm
-          registry-url: https://registry.npmjs.org
-      # Trusted publishing needs npm 11.5.1 or later.
-      - run: npm install -g npm@latest
-      - run: npm ci
-      - name: Tag matches package.json
-        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
-      - name: Not published already
-        id: published
+      - name: Work out the version
+        id: version
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          if npm view "$(node -p "require('./package.json').name")@$(node -p "require('./package.json').version")" version >/dev/null 2>&1; then
-            echo "already=true" >> "$GITHUB_OUTPUT"
-            echo "This version is already on npm; nothing to publish."
+          package_version=$(jq -r .version package.json)
+          if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF_TYPE" == tag ]]; then
+            tag="$GITHUB_REF_NAME"
+            if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "::error::The tag $tag isn't vX.Y.Z (or vX.Y.Z-suffix). Delete it and tag the release commit vX.Y.Z."
+              exit 1
+            fi
+            version="${tag#v}"
+            if [[ "$version" != "$package_version" ]]; then
+              echo "::error::The tag $tag is version $version, but package.json's version is $package_version. Tag the commit whose version is $version, or bump package.json in a release PR first."
+              exit 1
+            fi
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" "origin/$DEFAULT_BRANCH"; then
+              echo "::error::The tag $tag is on $GITHUB_SHA, which isn't on $DEFAULT_BRANCH. Tag the release PR's merge commit on $DEFAULT_BRANCH."
+              exit 1
+            fi
+            # A release in a gap between the untagged versions on npm would move latest back. A prerelease goes under
+            # next, so it may sit below latest.
+            if [[ "$version" != *-* ]] && latest=$(npm view @liberation-data/desk dist-tags.latest 2>/dev/null) && [[ -n "$latest" && "$latest" != "$version" ]] && ! node scripts/release-version.mjs greater "$version" "$latest"; then
+              echo "::error::The tag $tag is version $version, which isn't later than npm's latest, $latest, so publishing it would move latest back. Delete the tag and release a later version."
+              exit 1
+            fi
+            publish=true
+          elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            # A push to main that changed package.json. It releases a new version, and nothing else.
+            version="$package_version"
+            tag="v$version"
+            publish=false
+            newest=$(git tag -l 'v*' | node scripts/release-version.mjs newest)
+            if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "::error::package.json's version $version isn't X.Y.Z (or X.Y.Z-suffix), so it can't be released."
+              exit 1
+            elif [[ -n "$(git tag -l "$tag")" ]]; then
+              echo "::notice::package.json's version $version is already tagged $tag, so this push releases nothing. A change to package.json that isn't a version bump does this."
+            elif [[ -n "$newest" ]] && ! node scripts/release-version.mjs greater "$version" "${newest#v}"; then
+              echo "::notice::package.json's version $version isn't later than the last release, $newest, so this push releases nothing."
+            elif npm view "@liberation-data/desk@$version" version 2>/dev/null | grep -qx "$version"; then
+              # Versions up to 0.35.2 were published by hand, without a tag, so npm is asked as well as the tags.
+              echo "::notice::npm already has @liberation-data/desk@$version, so this push releases nothing."
+            elif latest=$(npm view @liberation-data/desk dist-tags.latest 2>/dev/null) && [[ -n "$latest" ]] && ! node scripts/release-version.mjs greater "$version" "$latest"; then
+              # A version in a gap between the untagged ones would otherwise publish and move latest back.
+              echo "::notice::package.json's version $version isn't later than npm's latest, $latest, so this push releases nothing."
+            else
+              publish=true
+            fi
+          else
+            version="$package_version"
+            tag="v$version"
+            publish=false
           fi
-      # prepublishOnly runs typecheck, tests and build.
-      - if: steps.published.outputs.already != 'true'
-        run: npm publish --access public
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+          echo "Version $version, publish: $publish" >> "$GITHUB_STEP_SUMMARY"
+
+  # The full CI, as it runs on main and on pull requests. Skipped on a push to main that releases nothing, as ci.yml
+  # runs on that push anyway.
+  gate:
+    needs: check
+    if: needs.check.outputs.publish == 'true' || github.event_name != 'push'
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: [check, gate]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      PUBLISH: ${{ needs.check.outputs.publish }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      # The npm that publishes, so the dry run checks what it will check. Pinned, as npm's latest can be a new major;
+      # trusted publishing needs 11.5.1 or later.
+      - run: npm install -g npm@11.21.1
+      - run: npm ci
+      - run: npm run build
+      - name: Pack
+        run: |
+          mkdir -p package
+          npm pack --ignore-scripts --pack-destination package --json > package/pack.json
+          jq -r '.[0].files[].path' package/pack.json | sort > package/files.txt
+          echo "$(wc -l < package/files.txt) files in $(jq -r '.[0].filename' package/pack.json)"
+          packed=$(jq -r '.[0].version' package/pack.json)
+          if [[ "$packed" != "$VERSION" ]]; then
+            echo "::error::The package is version $packed, not $VERSION."
+            exit 1
+          fi
+          for f in package.json README.md LICENSE NOTICE llms.txt dist/core/index.js dist/core/index.d.ts dist/react/index.js dist/react/index.d.ts dist/fx/index.js dist/desk.css; do
+            grep -qx "$f" package/files.txt || { echo "::error::The package has no $f."; exit 1; }
+          done
+          # src/ ships on purpose, for the source maps; tests and anything local don't.
+          if grep -E '(^|/)(node_modules|test|examples)/|\.test\.|\.env' package/files.txt; then
+            echo "::error::The package holds files it shouldn't (above)."
+            exit 1
+          fi
+      # Installed alone, as a user gets it: no devDependencies. The core entry needs no React.
+      - name: The package installs and loads in an empty project
+        run: |
+          tarball="$PWD/package/$(jq -r '.[0].filename' package/pack.json)"
+          cd "$RUNNER_TEMP"
+          mkdir smoke && cd smoke
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund --omit=peer "$tarball"
+          node --input-type=module -e 'const desk = await import("@liberation-data/desk"); if (typeof desk.createDesk !== "function") throw new Error("no createDesk")'
+      # npm refuses even a dry run of a version it already has, as a manual run or a pull request on a released version
+      # would be. That dry run publishes a copy under a throwaway prerelease version instead. When npm can't be asked,
+      # the run goes on with a warning: npm would refuse the publish of a version it has, overwriting nothing.
+      - name: Dry run of npm publish
+        run: |
+          tarball="./package/$(jq -r '.[0].filename' package/pack.json)"
+          published=false
+          if versions=$(npm view @liberation-data/desk versions --json); then
+            if jq -e --arg v "$VERSION" '[.] | flatten | any(.[]; . == $v)' <<< "$versions" > /dev/null; then
+              published=true
+            fi
+          else
+            echo "::warning::Couldn't ask npm whether it has @liberation-data/desk@$VERSION. Going on."
+          fi
+          if [[ "$published" == true ]]; then
+            if [[ "$PUBLISH" == true ]]; then
+              echo "::error::npm already has @liberation-data/desk@$VERSION, so this run publishes nothing. If merging its version bump released it, and this is a tag pushed for it by hand afterwards, there is nothing left to do. Otherwise bump the version in a release PR."
+              exit 1
+            fi
+            mkdir "$RUNNER_TEMP/dry-run"
+            tar -xzf "$tarball" -C "$RUNNER_TEMP/dry-run"
+            (cd "$RUNNER_TEMP/dry-run/package" && npm pkg set version="$VERSION-dryrun.$GITHUB_RUN_ID")
+            npm publish "$RUNNER_TEMP/dry-run/package" --ignore-scripts --dry-run --access public --tag dry-run
+          elif [[ "$VERSION" == *-* ]]; then
+            npm publish "$tarball" --dry-run --access public --tag next
+          else
+            npm publish "$tarball" --dry-run --access public
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-package
+          path: package/
+          if-no-files-found: error
+
+  publish:
+    needs: [check, build]
+    if: needs.check.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      # npm trusted publishing (OIDC) and provenance.
+      id-token: write
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      # The npm build ran its dry run with. Trusted publishing needs 11.5.1 or later.
+      - run: npm install -g npm@11.21.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-package
+          path: package
+      # Trusted publishing is used when it's configured on npmjs.com. An NPM_TOKEN secret, if set, is the fallback.
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [[ -n "$NODE_AUTH_TOKEN" ]]; then
+            npm config set //registry.npmjs.org/:_authToken '${NODE_AUTH_TOKEN}'
+          fi
+          tarball="./package/$(jq -r '.[0].filename' package/pack.json)"
+          if [[ "$VERSION" == *-* ]]; then
+            npm publish "$tarball" --provenance --access public --tag next
+          else
+            npm publish "$tarball" --provenance --access public
+          fi
+
+  github-release:
+    needs: [check, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.check.outputs.tag }}
+          VERSION: ${{ needs.check.outputs.version }}
+        # On a push to main the tag doesn't exist yet, and the release creates it on the commit that was released. A
+        # tag made with this token starts no workflow, so it doesn't release a second time.
+        run: |
+          prerelease=()
+          if [[ "$VERSION" == *-* ]]; then prerelease=(--prerelease); fi
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --generate-notes --verify-tag "${prerelease[@]}"
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --generate-notes "${prerelease[@]}"
+          fi
