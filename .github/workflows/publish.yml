@@ -159,11 +159,15 @@ jobs:
         run: |
           # A step's default shell has no pipefail, so without it tee would hide the plan failing.
           set -o pipefail
-          # Overtaken: more that the package ships has merged since this run began, and the run for the newest merge
-          # waits behind this one. That one releases it all, so this one releases nothing rather than an older main.
+          # Overtaken: a merge since this run's commit changed what the package ships, and so started a run of its own,
+          # which waits behind this one. That one releases it all, so this one releases nothing rather than an older
+          # main. A release commit merged meanwhile changes package.json too, but starts no run, so it doesn't count.
           git fetch -q origin main
-          if ! git diff --quiet HEAD origin/main -- src README.md LICENSE NOTICE llms.txt package.json package-lock.json tsconfig.json tsconfig.build.json scripts/css.mjs; then
-            echo "::notice::More has merged since this run's commit. The release waiting behind this one releases all of it: approve that one."
+          # Read in full, not with grep -q: under pipefail, git log cut off by grep would read as no newer merge.
+          newer=$(git log --first-parent --format=%s HEAD..origin/main -- src README.md LICENSE NOTICE llms.txt package.json package-lock.json tsconfig.json tsconfig.build.json scripts/css.mjs \
+            | { grep -Ev '^Release v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' || true; })
+          if [[ -n "$newer" ]]; then
+            echo "::notice::More has merged since this run's commit. The release waiting behind this one releases all of it: approve that one. If none comes (its run failed, or was rejected), run Release from main with publish ticked."
             exit 0
           fi
           # The plan goes on without npm when it can't reach it. A release can't: npm's latest may be ahead of the tags.
@@ -195,8 +199,10 @@ jobs:
           fi
           npm publish "./package/$(jq -r '.[0].filename' package/pack.json)" --provenance --access public
       # The release commit sits on the commit that was published, changing only the version, and carries the tag. Main
-      # takes it by a merge, a fast-forward unless more was merged meanwhile. A push made with this token starts no
-      # workflow, so it doesn't release again.
+      # takes it by a merge, a fast-forward unless more was merged meanwhile. When main took an earlier release after
+      # this run's commit, both changed the version line, so the merge takes this release's (-X theirs: only the
+      # release commit's hunks, which are the version's). A push made with this token starts no workflow, so it doesn't
+      # release again.
       - name: Commit the version to main and tag it
         if: steps.plan.outputs.version != ''
         env:
@@ -214,7 +220,7 @@ jobs:
           for attempt in 1 2 3; do
             git fetch origin main
             git switch -C main origin/main
-            if git merge --no-edit -m "Release $tag" "$tag" && git push origin main; then exit 0; fi
+            if git merge -X theirs --no-edit -m "Release $tag" "$tag" && git push origin main; then exit 0; fi
             git merge --abort 2>/dev/null || true
             sleep 5
           done

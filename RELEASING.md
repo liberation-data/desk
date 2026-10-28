@@ -10,7 +10,9 @@ Desk is released by CI, from a merge. Nothing is published from a laptop, and th
 2. **Approve when you want it out.** Merge as many pull requests as you like first: one release runs at a time, and
    GitHub keeps one more waiting behind it, a newer merge's replacing an older one's. Approve the newest waiting
    release: it releases everything merged since the last release, as one version. An older one, if approved, sees
-   it has been overtaken and does nothing, and so does one approved after everything was released.
+   it has been overtaken and does nothing, and so does one approved after everything was released. (A release
+   merged into `main` meanwhile doesn't overtake it.) If an overtaken one's successor never comes, because its run
+   failed or was rejected, run Release from `main` with publish ticked.
 3. **CI releases.** Approved, the job plans the version, runs `npm run check`, packs and checks the
    package, installs it alone and loads it, and publishes it with provenance. Then it commits the version to `main`
    ("Release vX.Y.Z", changing only `package.json` and `package-lock.json`), tags that commit `vX.Y.Z`, and creates
