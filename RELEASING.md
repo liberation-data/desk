@@ -18,9 +18,10 @@ Desk is released by CI, the way Drivine is. Nothing is published from a laptop.
    environment named `release`: give it required reviewers, and their approval of the run is the human checkpoint
    before anything goes out.
 
-A PR that "Prepare release" opens with the default `GITHUB_TOKEN` starts no workflows, so CI doesn't run on it by
-itself. Push an empty commit to its branch, or close and reopen it, to start CI. With a `RELEASE_PR_TOKEN` secret set,
-the PR is opened with that token and CI runs. "Prepare release" fails, saying why, when the version is already tagged
+A PR that "Prepare release" opens with the default `GITHUB_TOKEN` starts no workflows, so CI wouldn't run on it by
+itself. Prepare release therefore starts CI and the release dry run on the release branch by hand, which that token may
+do, and their checks land on the PR's commit: there is nothing to push. With a `RELEASE_PR_TOKEN` secret set, the PR is
+opened with that token and CI runs on it the usual way. "Prepare release" fails, saying why, when the version is already tagged
 or on npm, isn't later than the last tag and npm's `latest`, or its `release/vX.Y.Z` branch already exists.
 
 **Tagging by hand is the fallback.** A pushed tag `vX.Y.Z` releases the tagged commit, which must be on `main`, have
