@@ -128,7 +128,7 @@ jobs:
           if-no-files-found: error
 
   # The human checkpoint, and the release. One runs at a time and none is cancelled: GitHub keeps one more waiting
-  # behind it, a newer merge replacing that one. So with several merges, approve the newest: an older one, approved,
+  # behind it, a newer merge replacing that one. With several merges, an older one, approved,
   # finds it has been overtaken and does nothing, and one approved after everything is released finds nothing new.
   release:
     needs: [check, build]

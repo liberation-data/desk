@@ -8,9 +8,10 @@ Desk is released by CI, from a merge. Nothing is published from a laptop, and th
    and the few files that build it) starts the Release workflow (`.github/workflows/publish.yml`). It runs CI and a
    dry run of the package, then waits for approval in the `release` environment.
 2. **Approve when you want it out.** Merge as many pull requests as you like first: one release runs at a time, and
-   GitHub keeps one more waiting behind it, a newer merge's replacing an older one's. Approve the newest waiting
-   release: it releases everything merged since the last release, as one version. An older one, if approved, sees
-   it has been overtaken and does nothing, and so does one approved after everything was released. (A release
+   GitHub keeps one more queued behind it, a newer merge's replacing an older one's. Approve the one waiting. It
+   releases everything merged since the last release, as one version — unless more has merged since its own merge:
+   then it says it was overtaken and does nothing, and the newest merge's release waits next. Approve that one. One
+   approved after everything was released finds nothing new and does nothing too. (A release
    merged into `main` meanwhile doesn't overtake it.) If an overtaken one's successor never comes, because its run
    failed or was rejected, run Release from `main` with publish ticked.
 3. **CI releases.** Approved, the job plans the version, runs `npm run check`, packs and checks the
