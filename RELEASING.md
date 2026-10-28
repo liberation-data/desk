@@ -49,9 +49,11 @@ the human checkpoint before anything goes out, and it is why a pull request can'
 
 - Before publishing, nothing has gone out: fix what the run says, then run Release from `main` with publish ticked.
 - After publishing, the job stops once it can't record the release. If it published and tagged but couldn't merge the
-  release commit into `main`, merge the tag by hand (`git merge vX.Y.Z`). If npm has a version with no tag, the next
-  release stops and says so: tag the commit that version was built from, merge the tag into `main`, and run Release
-  again.
+  release commit into `main`, merge the tag by hand with the message the workflow uses, so the next release skips the
+  merge (`git merge -m 'Release vX.Y.Z' vX.Y.Z`), then create the GitHub release
+  (`gh release create vX.Y.Z --verify-tag --generate-notes --notes-start-tag <the tag before>`). If npm has a version
+  with no tag, the next release stops and says so: tag the commit that version was built from, merge the tag into
+  `main`, and run Release again.
 
 ## Settings, made once
 

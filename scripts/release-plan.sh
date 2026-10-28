@@ -33,11 +33,17 @@ range="$ref"
 [[ -n "$last" ]] && range="$last..$ref"
 prs=()
 direct=false
+err=$(mktemp)
+trap 'rm -f "$err"' EXIT
 while read -r sha subject; do
   [[ -z "$sha" ]] && continue
-  [[ "$subject" =~ ^Release\ v[0-9] ]] && continue
-  # A commit GitHub doesn't know (a pull request's test merge) has no pull request either.
-  found=$(gh api "repos/$repo/commits/$sha/pulls" --jq '[.[] | select(.merged_at != null) | .number] | join(" ")' 2>/dev/null || true)
+  [[ "$subject" =~ ^Release\ v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] && continue
+  # A commit GitHub doesn't know (a pull request's test merge, a local one) has no pull request either. Any other
+  # failure stops the plan, rather than count a merge as a change pushed straight to main.
+  if ! found=$(gh api "repos/$repo/commits/$sha/pulls" --jq '[.[] | select(.merged_at != null) | .number] | join(" ")' 2>"$err"); then
+    grep -q 'No commit found for SHA' "$err" || { cat "$err" >&2; exit 1; }
+    found=''
+  fi
   if [[ -n "$found" ]]; then
     for n in $found; do [[ " ${prs[*]-} " == *" $n "* ]] || prs+=("$n"); done
   else

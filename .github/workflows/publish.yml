@@ -46,6 +46,7 @@ on:
       - scripts/css.mjs
       - scripts/release-version.mjs
       - scripts/release-plan.sh
+      - scripts/release-pack.sh
 
 permissions:
   contents: read
@@ -156,6 +157,10 @@ jobs:
       - name: Plan the release, from main as it is now
         id: plan
         run: |
+          # A step's default shell has no pipefail, so without it tee would hide the plan failing.
+          set -o pipefail
+          # The plan goes on without npm when it can't reach it. A release can't: npm's latest may be ahead of the tags.
+          npm view @liberation-data/desk dist-tags.latest > /dev/null
           scripts/release-plan.sh HEAD | tee plan.txt
           last=$(sed -n 's/^last=//p' plan.txt)
           base=$(sed -n 's/^base=//p' plan.txt)
@@ -194,18 +199,19 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           tag="v$VERSION"
           git checkout -- .
-          npm version "$VERSION" --no-git-tag-version --ignore-scripts
-          git commit -am "Release $tag"
+          # Main's package.json may hold the version already, from a bump merged by hand.
+          npm version "$VERSION" --no-git-tag-version --ignore-scripts --allow-same-version
+          git commit --allow-empty -am "Release $tag"
           git tag "$tag"
           git push origin "$tag"
           for attempt in 1 2 3; do
             git fetch origin main
             git switch -C main origin/main
-            git merge --no-edit -m "Release $tag" "$tag"
-            if git push origin main; then exit 0; fi
+            if git merge --no-edit -m "Release $tag" "$tag" && git push origin main; then exit 0; fi
+            git merge --abort 2>/dev/null || true
             sleep 5
           done
-          echo "::error::Published and tagged $tag, but couldn't merge it into main. Merge it by hand: git merge $tag"
+          echo "::error::Published and tagged $tag, but couldn't merge it into main. Merge it by hand, with this message so the next release skips it: git merge -m 'Release $tag' $tag"
           exit 1
       - name: Create the GitHub release
         if: steps.plan.outputs.version != ''
