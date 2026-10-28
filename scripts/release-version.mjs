@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
  *
  *     git tag -l | node scripts/release-version.mjs newest     # prints the newest vX.Y.Z tag, or nothing
  *     node scripts/release-version.mjs greater 0.36.0 0.35.2   # exits 0 when the first is the greater, 1 when not
- *     node scripts/release-version.mjs bump 0.36.1 minor       # prints 0.37.0, from the X.Y.Z part
+ *     node scripts/release-version.mjs bump 0.36.1 minor       # prints 0.37.0 (from 0.37.0-rc.1, 0.37.0)
  *
  * It needs Node alone, so it runs before `npm ci`. Drivine's release workflows use the same script.
  */
@@ -71,8 +71,15 @@ function main(args) {
             return compare(parse(args[1]), parse(args[2])) > 0 ? 0 : 1;
         }
         if (args.length === 3 && args[0] === 'bump' && ['major', 'minor', 'patch'].includes(args[2])) {
-            const [major, minor, patch] = parse(args[1]).release;
-            const next = { major: [major + 1n, 0n, 0n], minor: [major, minor + 1n, 0n], patch: [major, minor, patch + 1n] }[args[2]];
+            // From a prerelease, as npm's semver does: the release it leads to, when that is at least the bump.
+            // 0.37.0-rc.1 by minor is 0.37.0, by patch 0.37.0, by major 1.0.0.
+            const { release: [major, minor, patch], prerelease } = parse(args[1]);
+            const pre = prerelease.length > 0;
+            const next = {
+                major: pre && minor === 0n && patch === 0n ? [major, 0n, 0n] : [major + 1n, 0n, 0n],
+                minor: pre && patch === 0n ? [major, minor, 0n] : [major, minor + 1n, 0n],
+                patch: pre ? [major, minor, patch] : [major, minor, patch + 1n],
+            }[args[2]];
             console.log(next.join('.'));
             return 0;
         }
