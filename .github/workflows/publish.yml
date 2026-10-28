@@ -1,10 +1,10 @@
 # Releases @liberation-data/desk to npm. See RELEASING.md.
 #
 # Every merge to main that changes what the package ships starts a release, which waits for approval in the `release`
-# environment. Approving it releases what main holds at that moment — everything merged since the last release, as
-# one version: the last release bumped by the biggest change merged (scripts/release-plan.sh). The job checks, packs
-# and publishes that commit with provenance, then commits the version to main, tags it, and creates the GitHub
-# release. A pull request that touches the release machinery, and a manual run, are dry runs.
+# environment. Approving it releases everything merged since the last release, as one version: the last release bumped
+# by the biggest change merged (scripts/release-plan.sh). The job checks, packs and publishes its commit with
+# provenance, then commits the version to main, tags it, and creates the GitHub release. A pull request that touches
+# the release machinery, and a manual run, are dry runs.
 #
 # It publishes with npm trusted publishing: npm is told, in the package's settings, that this repository's publish.yml
 # may publish it from the `release` environment, and GitHub proves that on each run. That is why the file keeps this
@@ -128,8 +128,8 @@ jobs:
           if-no-files-found: error
 
   # The human checkpoint, and the release. One runs at a time and none is cancelled: GitHub keeps one more waiting
-  # behind it, a newer merge replacing that one. Approved, it releases main as it is then; a run approved after
-  # another has released everything finds nothing new, and does nothing.
+  # behind it, a newer merge replacing that one. So with several merges, approve the newest: an older one, approved,
+  # finds it has been overtaken and does nothing, and one approved after everything is released finds nothing new.
   release:
     needs: [check, build]
     if: needs.check.outputs.publish == 'true'
@@ -146,19 +146,26 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
+      # This run's own commit: npm's provenance names it, so it is what is published.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: main
           fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - run: npm install -g npm@11.21.1
-      - name: Plan the release, from main as it is now
+      - name: Plan the release
         id: plan
         run: |
           # A step's default shell has no pipefail, so without it tee would hide the plan failing.
           set -o pipefail
+          # Overtaken: more that the package ships has merged since this run began, and the run for the newest merge
+          # waits behind this one. That one releases it all, so this one releases nothing rather than an older main.
+          git fetch -q origin main
+          if ! git diff --quiet HEAD origin/main -- src README.md LICENSE NOTICE llms.txt package.json package-lock.json tsconfig.json tsconfig.build.json scripts/css.mjs; then
+            echo "::notice::More has merged since this run's commit. The release waiting behind this one releases all of it: approve that one."
+            exit 0
+          fi
           # The plan goes on without npm when it can't reach it. A release can't: npm's latest may be ahead of the tags.
           npm view @liberation-data/desk dist-tags.latest > /dev/null
           scripts/release-plan.sh HEAD | tee plan.txt
