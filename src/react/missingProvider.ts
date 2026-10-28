@@ -4,7 +4,7 @@
  * message and not the stack, so the message carries the first frame outside the accessors that
  * only re-expose a context — the line that has to change.
  */
-const ACCESSORS = new Set(['caller', 'missingProvider', 'useDesk', 'useOptionalDesk', 'useDeskState', 'useBus', 'useToast'])
+const ACCESSORS = new Set(['caller', 'missingProvider', 'useDesk', 'useOptionalDesk', 'useDeskState', 'useBus', 'useToast', 'useWindowRoute'])
 
 /** `at Object.name (loc)` and `name@loc`: V8 or not, either engine can be the one that throws. */
 const FRAME = /^\s*(?:at\s+(?:[\w$.]*?([\w$]+)\s+\()?|([\w$]+)@)(.+?)\)?$/

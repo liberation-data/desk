@@ -13,7 +13,7 @@ export type {
 } from './dnd.js'
 export { DeskShell } from './shell.js'
 export type { DeskShellProps } from './shell.js'
-export { DeskProvider, useDesk, useDeskState, useLook, useWindowId } from './context.js'
+export { DeskProvider, useDesk, useDeskState, useLook, useWindowId, useWindowRoute } from './context.js'
 export type { DeskProviderProps } from './context.js'
 export { useCanPerform, useCommand, usePerform, useShortcuts } from './commands.js'
 export type { UseCommandOptions } from './commands.js'

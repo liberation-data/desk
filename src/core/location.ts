@@ -1,4 +1,4 @@
-import { cascadeFrame, focusedId, isMinimized, normalise } from './desk.js'
+import { cascadeFrame, focusedId, isMinimized, normalise, routeOf } from './desk.js'
 import type { Desk } from './desk.js'
 import type { DeskState, DeskWindow, Size, WindowId } from './types.js'
 
@@ -12,10 +12,31 @@ import type { DeskState, DeskWindow, Size, WindowId } from './types.js'
  * `~` marks a free window; the others fill the desk. `_` marks one that is minimized — open and
  * off the desk — which is not a position but which windows are open and how, so it travels.
  * `f` names the focused window.
+ *
+ *   #w=notes,settings~/agents&f=settings
+ *
+ * After a `/`, where the window is inside itself: Settings at its agents section. That does travel,
+ * because it is what a link is for — the place someone meant, not how their screen was arranged.
  */
 
 const FLOAT = '~'
 const MINIMIZED = '_'
+const ROUTE = '/'
+
+/*
+ * Only what would break the list is escaped — a `,` would end the window, a `%` would be read as an
+ * escape — so `views/name/run` reads as a path in the address bar and the rest is left to the hash.
+ */
+const encodeRoute = (route: string) => route.replace(/%/g, '%25').replace(/,/g, '%2C')
+
+/** A hand-edited link can hold a `%` that decodes to nothing; that window opens without its route. */
+const decodeRoute = (route: string) => {
+  try {
+    return decodeURIComponent(route)
+  } catch {
+    return ''
+  }
+}
 
 const warned = new Set<string>()
 /** Said once per message: a warning on every parse would be noise, not help. */
@@ -40,7 +61,10 @@ export function serialize(state: DeskState, options: LocationOptions = {}): URLS
   params.set(
     options.key ?? 'w',
     state.windows
-      .map(w => `${encodeURIComponent(w.id)}${w.mode === 'floating' ? FLOAT : ''}${isMinimized(state, w.id) ? MINIMIZED : ''}`)
+      .map(w => {
+        const route = routeOf(state, w.id)
+        return `${encodeURIComponent(w.id)}${w.mode === 'floating' ? FLOAT : ''}${isMinimized(state, w.id) ? MINIMIZED : ''}${route ? ROUTE + encodeRoute(route) : ''}`
+      })
       .join(','),
   )
   const focused = focusedId(state)
@@ -63,10 +87,14 @@ export function parse(params: URLSearchParams, stage: Size, options: LocationOpt
     .split(',')
     .filter(Boolean)
     .map(token => {
-      const minimized = token.endsWith(MINIMIZED)
-      const rest = minimized ? token.slice(0, -1) : token
+      // An id is encoded whole, so its own slashes are `%2F`: the first plain one starts the route.
+      const at = token.indexOf(ROUTE)
+      const head = at < 0 ? token : token.slice(0, at)
+      const route = at < 0 ? '' : decodeRoute(token.slice(at + 1))
+      const minimized = head.endsWith(MINIMIZED)
+      const rest = minimized ? head.slice(0, -1) : head
       const floating = rest.endsWith(FLOAT)
-      return { id: decodeURIComponent(floating ? rest.slice(0, -1) : rest), floating, minimized }
+      return { id: decodeURIComponent(floating ? rest.slice(0, -1) : rest), floating, minimized, route }
     })
     .filter(e => e.id && known(e.id))
 
@@ -80,7 +108,8 @@ export function parse(params: URLSearchParams, stage: Size, options: LocationOpt
   const ids = windows.map(w => w.id)
   const stack = focus && ids.includes(focus) ? [...ids.filter(id => id !== focus), focus] : ids
   const minimized = entries.filter(e => e.minimized).map(e => e.id)
-  return normalise(minimized.length ? { windows, stack, minimized } : { windows, stack })
+  const routes = Object.fromEntries(entries.filter(e => e.route).map(e => [e.id, e.route]))
+  return normalise({ windows, stack, minimized, routes })
 }
 
 export interface LocationEnv {
@@ -94,7 +123,7 @@ const openSet = (state: DeskState) => state.windows.map(w => w.id).join('|')
 
 /**
  * Keeps the desk and the URL hash in step. Opening or closing a window pushes a
- * history entry, so Back closes it; focus and mode changes replace the entry.
+ * history entry, so Back closes it; focus, mode and route changes replace the entry.
  * Other hash parameters are left alone, so the app can keep using the hash too.
  */
 export function syncWithLocation(desk: Desk, stage: () => Size, options: LocationOptions = {}, env?: LocationEnv): () => void {
@@ -108,7 +137,7 @@ export function syncWithLocation(desk: Desk, stage: () => Size, options: Locatio
     const params = read()
     keys.forEach(k => params.delete(k))
     serialize(state, options).forEach((value, key) => params.set(key, value))
-    const url = `#${params.toString().replace(/%2C/g, ',').replace(/%7E/g, FLOAT)}`
+    const url = `#${params.toString().replace(/%2C/g, ',').replace(/%7E/g, FLOAT).replace(/%2F/g, ROUTE)}`
     if (url === target.location.hash || (url === '#' && !target.location.hash)) return
     if (openSet(state) !== openSet(previous)) target.history.pushState(null, '', url)
     else target.history.replaceState(null, '', url)

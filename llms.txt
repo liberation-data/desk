@@ -64,11 +64,13 @@ fitFrame(frame, stage, min?): Frame | null; stepFrom(frame, open: Frame[], stage
 interface Desk {
   getState(): DeskState
   subscribe(listener: (state: DeskState) => void): () => void
-  open(id: string, options?: { mode?: 'filled' | 'floating'; frame?: Frame }): void   // default fills; a frame floats
+  open(id: string, options?: { mode?: 'filled' | 'floating'; frame?: Frame; route?: string }): void   // default fills; a frame floats;
+                                                  // a route moves it there, open already or not
   openInstance(type: string, options?): string    // 'query', then 'query#2' — returns the id it opened
   close(id: string): void
   closeAll(): void
   minimize(id: string): void                      // off the desk, still open and loaded; see Minimizing
+  setRoute(id: string, route: string): void       // where it is inside itself, not brought forward; '' clears
   focus(id: string): void                         // forward, and back onto the desk when minimized
   float(id: string, frame?: Frame): void          // no frame: last place it sat, else the next cascade step
   fill(id: string): void                          // fill the desk; remembers the frame for float()
@@ -86,11 +88,13 @@ interface DeskState {
   windows: readonly DeskWindow[]   // the order they were opened = the order Arrange lays out
   stack: readonly string[]         // back to front; the last one NOT minimized is key
   minimized?: readonly string[]    // open and off the desk; absent while nothing is
+  routes?: Record<string, string>  // where each window is inside itself; absent while none has one
 }
 type DeskWindow = { id: string; mode: 'filled' } | { id: string; mode: 'floating'; frame: Frame }
 interface Frame { x: number; y: number; width: number; height: number }
 
 focusedId(state): string | null
+routeOf(state, id): string                        // '' when nobody has said
 windowType(id): string                            // 'query#2' → 'query'; what to render
 instancesOf(state, type): DeskWindow[]            // every window of a kind
 isOpen(state, id): boolean
@@ -125,12 +129,12 @@ Deliberately NOT a `WindowMode`: the window keeps its mode and frame, which is h
 
 ```ts
 syncWithLocation(desk, stage: () => Size, options?: LocationOptions, env?: LocationEnv): () => void
-serialize(state, options?): URLSearchParams        // #w=rides,map~_&f=rides  (`~` = free, `_` = minimized)
+serialize(state, options?): URLSearchParams        // #w=rides,map~_,settings/agents&f=rides  (`~` = free, `_` = minimized, `/` = route)
 parse(params, stage, options?): DeskState
 interface LocationOptions { key?: 'w'; focusKey?: 'f'; isKnown?: (id: string) => boolean }
 ```
 
-Opening or closing pushes history (Back closes); focus and mode changes replace it. Frames are never in the
+Opening or closing pushes history (Back closes); focus, mode and route changes replace it. Frames are never in the
 URL. Other hash parameters are left alone. A URL naming no windows adopts whatever the app opened.
 
 ### The browser tab
@@ -255,6 +259,7 @@ useDesk(): Desk
 useLook(): 'mac' | 'gnome' | 'windows'              // resolved; the device's outside a desk
 useDeskState(): DeskState
 useWindowId(): string | null                        // inside a window's content
+useWindowRoute(): [route, setRoute]                 // where this window is inside itself; follows desk.open(id, { route }); throws outside a window
 useWindowProgress({ value, max, label } | null): boolean  // a real count in this window's title bar; false outside one
 useWindowNote(note: ReactNode): boolean             // this view's note in place of the window's; null defers, false hides
 useWindowInfo(info: ReactNode): boolean             // this view's (i) in place of the window's; null defers

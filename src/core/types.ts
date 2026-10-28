@@ -32,6 +32,12 @@ export interface DeskState {
    * Absent while nothing is minimized, which is most of the time.
    */
   readonly minimized?: readonly WindowId[]
+  /**
+   * Where each window is inside itself: Settings at a section, a list at one item. The desk only
+   * holds it — what a route means is the window's — so a link, a command or another window can open
+   * one somewhere, and the window can say where it has got to. Absent while no window has one.
+   */
+  readonly routes?: Readonly<Record<WindowId, string>>
 }
 
 export interface CascadeOptions {
@@ -56,6 +62,8 @@ export interface OpenOptions {
   /** Open as a free window rather than filling the desk. Given a frame, it floats there. */
   readonly mode?: WindowMode
   readonly frame?: Frame
+  /** Where inside the window: given to a window already open, it moves there as it comes forward. */
+  readonly route?: string
 }
 
 /** How big a window may be. Everything is optional; a window with no limits takes what it is given. */

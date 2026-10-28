@@ -84,9 +84,14 @@ useEffect(() => syncWithLocation(desk, stageSize, { isKnown: id => id in SURFACE
 ```
 
 The hash carries which windows are open, which float, and which has focus — `#w=rides,map~&f=map`. Opening
-or closing a window pushes a history entry, so Back closes it; focus and mode changes replace it. Window
+or closing a window pushes a history entry, so Back closes it; focus, mode and route changes replace it. Window
 positions are deliberately left out: a link should open the same things, not reproduce someone's layout on a
 different screen.
+
+A link can point inside a window too. `desk.open('settings', { route: 'agents' })` opens Settings on its
+agents section, or moves it there if it is open already, and the hash says so: `#w=settings/agents&f=settings`. The
+window reads where it is with `useWindowRoute()`, and says where it has got to with the setter it returns;
+what a route means is the window's own business.
 
 `isKnown` is not optional in spirit: it drops ids your app cannot render, so a stale or hand-edited link
 opens what it can rather than breaking.

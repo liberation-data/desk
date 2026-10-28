@@ -9,6 +9,7 @@ export {
   nextCascadeFrame,
   onDesk,
   normalise,
+  routeOf,
   windowType,
   EMPTY,
 } from './desk.js'
