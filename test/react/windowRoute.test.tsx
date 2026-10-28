@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { StrictMode } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createDesk, routeOf } from '../../src/core/index.js'
 import { Desktop, DeskProvider, useWindowRoute } from '../../src/react/index.js'
 
@@ -66,6 +67,20 @@ describe('useWindowRoute', () => {
     render(<Settings />)
     fireEvent.click(screen.getByRole('button', { name: 'Look' }))
     expect(screen.getByText('at look')).toBeTruthy()
+  })
+
+  it('keeps its own route outside a window under StrictMode, without a warning', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(
+      <StrictMode>
+        <Settings />
+      </StrictMode>,
+    )
+    expect(screen.getByText('at the start')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Look' }))
+    expect(screen.getByText('at look')).toBeTruthy()
+    expect(error).not.toHaveBeenCalled()
+    error.mockRestore()
   })
 })
 
