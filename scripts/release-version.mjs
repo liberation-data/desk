@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs'
  *     node scripts/release-version.mjs greater 0.36.0 0.35.2   # exits 0 when the first is the greater, 1 when not
  *     node scripts/release-version.mjs bump 0.36.1 minor       # prints 0.37.0 (from 0.37.0-rc.1, 0.37.0)
  *
- * It needs Node alone, so it runs before `npm ci`. Drivine's release workflows use the same script.
+ * It needs Node alone, so it runs before `npm ci`.
  */
 const SEMVER = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z.-]+))?$/;
 const TAG = /^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$/;
