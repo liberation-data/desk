@@ -809,8 +809,30 @@ const stop = syncWithLocation(desk, () => stageSize(), { isKnown: id => id in SU
 
 The hash carries which windows are open, which float, and which has focus — `#w=notes,clock~&f=clock` —
 but never positions: a shared link opens the same things, not someone else's layout on a different
-screen. Opening or closing a window pushes a history entry, so Back closes it; focus and mode changes
-replace the entry. Other hash parameters are left alone.
+screen. Opening or closing a window pushes a history entry, so Back closes it; focus, mode and route
+changes replace the entry. Other hash parameters are left alone.
+
+## Places inside a window
+
+```tsx
+desk.open('settings', { route: 'agents' })   // Settings, on its agents section — open or not
+desk.setRoute('settings', 'look')            // where it has got to, without bringing it forward
+routeOf(desk.getState(), 'settings')         // 'look'; '' when nobody has said
+
+function Settings() {
+  const [section, setSection] = useWindowRoute()   // from '@liberation-data/desk/react'
+  return <Sidebar label="Settings" sections={SECTIONS} value={section || 'look'} onChange={setSection} />
+}
+```
+
+A route is where a window is inside itself: Settings at a section, a list at one item. The desk holds it
+and the window says what it means. Opening a window that is already open with a route moves it there as it
+comes forward, so one rule serves a link, a command and another window, and the window reading
+`useWindowRoute` follows all of them. Opening without a route leaves it where it was; closing forgets it.
+
+The hash carries it after the window: `#w=notes,settings~/agents&f=settings`. A route is what someone meant
+to point at, not how their screen was arranged, so like minimizing it travels. Slashes stay readable —
+`views/crime/run` — and `state.routes` is absent while no window has one.
 
 ## Minimizing
 

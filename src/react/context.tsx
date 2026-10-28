@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import { createBus } from '../core/events.js'
 import type { Bus } from '../core/events.js'
-import { createDesk } from '../core/desk.js'
+import { createDesk, routeOf } from '../core/desk.js'
 import { deviceLook, resolveLook } from '../core/look.js'
 import { holdAll } from '../core/services.js'
 import type { Holdable } from '../core/services.js'
@@ -95,3 +95,19 @@ export const WindowContext = createContext<WindowContextValue | null>(null)
 
 /** The id of the window this component is rendered in, or null outside any window. */
 export const useWindowId = (): WindowId | null => useContext(WindowContext)?.id ?? null
+
+/**
+ * Where this window is inside itself, and a way to say it has moved: Settings on a section, a list on
+ * one item. A link that opens the window somewhere (`desk.open(id, { route })`) changes the route
+ * whether the window is new or already open, so a window that reads it here follows every link to it.
+ * The route is `''` when nobody has said; what it means is the window's.
+ */
+export function useWindowRoute(): readonly [string, (route: string) => void] {
+  const id = useWindowId()
+  if (id === null) throw missingProvider('useWindowRoute', 'a window on a <Desktop>')
+  const desk = useDesk()
+  const read = useCallback(() => routeOf(desk.getState(), id), [desk, id])
+  const route = useSyncExternalStore(desk.subscribe, read, read)
+  const setRoute = useCallback((next: string) => desk.setRoute(id, next), [desk, id])
+  return [route, setRoute] as const
+}

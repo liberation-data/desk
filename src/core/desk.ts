@@ -24,6 +24,11 @@ export interface Desk {
    * had. Focusing or opening it again brings it back.
    */
   minimize(id: WindowId): void
+  /**
+   * Where a window is inside itself, without bringing it forward: the window saying where it has got
+   * to. An empty route clears it. Nothing happens for a window that is not open.
+   */
+  setRoute(id: WindowId, route: string): void
   /** Brings a window forward, and back onto the desk when it was minimized. */
   focus(id: WindowId): void
   /** Frees a window: where it last was, or at the next step of the cascade. Given a frame, puts it there. */
@@ -64,6 +69,10 @@ const DEFAULT_CASCADE: CascadeOptions = {
 }
 
 const DEFAULT_STAGE: Size = { width: 1024, height: 768 }
+
+/** Where a window is inside itself, or `''` when nobody has said. Own keys only: a window called `constructor` has no route. */
+export const routeOf = (state: DeskState, id: WindowId): string =>
+  state.routes && Object.hasOwn(state.routes, id) ? (state.routes[id] ?? '') : ''
 
 /** Open, and off the desk: still mounted, and not somewhere anyone can point at. */
 export const isMinimized = (state: DeskState, id: WindowId): boolean => state.minimized?.includes(id) ?? false
@@ -142,8 +151,16 @@ export function normalise(state: DeskState): DeskState {
   const unstacked = windows.map(w => w.id).filter(id => !stacked.includes(id))
   const minimized = state.minimized?.filter((id, i, all) => ids.has(id) && all.indexOf(id) === i) ?? []
   const stack = [...unstacked, ...stacked]
-  // Left out while nothing is minimized: the everyday state is the two lists it always was.
-  return minimized.length ? { windows, stack, minimized } : { windows, stack }
+  // A list or a string has entries too, keyed `0`, `1`…: restored from storage, it would route a window called `0`.
+  const given = typeof state.routes === 'object' && !Array.isArray(state.routes) ? (state.routes ?? {}) : {}
+  const routes = Object.entries(given).filter(([id, route]) => ids.has(id) && typeof route === 'string' && route)
+  // Left out while nothing is minimized or routed: the everyday state is the two lists it always was.
+  return {
+    windows,
+    stack,
+    ...(minimized.length ? { minimized } : {}),
+    ...(routes.length ? { routes: Object.fromEntries(routes) } : {}),
+  }
 }
 
 /** Keeps the field out of the state while nothing is minimized, so the everyday state is two lists. */
@@ -151,6 +168,16 @@ function withMinimized(state: DeskState, ids: readonly WindowId[]): DeskState {
   if (ids.length) return { ...state, minimized: ids }
   if (!state.minimized) return state
   const { minimized: _none, ...rest } = state
+  return rest
+}
+
+/** One window's route set, or cleared by `''`, keeping the field out of the state while no window has one. */
+function withRoute(state: DeskState, id: WindowId, route: string): DeskState {
+  if (routeOf(state, id) === route) return state
+  const { [id]: _old, ...others } = state.routes ?? {}
+  const routes = route ? { ...others, [id]: route } : others
+  if (Object.keys(routes).length) return { ...state, routes }
+  const { routes: _none, ...rest } = state
   return rest
 }
 
@@ -246,7 +273,8 @@ export function createDesk(options: DeskOptions = {}): Desk {
 
     open(id, opts = {}) {
       if (find(id)) {
-        commit(toFront(state, id))
+        const forward = toFront(state, id)
+        commit(opts.route === undefined ? forward : withRoute(forward, id, opts.route))
         return
       }
       const saved = opts.mode || opts.frame ? undefined : layouts?.load(windowType(id))
@@ -263,8 +291,8 @@ export function createDesk(options: DeskOptions = {}): Desk {
       }
       const window: DeskWindow = mode === 'filled' ? { id, mode } : { id, mode, frame: frame() }
       // Spread, not a fresh pair: a state literal here drops `minimized`, and every window off the desk comes back.
-      // Spread, not a fresh pair: a state literal here drops `minimized`, and every window off the desk comes back.
-      commit({ ...state, windows: [...state.windows, window], stack: [...state.stack, id] })
+      const opened = { ...state, windows: [...state.windows, window], stack: [...state.stack, id] }
+      commit(opts.route ? withRoute(opened, id, opts.route) : opened)
     },
 
     openInstance(type, opts = {}) {
@@ -277,8 +305,9 @@ export function createDesk(options: DeskOptions = {}): Desk {
 
     close(id) {
       if (!find(id)) return
-      const closed: DeskState = { windows: state.windows.filter(w => w.id !== id), stack: state.stack.filter(x => x !== id) }
-      commit(withMinimized(closed, state.minimized?.filter(x => x !== id) ?? []))
+      const closed: DeskState = { ...state, windows: state.windows.filter(w => w.id !== id), stack: state.stack.filter(x => x !== id) }
+      // A window opened again starts where it is opened, not where it was left.
+      commit(withRoute(withMinimized(closed, state.minimized?.filter(x => x !== id) ?? []), id, ''))
     },
 
     minimize(id) {
@@ -289,6 +318,10 @@ export function createDesk(options: DeskOptions = {}): Desk {
 
     closeAll() {
       if (state.windows.length) commit(EMPTY)
+    },
+
+    setRoute(id, route) {
+      if (find(id)) commit(withRoute(state, id, route))
     },
 
     focus(id) {
