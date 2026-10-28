@@ -101,13 +101,19 @@ export const useWindowId = (): WindowId | null => useContext(WindowContext)?.id 
  * one item. A link that opens the window somewhere (`desk.open(id, { route })`) changes the route
  * whether the window is new or already open, so a window that reads it here follows every link to it.
  * The route is `''` when nobody has said; what it means is the window's.
+ *
+ * Outside a window — the same view drawn on its own, in a test or on a page of its own — the route
+ * is the component's own state, starting at `''`, as the other window hooks do something sensible
+ * there rather than throw.
  */
 export function useWindowRoute(): readonly [string, (route: string) => void] {
   const id = useWindowId()
-  if (id === null) throw missingProvider('useWindowRoute', 'a window on a <Desktop>')
-  const desk = useDesk()
-  const read = useCallback(() => routeOf(desk.getState(), id), [desk, id])
-  const route = useSyncExternalStore(desk.subscribe, read, read)
-  const setRoute = useCallback((next: string) => desk.setRoute(id, next), [desk, id])
+  const desk = useOptionalDesk()
+  const [own, setOwn] = useState('')
+  const inWindow = id !== null && desk !== null
+  const subscribe = useCallback((listener: () => void) => (inWindow ? desk.subscribe(listener) : () => {}), [desk, inWindow])
+  const read = useCallback(() => (inWindow ? routeOf(desk.getState(), id) : own), [desk, id, inWindow, own])
+  const route = useSyncExternalStore(subscribe, read, read)
+  const setRoute = useCallback((next: string) => (inWindow ? desk.setRoute(id, next) : setOwn(next)), [desk, id, inWindow])
   return [route, setRoute] as const
 }
