@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs'
  *
  *     git tag -l | node scripts/release-version.mjs newest     # prints the newest vX.Y.Z tag, or nothing
  *     node scripts/release-version.mjs greater 0.36.0 0.35.2   # exits 0 when the first is the greater, 1 when not
+ *     node scripts/release-version.mjs bump 0.36.1 minor       # prints 0.37.0, from the X.Y.Z part
  *
  * It needs Node alone, so it runs before `npm ci`. Drivine's release workflows use the same script.
  */
@@ -69,7 +70,13 @@ function main(args) {
         if (args.length === 3 && args[0] === 'greater') {
             return compare(parse(args[1]), parse(args[2])) > 0 ? 0 : 1;
         }
-        console.error('Usage: node scripts/release-version.mjs newest | greater <version> <version>');
+        if (args.length === 3 && args[0] === 'bump' && ['major', 'minor', 'patch'].includes(args[2])) {
+            const [major, minor, patch] = parse(args[1]).release;
+            const next = { major: [major + 1n, 0n, 0n], minor: [major, minor + 1n, 0n], patch: [major, minor, patch + 1n] }[args[2]];
+            console.log(next.join('.'));
+            return 0;
+        }
+        console.error('Usage: node scripts/release-version.mjs newest | greater <version> <version> | bump <version> major|minor|patch');
         return 2;
     } catch (error) {
         console.error(error.message);
