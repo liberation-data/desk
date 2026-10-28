@@ -1,71 +1,69 @@
 # Releasing
 
-Desk is released by CI, the way Drivine is. Nothing is published from a laptop.
+Desk is released by CI, from a merge. Nothing is published from a laptop, and there is no version to bump by hand.
 
 ## The process
 
-1. **Prepare release.** In the Actions tab, run "Prepare release" (`.github/workflows/prepare-release.yml`) with a
-   `bump` of `patch`, `minor`, `major` or `prerelease`, or an exact `version`. It bumps `package.json` and
-   `package-lock.json` on a branch `release/vX.Y.Z`, and opens a PR "Release vX.Y.Z" that lists the merges since the
-   last tag. Feature PRs leave the version alone.
-2. **Review and merge the release PR.** It passes CI like any other PR. Merging it is the release point.
-3. **CI publishes.** The merge, a push to `main` that changes `package.json`, runs `.github/workflows/publish.yml`. It
-   runs the full gate, packs, checks, publishes, and creates the GitHub release with its tag `vX.Y.Z` on the merge
-   commit.
-4. **Credentials.** npm trusted publishing (OIDC): npm trusts this repository's `publish.yml`, so there is no token to
-   keep, and every version carries provenance. Keep the file's name, or update the package's trusted publisher on
-   npmjs.com to match. An `NPM_TOKEN` secret, if set, is used as a fallback. The publish job runs in a GitHub
-   environment named `release`: give it required reviewers, and their approval of the run is the human checkpoint
-   before anything goes out.
+1. **Merge.** A merge to `main` that changes what the package ships (`src/`, the README, `llms.txt`, `package.json`
+   and the few files that build it) starts the Release workflow (`.github/workflows/publish.yml`). It runs CI and a
+   dry run of the package, then waits for approval in the `release` environment.
+2. **Approve when you want it out.** Merge as many pull requests as you like first: one release runs at a time, and
+   GitHub keeps one more queued behind it, a newer merge's replacing an older one's. Approve the one waiting. It
+   releases everything merged since the last release, as one version — unless more has merged since its own merge:
+   then it says it was overtaken and does nothing, and the newest merge's release waits next. Approve that one. One
+   approved after everything was released finds nothing new and does nothing too. (A release
+   merged into `main` meanwhile doesn't overtake it.) If an overtaken one's successor never comes, because its run
+   failed or was rejected, run Release from `main` with publish ticked.
+3. **CI releases.** Approved, the job plans the version, runs `npm run check`, packs and checks the
+   package, installs it alone and loads it, and publishes it with provenance. Then it commits the version to `main`
+   ("Release vX.Y.Z", changing only `package.json` and `package-lock.json`), tags that commit `vX.Y.Z`, and creates
+   the GitHub release with notes since the last one.
 
-A PR that "Prepare release" opens with the default `GITHUB_TOKEN` starts no workflows, so CI wouldn't run on it by
-itself. Prepare release therefore starts CI and the release dry run on the release branch by hand, which that token may
-do, and their checks land on the PR's commit: there is nothing to push. With a `RELEASE_PR_TOKEN` secret set, the PR is
-opened with that token and CI runs on it the usual way. "Prepare release" fails, saying why, when the version is already tagged
-or on npm, isn't later than the last tag and npm's `latest`, or its `release/vX.Y.Z` branch already exists.
+## The version
 
-**Tagging by hand is the fallback.** A pushed tag `vX.Y.Z` releases the tagged commit, which must be on `main`, have
-that version in `package.json`, and, unless it's a prerelease, be later than npm's `latest`:
+`scripts/release-plan.sh` works it out: the last release (the later of the newest `vX.Y.Z` tag and npm's `latest`),
+bumped by the biggest change merged since that tag, one pull request at a time.
 
-```
-git switch main && git pull
-git tag vX.Y.Z
-git push origin vX.Y.Z
-```
+- **A label decides,** when a pull request has one: `release: major`, `release: minor`, `release: patch` or
+  `release: none`.
+- **Without one,** a pull request that changes `src/` is a **minor** release, one that changes only other files the
+  package ships (the README, `llms.txt`) is a **patch**, and one that ships nothing (CI, tests, `docs/`) is **none**.
+- A change pushed to `main` without a pull request counts as minor.
 
-A tag that fails `check` publishes nothing. Delete it (`git push origin :refs/tags/vX.Y.Z`), fix what the message says,
-and tag again. If a release failed after publishing, re-run its failed jobs.
+Run it yourself to see what a release would be: `scripts/release-plan.sh origin/main`. It only reads.
 
-## What publish.yml does
+## Credentials
 
-- **`check`** works out the version: the tag without its `v` on a tag push, or `package.json`'s otherwise. On a push to
-  `main` it releases only a new version: not tagged, not on npm (versions up to 0.35.2 were published by hand without
-  tags), and later than every `vX.Y.Z` tag and npm's `latest` by semver precedence (`scripts/release-version.mjs`; a
-  prerelease `vX.Y.Z-rc.N` sorts below `vX.Y.Z`). Otherwise its notice says why it released nothing.
-- **`gate`** runs `ci.yml` unchanged: typecheck, tests, build and the size budget.
-- **`build`** packs the package from a clean `npm ci` and `npm run build`, checks the tarball holds the entry points and
-  no tests, installs it alone in an empty project and loads it, and dry-runs `npm publish`. The tarball is the run's
-  artifact.
-- **`publish`** runs on a release alone, in the `release` environment, and publishes that exact tarball with
-  `--provenance`. A prerelease goes under the `next` dist-tag, so `latest` stays on the last release.
-- **`github-release`** creates the GitHub release with generated notes, and on a push to `main` the tag with it. A tag
-  made this way starts no workflow, so it doesn't release again.
+npm trusted publishing (OIDC): npm trusts this repository's `publish.yml` from the `release` environment, so there is
+no token to keep, and every version carries provenance. Keep the file's name, or update the package's trusted
+publisher on npmjs.com to match. An `NPM_TOKEN` secret, if set, is used as a fallback.
 
-A **dry run** is everything but `publish` and `github-release`. Run it from the Actions tab (Release, Run workflow, on
-any branch), and it runs by itself on a pull request that changes the release machinery or `package.json`. npm refuses
-even a dry run of a version it has, so a dry run of a released version tries a copy as `X.Y.Z-dryrun.<run id>`, still
-with `--dry-run`: nothing is published.
+The `release` environment has a required reviewer, and only `main` (and `v*` tags) may deploy to it. That approval is
+the human checkpoint before anything goes out, and it is why a pull request can't publish: its runs aren't on `main`.
+
+## Dry runs and by hand
+
+- A pull request that changes the release machinery or `package.json` runs the workflow as a dry run: plan, CI, pack,
+  checks and `npm publish --dry-run`, with the package left as an artifact.
+- **Run workflow** on Release (Actions tab) is a dry run on any branch. On `main`, with **publish** ticked, it
+  releases what `main` holds, as a merge would: for a merge that didn't start a release, or a release that was
+  rejected and is wanted after all.
+
+## When something fails
+
+- Before publishing, nothing has gone out: fix what the run says, then run Release from `main` with publish ticked.
+- After publishing, the job stops once it can't record the release. If it published and tagged but couldn't merge the
+  release commit into `main`, merge the tag by hand with the message the workflow uses, so the next release skips the
+  merge (`git merge -m 'Release vX.Y.Z' vX.Y.Z`), then create the GitHub release
+  (`gh release create vX.Y.Z --verify-tag --generate-notes --notes-start-tag <the tag before>`). If npm has a version
+  with no tag, the next release stops and says so: tag the commit that version was built from, merge the tag into
+  `main`, and run Release again.
 
 ## Settings, made once
 
-- **GitHub:** Settings, Environments, a `release` environment, with required reviewers. Make it before the first
-  release: when a job names an environment that doesn't exist yet, GitHub creates it with no reviewers, and the release
-  goes out unreviewed. Its deployment branches and tags, if limited, must allow both the branch `main` (a merged bump) and
-  the tags `v*` (a tag pushed by hand).
-- **GitHub Actions and PRs:** Settings, Actions, General, "Allow GitHub Actions to create and approve pull requests",
-  so "Prepare release" can open its PR with `GITHUB_TOKEN`.
-- **Optional, a `RELEASE_PR_TOKEN` secret:** a fine-grained personal access token with Contents and Pull requests
-  read and write on this repository. "Prepare release" pushes its branch and opens its PR with it, so CI runs on the PR.
-- **npm trusted publishing:** on npmjs.com, `@liberation-data/desk`, Settings, Trusted publishing, a GitHub Actions
-  publisher with organization `liberation-data`, repository `desk` and workflow `publish.yml`. Its environment, if
-  set, must be `release`.
+- **The `release` environment** (Settings → Environments): a required reviewer, and deployment limited to `main` and
+  `v*` tags.
+- **The npm trusted publisher** (npmjs.com, the package's Settings): GitHub Actions, `liberation-data/desk`, workflow
+  `publish.yml`, environment `release`, allowed to `npm publish`.
+- **The labels** `release: major`, `release: minor`, `release: patch` and `release: none`, for the pull requests whose
+  release isn't what their files say.
