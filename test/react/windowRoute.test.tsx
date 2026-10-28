@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { StrictMode } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createDesk, routeOf } from '../../src/core/index.js'
 import { Desktop, DeskProvider, useWindowRoute } from '../../src/react/index.js'
 
@@ -51,15 +52,35 @@ describe('useWindowRoute', () => {
     expect(screen.getByText('at look')).toBeTruthy()
   })
 
-  it('needs a window around it', () => {
+  it('keeps its own route outside a window, with a desk or without one', () => {
     const desk = createDesk()
-    expect(() =>
-      render(
-        <DeskProvider desk={desk}>
-          <Settings />
-        </DeskProvider>,
-      ),
-    ).toThrow(/useWindowRoute must be used inside a window on a <Desktop> — called from Settings/)
+    render(
+      <DeskProvider desk={desk}>
+        <Settings />
+      </DeskProvider>,
+    )
+    expect(screen.getByText('at the start')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Look' }))
+    expect(screen.getByText('at look')).toBeTruthy()
+    expect(desk.getState().routes).toBeUndefined()
+    cleanup()
+    render(<Settings />)
+    fireEvent.click(screen.getByRole('button', { name: 'Look' }))
+    expect(screen.getByText('at look')).toBeTruthy()
+  })
+
+  it('keeps its own route outside a window under StrictMode, without a warning', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(
+      <StrictMode>
+        <Settings />
+      </StrictMode>,
+    )
+    expect(screen.getByText('at the start')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Look' }))
+    expect(screen.getByText('at look')).toBeTruthy()
+    expect(error).not.toHaveBeenCalled()
+    error.mockRestore()
   })
 })
 

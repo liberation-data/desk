@@ -259,7 +259,7 @@ useDesk(): Desk
 useLook(): 'mac' | 'gnome' | 'windows'              // resolved; the device's outside a desk
 useDeskState(): DeskState
 useWindowId(): string | null                        // inside a window's content
-useWindowRoute(): [route, setRoute]                 // where this window is inside itself; follows desk.open(id, { route }); throws outside a window
+useWindowRoute(): [route, setRoute]                 // where this window is inside itself; follows desk.open(id, { route }); outside a window, the component's own state
 useWindowProgress({ value, max, label } | null): boolean  // a real count in this window's title bar; false outside one
 useWindowNote(note: ReactNode): boolean             // this view's note in place of the window's; null defers, false hides
 useWindowInfo(info: ReactNode): boolean             // this view's (i) in place of the window's; null defers

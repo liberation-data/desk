@@ -829,6 +829,8 @@ A route is where a window is inside itself: Settings at a section, a list at one
 and the window says what it means. Opening a window that is already open with a route moves it there as it
 comes forward, so one rule serves a link, a command and another window, and the window reading
 `useWindowRoute` follows all of them. Opening without a route leaves it where it was; closing forgets it.
+Outside a window — the same view on a page of its own, or in a test — the route is the component's own
+state, starting at `''`.
 
 The hash carries it after the window: `#w=notes,settings~/agents&f=settings`. A route is what someone meant
 to point at, not how their screen was arranged, so like minimizing it travels. Slashes stay readable —
