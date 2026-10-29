@@ -1535,6 +1535,28 @@
   padding: var(--desk-space-1);
 }
 
+/* With variants the block is a column: a bar of tabs and Copy across its top, the code under it. */
+.desk-code[data-variants] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.desk-code-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--desk-space-2);
+  padding: var(--desk-space-1);
+  border-bottom: 1px solid var(--desk-rule);
+  border-radius: var(--desk-control-radius) var(--desk-control-radius) 0 0;
+  background: color-mix(in srgb, var(--desk-ink) 4%, transparent);
+}
+
+.desk-code-head .desk-code-actions {
+  padding: 0;
+}
+
 .desk-code-status {
   position: absolute;
   width: 1px;

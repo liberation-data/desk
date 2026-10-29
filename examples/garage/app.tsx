@@ -665,13 +665,18 @@ const ABOUT_PAGES = [
   'Stacks fan out; Back closes what you opened, in the order you opened it.',
 ]
 
+const RUN_IT = [
+  { value: 'npm', label: 'npm', language: 'shell', code: 'npm install\nnpm run example   # the garage, on localhost:5392\n' },
+  { value: 'pnpm', label: 'pnpm', language: 'shell', code: 'pnpm install\npnpm example   # the garage, on localhost:5392\n' },
+] as const
+
 function About() {
   const state = useDeskState()
   const [page, setPage] = useState(0)
   return (
     <div className="pad prose">
       <p><b>Garage</b> is a sample app for <code>@liberation-data/desk</code>. All of its data is made up.</p>
-      <CodeBlock language="shell" label="Run it yourself" code={'npm install\nnpm run example   # the garage, on localhost:5392\n'} />
+      <CodeBlock label="Run it yourself" variants={RUN_IT} />
       <p>{ABOUT_PAGES[page]}</p>
       <div className="row">
         <div className="grow"><PageDots count={ABOUT_PAGES.length} value={page} label="Tip" /></div>

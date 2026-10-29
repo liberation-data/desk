@@ -456,6 +456,10 @@ SearchCommand = 'desk.search'                          // a menu item can open i
                                                   // code people copy: scrolls sideways, a named region that takes focus;
                                                   // Copy → "Copied", announced; no clipboard → selects it, says ⌘C/Ctrl+C;
                                                   // built-in highlighting as React nodes, never HTML; highlight replaces it
+<CodeBlock variants={{value,label,language,code}[]} value? onValueChange? label? copy? highlight? />
+                                                  // the same code in several forms: tabs (a small segmented control) and
+                                                  // Copy in one bar across the block's top; Copy copies the one shown;
+                                                  // uncontrolled by default; label names the tabs and is not drawn
 ```
 
 ### Waiting

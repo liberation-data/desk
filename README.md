@@ -348,6 +348,19 @@ highlighting marks comments, strings, keywords, numbers and the keys of YAML and
 light and dark. It is a reading aid, not a parser, and it builds React nodes, so code is always text, never
 HTML. A host with a highlighter of its own passes `highlight`, which is used instead.
 
+```tsx
+<CodeBlock label="Install" variants={[
+  { value: 'pip', label: 'pip', language: 'shell', code: 'pip install desk' },
+  { value: 'uv', label: 'uv', language: 'shell', code: 'uv add desk' },
+]} />
+```
+
+The same code in several forms (an install with pip or uv, a client in two languages) is one block with
+`variants`. Their tabs, a small segmented control, sit in a bar across the top of the frame with Copy at its
+other end, so the choice and the code read as one card rather than a control above a box. The tabs are one
+tab stop and the arrow keys move between them; Copy copies the variant shown. The block keeps its own choice
+unless `value` and `onValueChange` hold it, and `label` then names the tabs instead of being drawn.
+
 ## Waiting
 
 ```tsx

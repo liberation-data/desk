@@ -388,6 +388,8 @@ at all.
   shown, in the corner, never over the code and never on hover alone.
 - Highlighting is a reading aid in the code colours (`--desk-code-*`), each 4.5:1 on the block's ground.
   The code says what it is in words too: a label, or the sentence before it.
+- The same code in several forms is one block with its **variants** as tabs across its top, never a
+  segmented control above it: the choice belongs to the card it changes.
 
 ### Selection
 

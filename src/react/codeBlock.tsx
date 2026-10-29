@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { formatShortcut } from '../core/shortcuts.js'
-import { Button } from './controls.js'
+import { Button, SegmentedControl } from './controls.js'
 
 /*
  * CODE PEOPLE COPY: a snippet to paste into a program, a command to run, a file to save.
@@ -23,12 +23,20 @@ import { Button } from './controls.js'
 
 export type CodeLanguage = 'python' | 'typescript' | 'javascript' | 'kotlin' | 'yaml' | 'shell' | 'json' | 'text'
 
-export interface CodeBlockProps {
-  /** The code, exactly as it is copied. One trailing newline is not drawn as an empty line. */
+/** One of the forms the same code comes in: the same install with pip or with uv, a client in two languages. */
+export interface CodeVariant {
+  readonly value: string
+  /** Its tab: "Python", "pip". */
+  readonly label: string
+  readonly language: CodeLanguage
   readonly code: string
-  /** How it is highlighted, and the region's name when there is no `label`. Default `text`: none. */
-  readonly language?: CodeLanguage
-  /** What it is, shown above the code and naming the region: "Install", "config.yaml". */
+}
+
+interface CodeBlockCommon {
+  /**
+   * What it is: "Install", "config.yaml". It names the region and, without variants, is shown above
+   * the code; with them the tabs take that place, and it names them.
+   */
   readonly label?: string
   /** A Copy button in the corner. Default true. */
   readonly copy?: boolean
@@ -36,6 +44,31 @@ export interface CodeBlockProps {
   readonly highlight?: (code: string, language: CodeLanguage) => ReactNode
   readonly className?: string
 }
+
+interface OneCode extends CodeBlockCommon {
+  /** The code, exactly as it is copied. One trailing newline is not drawn as an empty line. */
+  readonly code: string
+  /** How it is highlighted, and the region's name when there is no `label`. Default `text`: none. */
+  readonly language?: CodeLanguage
+  readonly variants?: never
+  readonly value?: never
+  readonly onValueChange?: never
+}
+
+interface VariantCode extends CodeBlockCommon {
+  /**
+   * The same code in several forms, chosen by tabs in a bar across the top of the block: one card,
+   * not a control above it. Copy copies the one shown.
+   */
+  readonly variants: readonly CodeVariant[]
+  /** The variant shown. Leave it out and the block keeps its own choice, starting at the first. */
+  readonly value?: string
+  readonly onValueChange?: (value: string) => void
+  readonly code?: never
+  readonly language?: never
+}
+
+export type CodeBlockProps = OneCode | VariantCode
 
 type Kind = 'comment' | 'string' | 'keyword' | 'number' | 'key'
 interface Token { readonly kind?: Kind | undefined; readonly text: string }
@@ -235,7 +268,16 @@ const COPIED_MS = 2000
 type Copying = 'idle' | 'copied' | 'select'
 
 /** A framed block of code to copy, highlighted for its language, with a Copy button in its corner. */
-export function CodeBlock({ code, language = 'text', label, copy = true, highlight, className }: CodeBlockProps) {
+export function CodeBlock(props: CodeBlockProps) {
+  const { label, copy = true, highlight, className, variants, value, onValueChange } = props
+  const [own, setOwn] = useState(variants?.[0]?.value)
+  const variant = variants && (variants.find(v => v.value === (value ?? own)) ?? variants[0])
+  const choose = (next: string) => {
+    if (value === undefined) setOwn(next)
+    onValueChange?.(next)
+  }
+  const code = (variants ? variant?.code : props.code) ?? ''
+  const language: CodeLanguage = (variants ? variant?.language : props.language) ?? 'text'
   const body = useRef<HTMLElement>(null)
   const [copying, setCopying] = useState<Copying>('idle')
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -292,25 +334,45 @@ export function CodeBlock({ code, language = 'text', label, copy = true, highlig
   }
 
   const keys = formatShortcut('mod+c')
-  const name = label ?? (NAMES[language] ? `${NAMES[language]} code` : 'Code')
+  const name = variant
+    ? label ? `${label}, ${variant.label}` : `${variant.label} code`
+    : label ?? (NAMES[language] ? `${NAMES[language]} code` : 'Code')
+  const actions = copy && (
+    <div className="desk-code-actions">
+      <Button intent="quiet" size="small" onClick={onCopy}>
+        {copying === 'copied' ? 'Copied' : copying === 'select' ? `Press ${keys}` : 'Copy'}
+      </Button>
+      <span className="desk-code-status" role="status">
+        {copying === 'copied' ? 'Copied' : copying === 'select' ? `Selected. Press ${keys} to copy.` : ''}
+      </span>
+    </div>
+  )
   return (
-    <div className={['desk-code', className].filter(Boolean).join(' ')} data-language={language}>
+    <div
+      className={['desk-code', className].filter(Boolean).join(' ')}
+      data-language={language}
+      {...(variants ? { 'data-variants': '' } : {})}
+    >
+      {variants && (
+        // The tabs are the frame's top edge, as on a phone: one card, not a control above a box.
+        <div className="desk-code-head">
+          <SegmentedControl
+            label={label ?? 'Code'}
+            size="small"
+            options={variants.map(v => ({ value: v.value, label: v.label }))}
+            value={variant?.value ?? ''}
+            onChange={choose}
+          />
+          {actions}
+        </div>
+      )}
       <div className="desk-code-main">
-        {label && <div className="desk-code-label" aria-hidden="true">{label}</div>}
+        {label && !variants && <div className="desk-code-label" aria-hidden="true">{label}</div>}
         <pre className="desk-code-body" role="region" aria-label={name} tabIndex={0}>
           <code ref={body}>{content}</code>
         </pre>
       </div>
-      {copy && (
-        <div className="desk-code-actions">
-          <Button intent="quiet" size="small" onClick={onCopy}>
-            {copying === 'copied' ? 'Copied' : copying === 'select' ? `Press ${keys}` : 'Copy'}
-          </Button>
-          <span className="desk-code-status" role="status">
-            {copying === 'copied' ? 'Copied' : copying === 'select' ? `Selected. Press ${keys} to copy.` : ''}
-          </span>
-        </div>
-      )}
+      {!variants && actions}
     </div>
   )
 }

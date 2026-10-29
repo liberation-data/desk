@@ -236,6 +236,65 @@ describe('CodeBlock', () => {
     expect(screen.getByRole('status').textContent).toBe('Selected. Press Ctrl+C to copy.')
   })
 
+  describe('with variants', () => {
+    const VARIANTS = [
+      { value: 'pip', label: 'pip', language: 'shell', code: 'pip install desk' },
+      { value: 'uv', label: 'uv', language: 'shell', code: 'uv add desk' },
+      { value: 'py', label: 'Python', language: 'python', code: 'import desk  # ready' },
+    ] as const
+
+    it('shows the first, and switching shows another and changes what Copy copies', async () => {
+      const writeText = vi.fn(() => Promise.resolve())
+      vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+      const { container } = render(<CodeBlock label="Install" variants={VARIANTS} />)
+      expect(container.querySelector('code')?.textContent).toBe('pip install desk')
+      expect(screen.getByRole('region', { name: 'Install, pip' })).toBeTruthy()
+
+      fireEvent.click(screen.getByRole('radio', { name: 'Python' }))
+      expect(container.querySelector('code')?.textContent).toBe('import desk  # ready')
+      expect(container.querySelector('.desk-code-comment')?.textContent).toBe('# ready')
+      expect(container.querySelector('.desk-code')?.getAttribute('data-language')).toBe('python')
+
+      await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Copy' })))
+      expect(writeText).toHaveBeenCalledWith('import desk  # ready')
+    })
+
+    it('puts the tabs and Copy in one bar inside the frame, and shows no separate label', () => {
+      const { container } = render(<CodeBlock label="Install" variants={VARIANTS} />)
+      const head = container.querySelector('.desk-code > .desk-code-head')
+      expect(head?.querySelector('[role="radiogroup"]')?.getAttribute('aria-label')).toBe('Install')
+      expect(head?.querySelector('.desk-button')?.textContent).toBe('Copy')
+      expect(container.querySelector('.desk-code-label')).toBeNull()
+    })
+
+    it('moves between variants with the arrow keys, and the tabs are one tab stop', async () => {
+      const user = userEvent.setup()
+      const { container } = render(<CodeBlock variants={VARIANTS} />)
+      await user.tab()
+      expect(document.activeElement).toBe(screen.getByRole('radio', { name: 'pip' }))
+      await user.keyboard('{ArrowRight}')
+      expect(document.activeElement).toBe(screen.getByRole('radio', { name: 'uv' }))
+      expect(container.querySelector('code')?.textContent).toBe('uv add desk')
+      await user.keyboard('{ArrowLeft}{ArrowLeft}')
+      expect(screen.getByRole('radio', { name: 'Python' }).getAttribute('aria-checked')).toBe('true')
+      await user.tab()
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Copy' }))
+      await user.tab()
+      expect(document.activeElement).toBe(screen.getByRole('region', { name: 'Python code' }))
+    })
+
+    it('follows value when the host holds it, and tells it what was chosen', () => {
+      const onValueChange = vi.fn()
+      const { container, rerender } = render(<CodeBlock variants={VARIANTS} value="uv" onValueChange={onValueChange} />)
+      expect(container.querySelector('code')?.textContent).toBe('uv add desk')
+      fireEvent.click(screen.getByRole('radio', { name: 'pip' }))
+      expect(onValueChange).toHaveBeenCalledWith('pip')
+      expect(container.querySelector('code')?.textContent).toBe('uv add desk')
+      rerender(<CodeBlock variants={VARIANTS} value="pip" onValueChange={onValueChange} />)
+      expect(container.querySelector('code')?.textContent).toBe('pip install desk')
+    })
+  })
+
   it('has no Copy when asked not to', () => {
     render(<CodeBlock code="x" copy={false} />)
     expect(screen.queryByRole('button')).toBeNull()
