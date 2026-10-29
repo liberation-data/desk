@@ -379,6 +379,18 @@ at all.
   are fixing.
 - Put the error beside the field, in words that say how to fix it.
 
+### Code
+
+- Code people copy — a snippet to paste into a program, a command to run — is a **code block**: never a
+  read-only `TextField`, which says it can be edited and hides lines, and never inline `<code>`, which is
+  for a name or a value inside a sentence.
+- Its lines stay whole and the block scrolls sideways; a wrapped command reads as two. Copy is always
+  shown, in the corner, never over the code and never on hover alone.
+- Highlighting is a reading aid in the code colours (`--desk-code-*`), each 4.5:1 on the block's ground.
+  The code says what it is in words too: a label, or the sentence before it.
+- The same code in several forms is one block with its **variants** as tabs across its top, never a
+  segmented control above it: the choice belongs to the card it changes.
+
 ### Selection
 
 - Two to five mutually exclusive options that are all worth seeing: a **segmented control**.

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
+import { readFileSync } from 'node:fs'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Checkbox, PopUpButton, Sidebar, Slider, Table } from '../../src/react/index.js'
@@ -187,6 +188,51 @@ describe('Table', () => {
     render(<Table label="Rides" rows={[]} columns={COLUMNS} rowId={(r: Ride) => r.id} empty={<p>No rides yet</p>} />)
     expect(screen.getByText('No rides yet')).toBeTruthy()
     expect(screen.queryByRole('table')).toBeNull()
+  })
+})
+
+/*
+ * jsdom lays nothing out, so the list's width is checked where it is decided — the stylesheet — and its
+ * move away from the window's edge with the boxes a browser would measure.
+ */
+describe('PopUpButton list', () => {
+  const css = readFileSync('src/css/controls.css', 'utf8')
+  const rule = (selector: string) => css.slice(css.indexOf(`${selector} {`), css.indexOf('}', css.indexOf(`${selector} {`)))
+  const LONG = [{ value: 'world', label: 'Your world', description: 'Everything you can open' }, { value: 'mine', label: 'Mine' }] as const
+
+  it('is as wide as its widest option, and an option is one line', () => {
+    expect(rule('.desk-popup-list')).toMatch(/width: max-content/)
+    expect(rule('.desk-popup-list')).toMatch(/min-width: 100%/)
+    expect(rule('.desk-popup-list')).toMatch(/max-width: min\(360px, calc\(100vw - 32px\)\)/)
+    expect(rule('.desk-popup-label')).toMatch(/white-space: nowrap/)
+    render(<PopUpButton label="Show" size="small" options={LONG} value="mine" onChange={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: /Show/ }))
+    expect(screen.getByText('Your world').className).toBe('desk-popup-label')
+  })
+
+  function measured(list: { left: number; right: number }) {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      const box = this.matches('[data-desk-window]') ? { left: 0, right: 300 } : this.matches('.desk-popup-list') ? list : { left: 0, right: 0 }
+      return { ...box, top: 0, bottom: 0, width: box.right - box.left, height: 0, x: box.left, y: 0, toJSON: () => ({}) } as DOMRect
+    })
+    render(<div data-desk-window="w"><PopUpButton label="Show" options={LONG} value="mine" onChange={() => {}} /></div>)
+    fireEvent.click(screen.getByRole('button', { name: /Show/ }))
+    return screen.getByRole('listbox')
+  }
+
+  it('moves left to stay inside its window', () => {
+    expect(measured({ left: 200, right: 420 }).style.left).toBe('-128px')
+    vi.restoreAllMocks()
+  })
+
+  it('never past the window\'s left edge', () => {
+    expect(measured({ left: 40, right: 420 }).style.left).toBe('-32px')
+    vi.restoreAllMocks()
+  })
+
+  it('stays where it is when it fits', () => {
+    expect(measured({ left: 20, right: 200 }).style.left).toBe('')
+    vi.restoreAllMocks()
   })
 })
 

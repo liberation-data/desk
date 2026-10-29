@@ -44,6 +44,7 @@ import {
   Table,
   TextField,
   Chip,
+  CodeBlock,
   Disclosure,
   Thread,
   Toggle,
@@ -604,6 +605,27 @@ function Settings() {
         <TextField label="Name" value={name} onChange={e => setName(e.target.value)} help="Shown on exported rides" />
         <TextField label="Wheel size" value={wheel} onChange={e => setWheel(e.target.value)} inputMode="numeric" error={wheelError} />
       </section>
+      <section className="section">
+        <h3>As a file</h3>
+        <CodeBlock
+          language="yaml"
+          label="garage.yaml"
+          code={[
+            '# What this window is set to, as the garage would save it',
+            'appearance:',
+            `  look: ${appearance.look}`,
+            `  dock: ${appearance.side}`,
+            `units: ${units}`,
+            'reminders:',
+            `  enabled: ${remind}`,
+            `  warn_at: ${threshold}  # percent worn`,
+            `  commutes: ${commutes}`,
+            'rider:',
+            `  name: ${JSON.stringify(name)}`,
+            `  wheel_mm: ${wheelError ? JSON.stringify(wheel) : wheel}`,
+          ].join('\n')}
+        />
+      </section>
     </div>
   )
 }
@@ -643,12 +665,18 @@ const ABOUT_PAGES = [
   'Stacks fan out; Back closes what you opened, in the order you opened it.',
 ]
 
+const RUN_IT = [
+  { value: 'npm', label: 'npm', language: 'shell', code: 'npm install\nnpm run example   # the garage, on localhost:5392\n' },
+  { value: 'pnpm', label: 'pnpm', language: 'shell', code: 'pnpm install\npnpm example   # the garage, on localhost:5392\n' },
+] as const
+
 function About() {
   const state = useDeskState()
   const [page, setPage] = useState(0)
   return (
     <div className="pad prose">
       <p><b>Garage</b> is a sample app for <code>@liberation-data/desk</code>. All of its data is made up.</p>
+      <CodeBlock label="Run it yourself" variants={RUN_IT} />
       <p>{ABOUT_PAGES[page]}</p>
       <div className="row">
         <div className="grow"><PageDots count={ABOUT_PAGES.length} value={page} label="Tip" /></div>

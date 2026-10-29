@@ -67,6 +67,12 @@
   /* How much of the accent is mixed into it, so the sheet belongs to the theme it is read in.
      0% is the neutral alone. */
   --desk-page-tint: 4%;
+  /* Code (`CodeBlock`), on the page's ground: each at least 4.5:1 against it, tinted or not. */
+  --desk-code-comment: #5d6676;
+  --desk-code-string: #136c2e;
+  --desk-code-keyword: #8034c8;
+  --desk-code-number: #a34400;
+  --desk-code-key: #0b5cad;
   --desk-on-accent: #ffffff;
   --desk-ease: cubic-bezier(.32, .72, 0, 1);
   --desk-dock-size: 48px;
@@ -106,6 +112,11 @@
     --desk-field-bg: rgb(0 0 0 / 35%);
     --desk-page: #26282c;
     --desk-page-tint: 5%;
+    --desk-code-comment: #9aa3b2;
+    --desk-code-string: #7ee2a0;
+    --desk-code-keyword: #d2a8ff;
+    --desk-code-number: #ffab70;
+    --desk-code-key: #7cc4ff;
   }
 }
 
@@ -132,4 +143,9 @@
   --desk-field-bg: rgb(0 0 0 / 35%);
   --desk-page: #26282c;
   --desk-page-tint: 5%;
+  --desk-code-comment: #9aa3b2;
+  --desk-code-string: #7ee2a0;
+  --desk-code-keyword: #d2a8ff;
+  --desk-code-number: #ffab70;
+  --desk-code-key: #7cc4ff;
 }

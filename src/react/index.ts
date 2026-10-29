@@ -62,6 +62,8 @@ export type { ChecklistProps, Task, TaskProgress, Tasks, TaskState } from './tas
 export { PopUpButton } from './popup.js'
 export { Chip, Disclosure } from './disclosure.js'
 export type { ChipProps, DisclosureProps } from './disclosure.js'
+export { CodeBlock } from './codeBlock.js'
+export type { CodeBlockProps, CodeLanguage, CodeVariant } from './codeBlock.js'
 export type { PopUpButtonProps, PopUpOption } from './popup.js'
 export { Tabs } from './tabs.js'
 export type { Tab, TabsProps } from './tabs.js'
