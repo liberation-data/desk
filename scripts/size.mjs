@@ -83,11 +83,12 @@ import { join } from 'node:path'
  * 0.1 spare, which is the failure the notes above describe.
  */
 /*
- * Raised react 62 → 66 for CodeBlock (4.0 KiB): a highlighter for seven languages is a scanner and
- * a list of keywords for each, and it is in desk so that code shown in a window is highlighted
- * without a dependency. React stood at 0.9 spare, short of it whatever it was trimmed to.
+ * Raised react 62 → 68 for CodeBlock (4.6 KiB with its variants): a highlighter for seven languages
+ * is a scanner and a list of keywords for each, and it is in desk so that code shown in a window is
+ * highlighted without a dependency. React stood at 0.9 spare, short of it whatever it was trimmed
+ * to, and 66 would have left the 0.2 the notes above describe as red on the next commit.
  */
-const BUDGETS = { core: 16, react: 66, css: 20, fx: 5 }
+const BUDGETS = { core: 16, react: 68, css: 20, fx: 5 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
