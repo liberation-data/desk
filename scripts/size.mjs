@@ -82,7 +82,12 @@ import { join } from 'node:path'
  * for the two hooks that read a service and the desk holding its own (0.3 KiB), because 60 stood at
  * 0.1 spare, which is the failure the notes above describe.
  */
-const BUDGETS = { core: 16, react: 62, css: 20, fx: 5 }
+/*
+ * Raised react 62 → 66 for CodeBlock (3.5 KiB): a highlighter for seven languages is a scanner and
+ * a list of keywords for each, and it is in desk so that code shown in a window is highlighted
+ * without a dependency. React stood at 0.9 spare, short of it whatever it was trimmed to.
+ */
+const BUDGETS = { core: 16, react: 66, css: 20, fx: 5 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {

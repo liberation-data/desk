@@ -178,6 +178,7 @@ value without being the thing that keeps the service running.
 | What a view would explain if asked | `<InfoTip>` |
 | Controls that stay while content scrolls | `<Pane>` and `<Toolbar>` |
 | Text read at length: a document, an answer | `<Page>` |
+| Code people copy: a snippet, a command to run | `<CodeBlock>` |
 | A small task tied to one control | `<Popover>` |
 | A task belonging to one window | `<Sheet>` |
 | The app cannot continue until this is decided | `<Alert>` |

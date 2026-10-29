@@ -333,6 +333,21 @@ are set to: a chip for each one off its default, so the folded line is never a m
 mounted while folded, so a field keeps its value. A chip is one thing that is set or chosen; with `onRemove`
 it ends in a × that takes it away, named by `removeLabel`.
 
+```tsx
+<CodeBlock language="shell" label="Install" code="npm install @liberation-data/desk" />
+<CodeBlock language="python" code={snippet} highlight={(code, language) => <Highlighted code={code} language={language} />} />
+```
+
+A code block is code people copy: a snippet to paste into a program, a command to run. It keeps its lines
+and scrolls sideways, since a wrapped command reads as two, and it is a named region that takes focus, so it
+scrolls from the keyboard. Copy sits in its corner and says Copied for a moment, politely announced; where
+the page has no clipboard it selects the code and says which keys copy it. `language` is `python`,
+`typescript`, `javascript`, `kotlin`, `yaml`, `shell`, `json` or `text` (the default), and the built-in
+highlighting marks comments, strings, keywords, numbers and the keys of YAML and JSON, in
+`--desk-code-comment`, `-string`, `-keyword`, `-number` and `-key`, each 4.5:1 on the block's ground in
+light and dark. It is a reading aid, not a parser, and it builds React nodes, so code is always text, never
+HTML. A host with a highlighter of its own passes `highlight`, which is used instead.
+
 ## Waiting
 
 ```tsx
@@ -890,7 +905,7 @@ import '@liberation-data/desk/css/tokens.css'    // always: every other part rea
 import '@liberation-data/desk/css/windows.css'   // the stage, windows, panes and toolbars
 import '@liberation-data/desk/css/dock.css'
 import '@liberation-data/desk/css/menus.css'     // menu bar and context menus
-import '@liberation-data/desk/css/controls.css'  // buttons, fields, table, sidebar, icon view
+import '@liberation-data/desk/css/controls.css'  // buttons, fields, table, sidebar, icon view, code
 import '@liberation-data/desk/css/overlays.css'  // popovers, sheets, alerts, toasts, the (i)
 import '@liberation-data/desk/css/conversation.css'
 import '@liberation-data/desk/css/search.css'

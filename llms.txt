@@ -451,6 +451,11 @@ SearchCommand = 'desk.search'                          // a menu item can open i
                                                   // one caret button; summary sits beside it folded or open;
                                                   // the body stays mounted while folded, so fields keep their values
 <Chip onRemove? removeLabel? className?>{a word or two}</Chip>               // one thing set or chosen; × only with onRemove
+<CodeBlock code language?={'python'|'typescript'|'javascript'|'kotlin'|'yaml'|'shell'|'json'|'text'}
+           label? copy?={true} highlight?={(code, language) => ReactNode} className? />
+                                                  // code people copy: scrolls sideways, a named region that takes focus;
+                                                  // Copy → "Copied", announced; no clipboard → selects it, says ⌘C/Ctrl+C;
+                                                  // built-in highlighting as React nodes, never HTML; highlight replaces it
 ```
 
 ### Waiting
@@ -576,7 +581,8 @@ Every value reads a `--desk-*` token; redefine tokens, never override selectors.
 `--desk-ok|warn|bad`, `--desk-on-accent`. Spacing `--desk-space-1..7` = 4, 8, 12, 16, 24, 32, 48 px. Also
 `--desk-radius`, `--desk-control-height`, `--desk-control-radius`, `--desk-font`, `--desk-font-mono`,
 `--desk-ease`, `--desk-dock-size`, `--desk-dock-glass`, `--desk-dock-offset`, `--desk-dock-room`,
-`--desk-inset-bottom`, `--desk-wizard-height`, `--desk-field-gap`.
+`--desk-inset-bottom`, `--desk-wizard-height`, `--desk-field-gap`. Code colours (`CodeBlock`, on `--desk-page`):
+`--desk-code-comment|string|keyword|number|key`, 4.5:1 in light and dark.
 
 Light and dark follow `prefers-color-scheme`; `data-theme="light" | "dark"` on the root wins. The look is
 `data-look="mac" | "gnome" | "windows"` on the root, set by the desk; don't set it yourself — pass `look`.
