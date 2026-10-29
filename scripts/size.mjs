@@ -83,7 +83,7 @@ import { join } from 'node:path'
  * 0.1 spare, which is the failure the notes above describe.
  */
 /*
- * Raised react 62 → 66 for CodeBlock (3.5 KiB): a highlighter for seven languages is a scanner and
+ * Raised react 62 → 66 for CodeBlock (4.0 KiB): a highlighter for seven languages is a scanner and
  * a list of keywords for each, and it is in desk so that code shown in a window is highlighted
  * without a dependency. React stood at 0.9 spare, short of it whatever it was trimmed to.
  */

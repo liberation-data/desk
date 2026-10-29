@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
+import { StrictMode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CodeBlock } from '../../src/react/index.js'
 import type { CodeLanguage } from '../../src/react/index.js'
@@ -56,6 +57,13 @@ describe('CodeBlock highlighting', () => {
     expect(t.keyword).toEqual(['const', 'let'])
   })
 
+  it('JavaScript: a /* left open, as in a regular expression, colours its own line and no more', () => {
+    const t = tokens("s.replace(/\\/*/g, '')\nconst x = 1", 'javascript')
+    expect(t.comment).toEqual(["/*/g, '')"])
+    expect(t.keyword).toEqual(['const'])
+    expect(t.number).toEqual(['1'])
+  })
+
   it('JavaScript: a // inside a string is text', () => {
     const t = tokens("fetch('https://example.com') // go", 'javascript')
     expect(t.string).toEqual(["'https://example.com'"])
@@ -79,6 +87,24 @@ describe('CodeBlock highlighting', () => {
     expect(t.comment).toEqual(['# the port'])
     expect(t.string).toEqual(["'it''s'"])
     expect(t.keyword).toEqual(['true'])
+  })
+
+  it('Shell: an apostrophe inside a word does not open a string', () => {
+    const t = tokens("cat <<EOF\nDon't panic\nEOF\necho 'quoted' # done", 'shell')
+    expect(t.string).toEqual(["'quoted'"])
+    expect(t.comment).toEqual(['# done'])
+  })
+
+  it('Kotlin: a raw string may end in its own quote', () => {
+    const t = tokens('val s = """say "hi""""\nval n = 2', 'kotlin')
+    expect(t.string).toEqual(['"""say "hi""""'])
+    expect(t.number).toEqual(['2'])
+  })
+
+  it('YAML: a long line takes no longer than its length', () => {
+    const started = performance.now()
+    tokens(`a${' '.repeat(30000)}\n${"'x' ".repeat(8000)}`, 'yaml')
+    expect(performance.now() - started).toBeLessThan(250)
   })
 
   it('YAML: a list item without a key, and a date, are text', () => {
@@ -164,6 +190,26 @@ describe('CodeBlock', () => {
     act(() => vi.advanceTimersByTime(2000))
     expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy()
     expect(screen.getByRole('status').textContent).toBe('')
+  })
+
+  it('says Copy again as soon as the code changes', async () => {
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText: () => Promise.resolve() } })
+    const { rerender } = render(<CodeBlock code="one" />)
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Copy' })))
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy()
+    rerender(<CodeBlock code="two" />)
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy()
+  })
+
+  it('a copy that finishes after the block has gone leaves nothing behind', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    let finish = () => {}
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText: () => new Promise<void>(resolve => (finish = resolve)) } })
+    const { unmount } = render(<StrictMode><CodeBlock code="later" /></StrictMode>)
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
+    unmount()
+    await act(async () => finish())
+    expect(vi.getTimerCount()).toBe(0)
   })
 
   it('without a clipboard, selects the code and copies it the older way', async () => {

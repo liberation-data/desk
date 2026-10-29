@@ -13,8 +13,9 @@ import { Button } from './controls.js'
  *
  * HIGHLIGHTING IS SMALL ON PURPOSE. Comments, strings, keywords, numbers and the keys of YAML and
  * JSON, from a scanner a few rules long per language: enough to read a snippet by, and no
- * dependency. It is a reading aid, not a parser — a regular expression literal or a heredoc is just
- * text — and a host with a real highlighter passes `highlight` instead.
+ * dependency. It is a reading aid, not a parser — a regular expression literal or a heredoc is read
+ * as code, and a block comment left open colours its own line rather than the rest of the file — and
+ * a host with a real highlighter passes `highlight` instead.
  *
  * NOTHING IS PARSED AS HTML. The scanner cuts the code into strings and React renders them, so a
  * `<script>` in a snippet is text in the block, whatever the language or the highlighter.
@@ -46,6 +47,8 @@ interface Grammar {
   readonly line?: string
   /** `#` starts a comment only at the start of a word, so `$#` and `a#b` are not one (shell, YAML). */
   readonly wordComment?: boolean
+  /** A quote opens only where a value can start, so an apostrophe inside a word or a sentence is text. */
+  readonly quoteAt?: (code: string, at: number) => boolean
   readonly block?: readonly [string, string]
   readonly quotes: readonly Quote[]
   readonly keywords: ReadonlySet<string>
@@ -87,6 +90,8 @@ const GRAMMARS: Partial<Record<CodeLanguage, Grammar>> = {
     line: '#',
     wordComment: true,
     quotes: [{ open: '"', lines: true, escape: B }, { open: "'", lines: true }],
+    // `Don't panic` in a heredoc or an unquoted echo is not the start of a string.
+    quoteAt: (code, at) => !/[\w]/.test(code[at - 1] ?? ''),
     keywords: words('case do done elif else esac export fi for function if in local readonly return select then until while'),
   },
   yaml: {
@@ -94,6 +99,7 @@ const GRAMMARS: Partial<Record<CodeLanguage, Grammar>> = {
     wordComment: true,
     quotes: [{ open: '"', lines: true, escape: B }, { open: "'", lines: true, escape: 'double' }],
     keywords: words('true false null'),
+    quoteAt: (code, at) => yamlValueStarts(code, at),
     keys: 'yaml',
   },
   json: {
@@ -107,7 +113,7 @@ const NUMBER = /0[xX][\da-fA-F_]+|\d[\d_]*(?:\.\d[\d_]*)?(?:[eE][+-]?\d+)?[fFLn]
 const WORD = /[A-Za-z_$][\w$]*/y
 const JSON_COLON = /[ \t]*:/y
 /* Indentation and list dashes, a key — plain or quoted — and its colon, which ends at a space or the line. */
-const YAML_KEY = /([ \t]*(?:-[ \t]+)*)([^\s#'"{}[\],:-][^:\n#]*?|"(?:[^"\\\n]|\\.)*"|'(?:[^'\n]|'')*')([ \t]*:)(?=[ \t]|$)/my
+const YAML_KEY = /([ \t]*(?:-[ \t]+)*)([^\s#'"{}[\],:-](?:[^:\n#]*[^\s:#])?|"(?:[^"\\\n]|\\.)*"|'(?:[^'\n]|'')*')([ \t]*:)(?=[ \t]|$)/my
 /* What a number or keyword cannot touch, so `v1`, `1.2.3`, `obj.if` and `--if-exists` stay text. */
 const JOINED = /[\w$.-]/
 
@@ -123,7 +129,12 @@ function closeOf(code: string, at: number, quote: Quote): number {
     if (quote.escape === 'backslash' && code[i] === '\\') i += 2
     else if (code.startsWith(quote.open, i)) {
       if (quote.escape === 'double' && code[i + 1] === quote.open) i += 2
-      else return i + quote.open.length
+      else {
+        // A raw string may end in its own quote: `"""a""""` closes at the last of the run.
+        let end = i + quote.open.length
+        while (quote.open.length === 3 && code[end] === quote.open[0]) end++
+        return end
+      }
     } else if (code[i] === '\n' && !quote.lines) return i
     else i++
   }
@@ -131,7 +142,11 @@ function closeOf(code: string, at: number, quote: Quote): number {
 }
 
 /* YAML opens a quote only where a value starts: `title: Don't stop` is a plain sentence. */
-const yamlValueStarts = (code: string, at: number) => /(?:^|[:\-[{,])[ \t]*$/.test(code.slice(code.lastIndexOf('\n', at - 1) + 1, at))
+function yamlValueStarts(code: string, at: number): boolean {
+  let i = at - 1
+  while (code[i] === ' ' || code[i] === '\t') i--
+  return i < 0 || ':-[{,\n'.includes(code[i] ?? '')
+}
 
 function tokenize(code: string, grammar: Grammar): Token[] {
   const out: Token[] = []
@@ -157,7 +172,9 @@ function tokenize(code: string, grammar: Grammar): Token[] {
     }
     if (grammar.block && code.startsWith(grammar.block[0], i)) {
       const end = code.indexOf(grammar.block[1], i + 2)
-      const stop = end < 0 ? code.length : end + grammar.block[1].length
+      // Never closed: most likely a `/*` inside a regular expression, so it colours one line, not the file.
+      const open = code.indexOf('\n', i)
+      const stop = end >= 0 ? end + grammar.block[1].length : open < 0 ? code.length : open
       push(code.slice(i, stop), 'comment')
       i = stop
       continue
@@ -170,7 +187,7 @@ function tokenize(code: string, grammar: Grammar): Token[] {
       continue
     }
     const quote = grammar.quotes.find(q => code.startsWith(q.open, i))
-    if (quote && (grammar.keys !== 'yaml' || yamlValueStarts(code, i))) {
+    if (quote && (!grammar.quoteAt || grammar.quoteAt(code, i))) {
       const stop = closeOf(code, i, quote)
       const isKey = grammar.keys === 'json' && sticky(JSON_COLON, code, stop) !== null
       push(code.slice(i, stop), isKey ? 'key' : 'string')
@@ -222,14 +239,29 @@ export function CodeBlock({ code, language = 'text', label, copy = true, highlig
   const body = useRef<HTMLElement>(null)
   const [copying, setCopying] = useState<Copying>('idle')
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const alive = useRef(true)
+  const copied = useRef(code)
   const shown = code.endsWith('\n') ? code.slice(0, -1) : code
   const content = useMemo(() => (highlight ?? highlighted)(shown, language), [shown, language, highlight])
 
-  useEffect(() => () => clearTimeout(timer.current), [])
-  // Copied or selected says something about this code; new code has been neither.
-  useEffect(() => setCopying('idle'), [code])
+  useEffect(() => {
+    alive.current = true
+    return () => {
+      alive.current = false
+      clearTimeout(timer.current)
+    }
+  }, [])
+  // Copied or selected says something about this code; new code has been neither. Put back while
+  // rendering, so not one frame says Copied over code nobody copied.
+  if (copied.current !== code) {
+    copied.current = code
+    clearTimeout(timer.current)
+    if (copying !== 'idle') setCopying('idle')
+  }
 
   const settle = (next: Copying) => {
+    // A copy that finishes after the block has gone has nothing left to say it in.
+    if (!alive.current) return
     clearTimeout(timer.current)
     setCopying(next)
     if (next === 'copied') timer.current = setTimeout(() => setCopying('idle'), COPIED_MS)
@@ -239,6 +271,8 @@ export function CodeBlock({ code, language = 'text', label, copy = true, highlig
    * THE CLIPBOARD IS NOT ALWAYS THERE: a page over plain http has none, and a browser may refuse
    * it. Then the code is selected and the older copy command tried; where that fails too, the
    * selection stays and the button says which keys copy it, so the person is one keystroke away.
+   * The selection is the code as drawn: without the trailing newline, and with whatever a host's
+   * `highlight` adds to it.
    */
   const onCopy = async () => {
     try {
