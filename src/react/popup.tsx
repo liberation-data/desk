@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { WINDOW_ATTRIBUTE } from '../core/commands.js'
 import type { KeyboardEvent, ReactNode } from 'react'
 
 /*
@@ -26,6 +27,9 @@ export interface PopUpButtonProps<T extends string> {
   readonly disabled?: boolean
   readonly size?: 'regular' | 'small'
 }
+
+/** How far the list keeps from its window's edges. */
+const LIST_MARGIN = 8
 
 export function PopUpButton<T extends string>({
   value,
@@ -74,6 +78,24 @@ export function PopUpButton<T extends string>({
     }
     document.addEventListener('pointerdown', onPointerDown, true)
     return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  }, [open])
+
+  /*
+   * THE LIST IS AS WIDE AS ITS WIDEST OPTION, as a menu is, and not as narrow as the button: a short
+   * button over longer options wrapped every label in two. Wider than the button, it can reach past
+   * the window's right edge, so it moves left until it fits, never past the window's left edge.
+   */
+  useLayoutEffect(() => {
+    const element = list.current
+    const anchor = element?.parentElement
+    if (!open || !element || !anchor) return
+    element.style.left = ''
+    const frame = anchor.closest(`[${WINDOW_ATTRIBUTE}]`)?.getBoundingClientRect()
+    const right = (frame?.right ?? innerWidth) - LIST_MARGIN
+    const left = (frame?.left ?? 0) + LIST_MARGIN
+    const box = element.getBoundingClientRect()
+    const over = box.right - right
+    if (over > 0) element.style.left = `${-Math.min(over, Math.max(box.left - left, 0))}px`
   }, [open])
 
   const step = (from: number, delta: 1 | -1) => {
@@ -163,7 +185,7 @@ export function PopUpButton<T extends string>({
               >
                 <span className="desk-popup-check" aria-hidden="true">{option.value === value ? '✓' : ''}</span>
                 <span className="desk-popup-text">
-                  <span>{option.label}</span>
+                  <span className="desk-popup-label">{option.label}</span>
                   {option.description && <span className="desk-help">{option.description}</span>}
                 </span>
               </li>

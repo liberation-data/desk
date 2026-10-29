@@ -705,7 +705,11 @@
   z-index: 1200;
   top: calc(100% + 4px);
   left: 0;
+  /* As wide as the widest option, as a menu is; never narrower than the button, nor past the screen. */
+  width: max-content;
   min-width: 100%;
+  max-width: min(360px, calc(100vw - 32px));
+  box-sizing: border-box;
   max-height: 40vh;
   margin: 0;
   padding: 4px;
@@ -754,6 +758,12 @@
 .desk-popup-text {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+}
+
+/* An option is one line; its description may wrap inside the list's widest. */
+.desk-popup-label {
+  white-space: nowrap;
 }
 
 /* ── Tabs ── */
