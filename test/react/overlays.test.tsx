@@ -140,6 +140,16 @@ describe('Sheet', () => {
     render(<Harness />)
     expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Export' })).toBeTruthy()
   })
+
+  it('holds what it asks in a body of its own, between the title and the actions, which scrolls when the window is short', () => {
+    render(<Harness />)
+    const sheet = screen.getByRole('dialog')
+    const body = screen.getByRole('textbox', { name: 'File name' }).closest('.desk-sheet-body')
+    expect(body?.parentElement).toBe(sheet)
+    // The title and description above it, and the actions below, stay put while it scrolls.
+    expect(body?.previousElementSibling?.className).toBe('desk-sheet-description')
+    expect(body?.nextElementSibling?.className).toBe('desk-sheet-actions')
+  })
 })
 
 describe('Alert', () => {
