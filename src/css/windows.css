@@ -413,6 +413,30 @@
   grid-template-columns: minmax(0, 1fr) auto var(--desk-split-size);
 }
 
+/* One above the other: the same, in rows. */
+.desk-split[data-orientation="vertical"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--desk-split-size) auto minmax(0, 1fr);
+}
+
+.desk-split[data-orientation="vertical"][data-at="end"] {
+  grid-template-rows: minmax(0, 1fr) auto var(--desk-split-size);
+}
+
+.desk-split[data-orientation="vertical"] > .desk-split-edge {
+  width: auto;
+  height: 1px;
+  cursor: row-resize;
+}
+
+.desk-split[data-orientation="vertical"] > .desk-split-edge::before {
+  inset: -6px 0;
+}
+
+.desk-split[data-orientation="vertical"][data-dragging] {
+  cursor: row-resize;
+}
+
 .desk-split[data-dragging] {
   user-select: none;
   cursor: col-resize;

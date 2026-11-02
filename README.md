@@ -311,7 +311,9 @@ in this browser, so the section opens the way it was left.
 
 `size` is where the side section starts (280px), `min` the narrowest it goes (200px), and `max` the most of
 the window it may take, as CSS (`50%`), so a width remembered from a big screen still leaves room on a
-small one. `at="end"` puts it on the right. Dragging from one section to the other is the ordinary
+small one. `at="end"` puts it on the right. `orientation="vertical"` puts one above the other instead, such as an
+editor over the results it runs: `at` is then the top or the bottom, the sizes are heights, and the edge moves up
+and down. Dragging from one section to the other is the ordinary
 `useDragSource` and `useDropTarget` (see [Dragging between windows](#dragging-between-windows)), which
 works the same inside one window. The garage sample's Workshop window is Service beside Rides.
 
