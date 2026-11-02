@@ -17,9 +17,10 @@ let drawn = 280
 beforeEach(() => {
   drawn = 280
   Element.prototype.setPointerCapture = () => {}
+  // The side panel is `drawn` across whichever way it is laid out: jsdom has no layout to say.
   Element.prototype.getBoundingClientRect = function () {
-    const width = this.hasAttribute('data-side') ? drawn : 0
-    return { left: 0, top: 0, right: width, bottom: 0, width, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect
+    const size = this.hasAttribute('data-side') ? drawn : 0
+    return { left: 0, top: 0, right: size, bottom: size, width: size, height: size, x: 0, y: 0, toJSON: () => ({}) } as DOMRect
   }
 })
 
@@ -27,10 +28,11 @@ const split = () => document.querySelector<HTMLElement>('.desk-split') as HTMLEl
 const edge = () => screen.getByRole('separator')
 const size = () => split().style.getPropertyValue('--desk-split-size')
 
-const drag = (from: number, to: number) => {
-  fireEvent.pointerDown(edge(), { button: 0, clientX: from, pointerId: 1 })
+const drag = (from: number, to: number, axis: 'x' | 'y' = 'x') => {
+  const at = (n: number) => (axis === 'x' ? { clientX: n } : { clientY: n })
+  fireEvent.pointerDown(edge(), { button: 0, ...at(from), pointerId: 1 })
   act(() => {
-    edge().dispatchEvent(new PointerEvent('pointermove', { clientX: to, bubbles: true }))
+    edge().dispatchEvent(new PointerEvent('pointermove', { ...at(to), bubbles: true }))
   })
   act(() => {
     edge().dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
@@ -112,5 +114,42 @@ describe('a split', () => {
   it('names the edge for assistive technology', () => {
     render(<Split side={<p>side</p>} label="Resize the catalogue"><p>main</p></Split>)
     expect(screen.getByRole('separator', { name: 'Resize the catalogue' }).getAttribute('aria-orientation')).toBe('vertical')
+  })
+})
+
+describe('a split one above the other', () => {
+  const vertical = () => render(<Split side={<p>editor</p>} orientation="vertical" size={240}><p>results</p></Split>)
+
+  it('lays the panels out in rows, with an edge that runs across', () => {
+    vertical()
+    expect(split().dataset.orientation).toBe('vertical')
+    expect(edge().getAttribute('aria-orientation')).toBe('horizontal')
+    expect(size()).toBe('min(240px, 50%)')
+  })
+
+  it('grows downwards from the top, by the pointer’s height, not its width', () => {
+    vertical()
+    drawn = 240
+    fireEvent.pointerDown(edge(), { button: 0, clientX: 0, clientY: 240, pointerId: 1 })
+    act(() => {
+      edge().dispatchEvent(new PointerEvent('pointermove', { clientX: 500, clientY: 300, bubbles: true }))
+      edge().dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+    })
+    expect(size()).toBe('min(300px, 50%)')
+  })
+
+  it('grows upwards from the bottom', () => {
+    render(<Split side={<p>log</p>} orientation="vertical" at="end"><p>main</p></Split>)
+    drag(600, 560, 'y')
+    expect(size()).toBe('min(320px, 50%)')
+  })
+
+  it('moves with the up and down arrows', () => {
+    vertical()
+    drawn = 240
+    act(() => void fireEvent.keyDown(edge(), { key: 'ArrowDown' }))
+    expect(size()).toBe('min(256px, 50%)')
+    act(() => void fireEvent.keyDown(edge(), { key: 'ArrowRight' }))
+    expect(size()).toBe('min(256px, 50%)')
   })
 })
