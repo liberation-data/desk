@@ -293,6 +293,28 @@ and a terminal's grey in a dark one. A trace of the accent is mixed into it, `--
 sheet belongs to the theme it is read in; set that to `0%` for the neutral alone. `fill` makes it at least as tall as the room it is given, so a short
 section is still a whole sheet.
 
+### Two sections of one app: a split
+
+```tsx
+import { Split } from '@liberation-data/desk/react'
+
+<Split side={<Catalogue />} remember="studio.explore">
+  <Canvas />
+</Split>
+```
+
+A picker and the canvas it fills, or a list and its detail, are one app, so they are one window. Two windows
+placed side by side drift apart and can be pulled apart. In a split they open, close and move together, and
+only the edge between them moves. Drag the edge, or focus it and use the arrow keys. Home makes the side
+section as narrow as it goes, and Enter or a double-click puts it back. With `remember`, the width is kept
+in this browser, so the section opens the way it was left.
+
+`size` is where the side section starts (280px), `min` the narrowest it goes (200px), and `max` the most of
+the window it may take, as CSS (`50%`), so a width remembered from a big screen still leaves room on a
+small one. `at="end"` puts it on the right. Dragging from one section to the other is the ordinary
+`useDragSource` and `useDropTarget` (see [Dragging between windows](#dragging-between-windows)), which
+works the same inside one window. The garage sample's Workshop window is Service beside Rides.
+
 `InfoTip` is an (i) holding what the view would explain if asked, so a window does not open with a
 paragraph everyone reads once. Explanation only: a warning belongs in front of people, not behind a
 disclosure.
@@ -501,6 +523,8 @@ someone reaches the desktop, straight after setup, so nobody lands there without
 content: the steps are the app's.
 
 ## Dragging between windows
+
+The same hooks drag between the sections of one window, such as from a `Split`'s side section to the rest.
 
 ```tsx
 // In the list — one source, because a hook cannot be called per row

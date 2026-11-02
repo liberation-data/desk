@@ -181,6 +181,13 @@ The desk wears the chrome of a platform: **Mac**, **GNOME** or **Windows** (`loo
 A window is one task or one thing: a list of rides, a map, a conversation. If two things are always used
 together, they are one window; if people want them side by side, they are two.
 
+**Sections of one app are one window, not windows placed side by side.** A picker and the canvas it
+fills, a list and its detail: put them in one window with a `Split` between them. Two windows held next to
+each other drift apart, can be pulled apart by either title bar, and look like two things when they are one.
+In a split only the edge between the sections moves. It is remembered, and it never lets the side
+section take more than its share of a small screen. Dragging from one section to the other is the ordinary
+drag and drop, which works the same inside a window as between windows.
+
 Not everything an app keeps going is a window. What has to be true while a window is shut, such as a
 count on its dock item, or ready when it opens, such as the list it shows first, belongs to a service
 the desk holds. A window that opens on a spinner for data the app could already have had is a service

@@ -39,6 +39,7 @@ import {
   Sheet,
   Outline,
   Sidebar,
+  Split,
   Slider,
   SoundsToggle,
   Table,
@@ -1110,6 +1111,7 @@ interface Surface { readonly title: string; readonly icon: keyof typeof PATHS; r
 export const SURFACES = {
   rides: { title: 'Rides', icon: 'ride', description: 'Every ride, newest first' },
   service: { title: 'Service', icon: 'wrench', description: 'What the bikes need' },
+  workshop: { title: 'Workshop', icon: 'chain', description: 'Service beside your rides, in one window' },
   map: { title: 'Map', icon: 'map', description: 'The last ride, drawn' },
   chat: { title: 'Chat', icon: 'chat', description: 'Ask about the bikes' },
   card: { title: 'Ride Card', icon: 'log', description: 'A generated app, in a window' },
@@ -1179,6 +1181,7 @@ function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonl
     dockItem(item('service', due ? { badge: due } : {})),
     dockItem(item('map')),
     dockItem(item('chat')),
+    dockItem(item('workshop')),
     dockSeparator('sep-stacks'),
     dockStack({ id: 'garage', label: 'Garage', items: [item('bikes'), item('parts'), item('manual'), item('service', due ? { badge: due } : {})] }),
     dockStack({ id: 'plan', label: 'Plan', items: [item('routes'), item('weather'), item('calendar')] }),
@@ -1246,6 +1249,13 @@ function Garage({ desk, firstRun, onSetupAgain }: { readonly desk: Desk; readonl
     switch (id) {
       case 'rides': return <Rides />
       case 'service': return <Service steps={steps} setSteps={setSteps} />
+      // One app, one window: what is due beside the rides that wore it out. Only the edge between them moves.
+      case 'workshop':
+        return (
+          <Split side={<Service steps={steps} setSteps={setSteps} />} size={300} remember="garage.workshop" label="Resize Service">
+            <Rides />
+          </Split>
+        )
       case 'map': return <MapView />
       case 'chat': return <Chat pending={pending} onPending={setPending} />
       // Granted per app: it may hear and say ride.selected, take a dropped ride, and open the map. Nothing else.
