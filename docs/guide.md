@@ -174,6 +174,7 @@ value without being the thing that keeps the service running.
 | A setting that waits for Save | `<Checkbox>` |
 | Rows people sort and choose from | `<Table>` |
 | The places inside a window | `<Sidebar>` |
+| Two sections of one app, such as a picker beside its canvas | `<Split>` (one window, a draggable edge) |
 | What a window is, for whoever asks | `<Desktop info>` (an (i) in the title bar) |
 | What a view would explain if asked | `<InfoTip>` |
 | Controls that stay while content scrolls | `<Pane>` and `<Toolbar>` |
