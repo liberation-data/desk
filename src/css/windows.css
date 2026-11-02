@@ -401,6 +401,58 @@
 
 /* ── The inside of a window: controls that stay, content that scrolls ── */
 
+/* Two panels in one window, and the edge between them that moves. */
+.desk-split {
+  display: grid;
+  grid-template-columns: var(--desk-split-size) auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.desk-split[data-at="end"] {
+  grid-template-columns: minmax(0, 1fr) auto var(--desk-split-size);
+}
+
+.desk-split[data-dragging] {
+  user-select: none;
+  cursor: col-resize;
+}
+
+.desk-split-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* A hairline to see, and a wider strip either side of it to catch. */
+.desk-split-edge {
+  position: relative;
+  width: 1px;
+  background: var(--desk-rule);
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+  /* Above the panels, so the strip it catches with is not covered by something positioned in them. */
+  z-index: 1;
+}
+
+/* 13px to catch with: a hairline you can see, and enough either side that you need not aim for it. */
+.desk-split-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0 -6px;
+}
+
+.desk-split-edge:hover,
+.desk-split-edge:focus-visible,
+.desk-split[data-dragging] > .desk-split-edge {
+  background: var(--desk-accent);
+  box-shadow: 0 0 0 1px var(--desk-accent);
+}
+
+
 .desk-pane {
   display: flex;
   flex-direction: column;

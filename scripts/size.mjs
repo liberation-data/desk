@@ -88,7 +88,11 @@ import { join } from 'node:path'
  * highlighted without a dependency. React stood at 0.9 spare, short of it whatever it was trimmed
  * to, and 66 would have left the 0.2 the notes above describe as red on the next commit.
  */
-const BUDGETS = { core: 16, react: 68, css: 20, fx: 5 }
+/*
+ * Raised css 20 → 22 for Split (0.2 KiB): two panels in one window and the edge between them. It took
+ * css to 19.9 of 20, the 0.1 spare the notes above describe as red on the next commit whatever it is.
+ */
+const BUDGETS = { core: 16, react: 68, css: 22, fx: 5 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
