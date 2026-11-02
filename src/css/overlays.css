@@ -35,6 +35,8 @@
 
 .desk-sheet-scrim {
   place-items: start center;
+  /* One row the height of the window, so a sheet can be held to it rather than run past its foot. */
+  grid-template-rows: minmax(0, 1fr);
   padding: var(--desk-space-4);
 }
 
@@ -66,7 +68,21 @@
 }
 
 .desk-sheet {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
   animation: desk-sheet-in .22s var(--desk-ease);
+}
+
+/*
+ * What the sheet asks, between its title and its buttons: scrolled when the window is too short for it. It reaches the
+ * sheet's edges, its padding in place of the sheet's, so a focus ring at a field's edge is not cut off by the scroll.
+ */
+.desk-sheet-body {
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 calc(-1 * var(--desk-space-4));
+  padding: 3px var(--desk-space-4);
 }
 
 .desk-alert {

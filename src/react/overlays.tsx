@@ -158,7 +158,8 @@ export function Sheet({ open, onDismiss, title, description, actions, children }
       <div ref={panel} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} className="desk-sheet">
         <h2 id={`${id}-title`} className="desk-sheet-title">{title}</h2>
         {description && <p className="desk-sheet-description">{description}</p>}
-        {children}
+        {/* Only this scrolls, so a sheet taller than its window keeps its title and its buttons in sight. */}
+        <div className="desk-sheet-body">{children}</div>
         {actions && <div className="desk-sheet-actions">{actions}</div>}
       </div>
     </div>,
