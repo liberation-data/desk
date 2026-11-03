@@ -174,15 +174,15 @@
 }
 
 /* The note gives up the spare room; the (i) keeps its place at the end of the bar. */
-.desk-window-note + .desk-window-info {
-  margin-left: var(--desk-space-2);
-}
-
-.desk-window-info {
+/*
+ * The (i) is the bar's last word, at its trailing end, with or without a note before it. It sits in its popover's
+ * anchor, so the anchor is what the bar lays out: a margin on the button inside it would move nothing.
+ */
+.desk-titlebar > .desk-popover-anchor:has(> .desk-window-info) {
   margin-left: auto;
 }
 
-.desk-window-note ~ .desk-window-info {
+.desk-window-note ~ .desk-popover-anchor:has(> .desk-window-info) {
   margin-left: var(--desk-space-2);
 }
 
@@ -258,7 +258,7 @@
   .desk-window-progress-fill { transition: none; }
 }
 
-.desk-window-info + .desk-window-actions,
+.desk-popover-anchor:has(> .desk-window-info) + .desk-window-actions,
 .desk-window-note + .desk-window-actions {
   margin-left: var(--desk-space-1);
 }
