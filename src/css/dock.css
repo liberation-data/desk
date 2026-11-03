@@ -69,6 +69,30 @@
   height: calc(100% - var(--desk-dock-room));
 }
 
+/*
+ * The room is where windows start, not a wall. A window dragged toward the dock goes on under it, as it would under a
+ * Mac's: only the dock is drawn over it, not the lane it stands in. The stage clips across that lane, and the screen
+ * that holds the dock clips at its own edge, so nothing scrolls.
+ */
+:has(> .desk-dock[data-placement="overlay"]) {
+  overflow: hidden;
+}
+
+:has(> .desk-dock[data-placement="overlay"][data-side="left"]) > .desk-stage {
+  overflow: visible;
+  clip-path: inset(0 0 0 calc(-1 * var(--desk-dock-room)));
+}
+
+:has(> .desk-dock[data-placement="overlay"][data-side="right"]) > .desk-stage {
+  overflow: visible;
+  clip-path: inset(0 calc(-1 * var(--desk-dock-room)) 0 0);
+}
+
+:has(> .desk-dock[data-placement="overlay"][data-side="bottom"]) > .desk-stage {
+  overflow: visible;
+  clip-path: inset(0 0 calc(-1 * var(--desk-dock-room)) 0);
+}
+
 .desk-dock-separator {
   flex: none;
   align-self: stretch;
