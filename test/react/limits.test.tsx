@@ -30,6 +30,8 @@ describe('how big a window may be', () => {
     expect(style.maxWidth).toBe('720px')
     expect(style.maxHeight).toBe('560px')
     expect(style.margin).toBe('auto')
+    // Centred, so it keeps the frame a free window has, where a filled one sits flush to the desk's edges.
+    expect(windowFor('about').dataset.centred).toBe('true')
   })
 
   it('caps a free window too, without moving it', () => {
@@ -39,6 +41,7 @@ describe('how big a window may be', () => {
     expect([style.left, style.top, style.width]).toEqual(['60px', '40px', '900px'])
     expect(style.maxWidth).toBe('400px')
     expect(style.margin).toBe('')
+    expect(windowFor('about').dataset.centred).toBeUndefined()
   })
 
   it('says nothing about a window with no limits, which is most of them', () => {
@@ -47,6 +50,7 @@ describe('how big a window may be', () => {
     const style = windowFor('rides').style
     expect(style.maxWidth).toBe('')
     expect(style.margin).toBe('')
+    expect(windowFor('rides').dataset.centred).toBeUndefined()
   })
 
   it('needs no limits function at all', () => {
