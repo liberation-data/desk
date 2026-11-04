@@ -457,13 +457,14 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
    * the desk, being arranged into a cell and being dragged wider all end at the same place, and the
    * window sits in the middle of whatever room it was given rather than pinned to a corner of it.
    */
+  // Filled and capped: it sits in the middle of the room, not in the corner of it.
+  const centred = Boolean(limits && (limits.maxWidth || limits.maxHeight) && !frame)
   const capped: CSSProperties = {
     ...(limits?.maxWidth ? { maxWidth: limits.maxWidth } : {}),
     ...(limits?.maxHeight ? { maxHeight: limits.maxHeight } : {}),
     ...(limits?.minWidth ? { minWidth: limits.minWidth } : {}),
     ...(limits?.minHeight ? { minHeight: limits.minHeight } : {}),
-    // Filled and capped: it sits in the middle of the room, not in the corner of it.
-    ...(limits && (limits.maxWidth || limits.maxHeight) && !frame ? { margin: 'auto' } : {}),
+    ...(centred ? { margin: 'auto' } : {}),
   }
   const style: CSSProperties | undefined =
     layout !== 'desktop'
@@ -508,6 +509,7 @@ function WindowView({ window, layout, hidden, minimized, depth, focused, title, 
         {...{ [WINDOW_ATTRIBUTE]: window.id }}
         className="desk-window"
         data-mode={layout === 'fullscreen' ? 'fullscreen' : live ? 'floating' : window.mode}
+        data-centred={centred || undefined}
         data-hidden={hidden || undefined}
         data-minimized={minimized || undefined}
         inert={hidden || undefined}

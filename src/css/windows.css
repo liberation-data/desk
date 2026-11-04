@@ -15,7 +15,7 @@
 }
 
 .desk-window {
-  /* Filled windows fill the stage inside its padding, layered in the order they were used. */
+  /* Windows are placed inside the stage's padding; filled ones, below, fill it to its edges, layered in the order they were used. */
   position: absolute;
   top: var(--desk-padding);
   right: var(--desk-padding);
@@ -52,6 +52,18 @@
   position: static;
   inset: auto;
   grid-area: 1 / 1;
+}
+
+/*
+ * A filled window takes the whole desk, as a zoomed window does on a Mac: no margin, no corners, no shadow. The
+ * stage's padding stays for the windows that are arranged or free, and for a filled one that is capped and sits
+ * in the middle of the room.
+ */
+.desk-window[data-mode="filled"]:not([data-centred]) {
+  inset: 0 0 var(--desk-inset-bottom) 0;
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .desk-window[data-mode="floating"] {
