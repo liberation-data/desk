@@ -323,6 +323,18 @@ describe('MenuBar with a host', () => {
 })
 
 describe('hostMenuModel', () => {
+  it('marks an action\'s shortcut show-only, as the drawn bar treats it, and leaves a command\'s to bind', () => {
+    const { model } = hostMenuModel(
+      [{ id: 'file', label: 'File', items: [menuAction('Print', () => {}, { shortcut: 'mod+p' }), menuCommand('Export', 'rides.export', { shortcut: 'mod+e' })] }],
+      [],
+      () => true,
+    )
+    expect(model[0]?.items).toEqual([
+      { type: 'item', id: 'file:0:Print', label: 'Print', shortcut: 'mod+p', showOnly: true, enabled: true },
+      { type: 'item', id: 'file:1:Export', label: 'Export', shortcut: 'mod+e', enabled: true },
+    ])
+  })
+
   it('reads checked and disabled when asked, and keeps details', () => {
     const { model, run } = hostMenuModel(
       [{ id: 'view', label: 'View', items: [menuAction('Grid', () => {}, { checked: () => true, detail: '⌘1' }), menuCommand('Zoom', DeskCommands.zoomWindow)] }],

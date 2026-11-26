@@ -90,8 +90,8 @@ export interface MenuBarProps {
    * A native menu bar to put the menus in instead. The bar then draws nothing: it publishes the
    * menus and status menus to the host as data, again whenever they change or focus moves, and runs
    * the item the host says was chosen. Anything that should reach the host is a menu or a status
-   * menu, since `leading` and `trailing` cannot cross. Every item's shortcut crosses, an action's
-   * included, so a host that binds it runs the action, which the drawn bar only shows. Enablement
+   * menu, since `leading` and `trailing` cannot cross. An action's shortcut crosses `showOnly`, a label
+   * for a key the app binds, as the drawn bar treats it. Enablement
    * that changes through app state alone, with no render or focus move, shows stale until the next.
    */
   readonly host?: MenuHost

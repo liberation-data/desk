@@ -25,6 +25,12 @@ export interface HostMenuItem {
   readonly detail?: string
   /** In desk's format: 'mod+k', 'mod+alt+a', 'alt+]'. */
   readonly shortcut?: string
+  /**
+   * The page handles this item's shortcut itself, so a host draws it beside the item and gives it
+   * no key (Electron: `registerAccelerator: false`). Set on an action's shortcut, which the drawn
+   * bar only shows too: binding it as well would fire the action twice.
+   */
+  readonly showOnly?: boolean
   /** Defaults to true. */
   readonly enabled?: boolean
   /** Absent means the item is not checkable. */
@@ -83,6 +89,7 @@ function itemModel(item: MenuItem, id: string, canPerform: (command: CommandId) 
         label: item.label,
         ...(item.detail === undefined ? {} : { detail: item.detail }),
         ...(item.shortcut === undefined ? {} : { shortcut: item.shortcut }),
+        ...(item.shortcut !== undefined && item.type === 'action' ? { showOnly: true } : {}),
         enabled: item.type === 'command' ? canPerform(item.command) : !read(item.disabled),
         ...(checked === undefined ? {} : { checked }),
       }
