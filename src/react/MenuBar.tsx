@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
 import { canPerform, perform } from '../core/commands.js'
 import type { CommandId } from '../core/commands.js'
@@ -6,7 +6,9 @@ import { focusedId, isMinimized } from '../core/desk.js'
 import { bindShortcuts, formatShortcut, isApplePlatform } from '../core/shortcuts.js'
 import type { Desk } from '../core/desk.js'
 import type { DeskState, WindowId } from '../core/types.js'
-import { useDesk } from './context.js'
+import { useDesk, useDeskState } from './context.js'
+import { disabledIds, hasModKey, hostMenuModel, sameHostModel } from './hostMenu.js'
+import type { HostMenu, MenuHost } from './hostMenu.js'
 
 /*
  * A menu bar in the AppKit manner. Menus never take keyboard focus from the
@@ -79,10 +81,17 @@ export interface MenuBarProps {
   readonly menus: readonly Menu[]
   /** Status menus on the trailing side. */
   readonly status?: readonly Menu[]
-  /** Leading content before the menus, e.g. the app's mark. */
+  /** Leading content before the menus, e.g. the app's mark. Not drawn when there is a `host`. */
   readonly leading?: ReactNode
-  /** Trailing content after the status menus, e.g. a clock. */
+  /** Trailing content after the status menus, e.g. a clock. Not drawn when there is a `host`. */
   readonly trailing?: ReactNode
+  /**
+   * A native menu bar to put the menus in instead. The bar then draws nothing: it publishes the
+   * menus and status menus to the host as data, again whenever they change or focus moves, and runs
+   * the item the host says was chosen. Anything that should reach the host is a menu or a status
+   * menu, since `leading` and `trailing` cannot cross.
+   */
+  readonly host?: MenuHost
   readonly label?: string
   /** Bind the shortcuts of command items, in every menu. Default true. */
   readonly shortcuts?: boolean
@@ -148,7 +157,83 @@ export const typeAhead = (items: readonly Resolved[], from: number, letter: stri
   return -1
 }
 
-export function MenuBar({ menus, status = [], leading, trailing, label = 'Menu bar', shortcuts = true, className }: MenuBarProps) {
+export function MenuBar(props: MenuBarProps) {
+  return props.host ? <HostedMenuBar {...props} host={props.host} /> : <DrawnMenuBar {...props} />
+}
+
+/**
+ * The menus in a host's menu bar. Draws nothing. It publishes after every render, since menus are
+ * rebuilt on every render and a publish that changes nothing is skipped; again when focus moves,
+ * because whether a command can run depends on what has focus; and an empty list on the way out,
+ * so the host never shows a menu the page has taken down.
+ */
+function HostedMenuBar({ menus, status = [], host, shortcuts = true }: MenuBarProps & { readonly host: MenuHost }) {
+  const desk = useDesk()
+  useDeskState() // a menu that lists the open windows changes when they do
+  const apple = useMemo(isApplePlatform, [])
+  const model = hostMenuModel(menus, status, command => canPerform(desk, command))
+
+  /* What a chosen id runs, kept fresh on every render, including those that publish nothing new:
+     the model can match the last one while its functions do not, and an old one would act on state
+     that has since moved on. */
+  const latest = useRef({ menus, status, run: model.run, disabled: disabledIds(model.model) })
+  latest.current = { menus, status, run: model.run, disabled: disabledIds(model.model) }
+  const last = useRef<readonly HostMenu[] | null>(null)
+
+  const publish = useCallback(
+    (next: readonly HostMenu[]) => {
+      if (last.current !== null && sameHostModel(last.current, next)) return
+      last.current = next
+      host.publish(next)
+    },
+    [host],
+  )
+
+  useEffect(() => publish(model.model))
+
+  useEffect(() => {
+    const onFocus = () => {
+      const fresh = hostMenuModel(latest.current.menus, latest.current.status, command => canPerform(desk, command))
+      latest.current = { ...latest.current, run: fresh.run, disabled: disabledIds(fresh.model) }
+      publish(fresh.model)
+    }
+    const choose = (id: string) => {
+      if (latest.current.disabled.has(id)) return
+      const item = latest.current.run.get(id)
+      if (item?.type === 'action') item.onSelect()
+      else if (item?.type === 'command') perform(desk, item.command, item.args)
+      // An id this bar never published, or one from an older model, does nothing.
+    }
+    document.addEventListener('focusin', onFocus)
+    const unsubscribe = host.onSelect(choose)
+    return () => {
+      document.removeEventListener('focusin', onFocus)
+      unsubscribe()
+      last.current = null
+      host.publish([])
+    }
+  }, [desk, host, publish])
+
+  // The host gives its own shortcuts a key; the page binds the rest, read at each key press.
+  useEffect(() => {
+    if (!shortcuts) return undefined
+    const owns = (shortcut: string) => (host.ownsShortcut ? host.ownsShortcut(shortcut) : hasModKey(shortcut))
+    return bindShortcuts(
+      desk,
+      () =>
+        Object.fromEntries(
+          [...latest.current.menus, ...latest.current.status]
+            .flatMap(m => (typeof m.items === 'function' ? m.items() : m.items))
+            .flatMap(i => (i.type === 'command' && i.shortcut && !owns(i.shortcut) ? [[i.shortcut, i.command] as const] : [])),
+        ),
+      { apple },
+    )
+  }, [desk, host, shortcuts, apple])
+
+  return null
+}
+
+function DrawnMenuBar({ menus, status = [], leading, trailing, label = 'Menu bar', shortcuts = true, className }: MenuBarProps) {
   const desk = useDesk()
   const all = useMemo(() => [...menus, ...status], [menus, status])
   const [open, setOpen] = useState<OpenMenu | null>(null)

@@ -335,7 +335,11 @@ Pins: the app stores kept items and passes them back as entries. A drop on the d
 ### Menu bar
 
 ```tsx
-<MenuBar menus={Menu[]} status?={Menu[]} leading?={ReactNode} trailing?={ReactNode} shortcuts?={true} />
+<MenuBar menus={Menu[]} status?={Menu[]} leading?={ReactNode} trailing?={ReactNode} shortcuts?={true} host?={MenuHost} />
+// host: a native menu bar (Electron, Tauri). The bar draws nothing and publishes menus + status as data:
+interface MenuHost { publish(menus: HostMenu[]): void; onSelect(listener: (id: string) => void): () => void; ownsShortcut?(s: string): boolean }
+interface HostMenu { id; label; primary?; status?; items: { type: 'item'|'separator'|'header'; id?; label?; detail?; shortcut?; enabled?; checked? }[] }
+// leading/trailing do not cross; a status menu crosses with its label, not its title. Default: host owns `mod` shortcuts.
 interface Menu { id: string; label: string; title?: ReactNode; emphasis?: boolean; items: MenuItem[] | (() => MenuItem[]) }
 // emphasis: the app's own menu, its name in bold, conventionally first
 menuCommand(label, command, { shortcut?, checked?, detail?, args? })
