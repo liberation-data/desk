@@ -92,7 +92,12 @@ import { join } from 'node:path'
  * Raised css 20 → 22 for Split (0.2 KiB): two panels in one window and the edge between them. It took
  * css to 19.9 of 20, the 0.1 spare the notes above describe as red on the next commit whatever it is.
  */
-const BUDGETS = { core: 16, react: 68, css: 22, fx: 5 }
+/*
+ * Raised react 68 → 72 for a menu bar a native shell draws (0.9 KiB): the menus handed to a host as
+ * data, and the chosen item run when the host names it. React measured 68.7 of 68 before it on a
+ * fresh install, red already, so 70 would have left the 0.4 spare the notes above call red next time.
+ */
+const BUDGETS = { core: 16, react: 72, css: 22, fx: 5 }
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {

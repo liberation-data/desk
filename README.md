@@ -775,6 +775,22 @@ own their shortcuts, as in AppKit — a command item's `shortcut` is shown and b
 the bar, arrow keys move between menus and items (skipping separators and disabled items), a letter jumps
 to an item, Enter chooses, Escape closes.
 
+In a native shell, give the bar a `host` and its menus go in the system's menu bar instead. The bar draws
+nothing: it publishes its menus and status menus to the host as plain data (`HostMenu[]`, each item under an
+id), again whenever they change or focus moves, runs the item whose id the host sends back, and publishes an
+empty list when it unmounts. A status menu crosses with its `label`, since a native bar draws text, and
+`leading` and `trailing` do not cross at all, so anything the host should show is a menu. The host gives a
+shortcut with `mod` in it a key of its own and the page binds the rest, unless the host says otherwise with
+`ownsShortcut`.
+
+```tsx
+const host: MenuHost = {
+  publish: menus => ipc.send('menus', menus),               // build the native menu from these
+  onSelect: listener => ipc.on('menu-chosen', (_, id) => listener(id)),
+}
+<MenuBar menus={menus} status={status} host={window.inShell ? host : undefined} />
+```
+
 
 ### Context menus
 

@@ -91,6 +91,8 @@ export { MenuBar, menuAction, menuCommand, menuHeader, menuSeparator, windowMenu
 export { useContextMenu } from './contextMenu.js'
 export type { ContextMenuOptions, ContextMenuResult, ContextMenuTargetProps } from './contextMenu.js'
 export type { Menu, MenuBarProps, MenuItem } from './MenuBar.js'
+export { hasModKey, hostMenuModel } from './hostMenu.js'
+export type { HostMenu, HostMenuItem, HostMenuModel, MenuHost } from './hostMenu.js'
 export { IconView } from './iconView.js'
 export type { IconViewItem, IconViewProps } from './iconView.js'
 export { Dock, DOCK_ITEM, dockItem, dockSeparator, dockStack } from './Dock.js'
