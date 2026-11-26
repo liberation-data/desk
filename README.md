@@ -782,8 +782,8 @@ empty list when it unmounts. A status menu crosses with its `label`, since a nat
 `leading` and `trailing` do not cross at all, so anything the host should show is a menu. The host gives a
 shortcut with `mod` in it a key of its own and the page binds the rest, unless the host says otherwise with
 `ownsShortcut`; `shortcuts={false}` stops only the page's binding, as the host still gets every shortcut to show.
-An action item's shortcut crosses too, and a host that binds it runs the action, where the drawn bar only shows
-it: an app that binds that key itself, for the drawn bar, leaves it to the host in a shell or it fires twice.
+An action item's shortcut crosses marked `showOnly`: as in the drawn bar, it is a label for a key the app binds
+itself, so the host shows it and gives it no key of its own.
 Enablement is published on each render and focus move, so one that changes through app state alone shows
 stale in the host until the next; a stale item the host sends back is asked again and does nothing.
 
