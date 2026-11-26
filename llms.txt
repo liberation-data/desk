@@ -340,6 +340,10 @@ Pins: the app stores kept items and passes them back as entries. A drop on the d
 interface MenuHost { publish(menus: HostMenu[]): void; onSelect(listener: (id: string) => void): () => void; ownsShortcut?(s: string): boolean }
 interface HostMenu { id; label; primary?; status?; items: { type: 'item'|'separator'|'header'; id?; label?; detail?; shortcut?; enabled?; checked? }[] }
 // leading/trailing do not cross; a status menu crosses with its label, not its title. Default: host owns `mod` shortcuts.
+// An action's shortcut is bound by the host (the drawn bar only shows it). shortcuts={false} stops the page binding, not the host.
+// Republished on render and focus move only; a choice is re-checked before it runs.
+hostMenuModel(menus, status, canPerform): { model: HostMenu[]; run: Map<id, MenuItem> }  // the same data, for a host built by hand
+hasModKey(shortcut): boolean  // the default ownsShortcut: has `mod` in it
 interface Menu { id: string; label: string; title?: ReactNode; emphasis?: boolean; items: MenuItem[] | (() => MenuItem[]) }
 // emphasis: the app's own menu, its name in bold, conventionally first
 menuCommand(label, command, { shortcut?, checked?, detail?, args? })

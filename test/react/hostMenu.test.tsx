@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createDesk, DeskCommands } from '../../src/core/index.js'
+import { createDesk, DeskCommands, focusedId } from '../../src/core/index.js'
 import type { Desk } from '../../src/core/index.js'
 import {
   Desktop,
@@ -42,7 +42,9 @@ function fakeHost(extra: Partial<MenuHost> = {}) {
     return found.id
   }
   const pick = (label: string) => act(() => listener?.(idOf(label)))
-  return { host, published, latest, pick, listening: () => listener !== null }
+  /** Sends an id back as the host would, whether or not the page still publishes it. */
+  const send = (id: string) => act(() => listener?.(id))
+  return { host, published, latest, pick, send, listening: () => listener !== null }
 }
 
 function Rides() {
@@ -94,8 +96,8 @@ describe('MenuBar with a host', () => {
     ])
     expect(fake.latest()[1]?.items).toEqual([
       { type: 'header', label: 'Rides' },
-      { type: 'item', id: 'ride:1', label: 'Export rides', shortcut: 'mod+e', enabled: false },
-      { type: 'item', id: 'ride:2', label: 'Next ride', shortcut: 'alt+]', enabled: false },
+      { type: 'item', id: 'ride:1:Export rides', label: 'Export rides', shortcut: 'mod+e', enabled: false },
+      { type: 'item', id: 'ride:2:Next ride', label: 'Next ride', shortcut: 'alt+]', enabled: false },
     ])
     // The publish is JSON all the way down: nothing a host could not receive.
     expect(JSON.parse(JSON.stringify(fake.latest()))).toEqual(fake.latest())
@@ -110,6 +112,21 @@ describe('MenuBar with a host', () => {
     expect(onAbout).toHaveBeenCalledOnce()
   })
 
+  it('asks an action again when it is chosen, not trusting what was last published', () => {
+    let locked = false
+    const onSelect = vi.fn()
+    const fake = fakeHost()
+    render(
+      <DeskProvider desk={createDesk()}>
+        <MenuBar menus={[{ id: 'file', label: 'File', items: [menuAction('Unlock', onSelect, { disabled: () => locked })] }]} host={fake.host} />
+      </DeskProvider>,
+    )
+    expect(fake.latest()[0]?.items[0]?.enabled).toBe(true)
+    locked = true // through app state the bar never sees, so nothing is published again
+    fake.pick('Unlock')
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
   it('publishes again when a command becomes available, and sends a chosen one to the key window', () => {
     const fake = fakeHost()
     const { desk } = mount(fake.host)
@@ -118,6 +135,48 @@ describe('MenuBar with a host', () => {
     expect(exportRides?.enabled).toBe(true)
     fake.pick('Export rides')
     expect(screen.getByText('exported 1')).toBeTruthy()
+  })
+
+  it('ignores a command nothing can perform, and sends a chosen one its args', () => {
+    const got = vi.fn()
+    function Opener() {
+      useCommand<string>('file.open', name => got(name))
+      return null
+    }
+    function App({ ready }: { ready: boolean }) {
+      return (
+        <DeskProvider desk={desk}>
+          <MenuBar menus={[{ id: 'file', label: 'File', items: [menuCommand('Open recent', 'file.open', { args: 'garage.txt' })] }]} host={fake.host} />
+          {ready ? <Opener /> : null}
+        </DeskProvider>
+      )
+    }
+    const fake = fakeHost()
+    const desk = createDesk()
+    const view = render(<App ready={false} />)
+    fake.pick('Open recent')
+    expect(got).not.toHaveBeenCalled()
+    view.rerender(<App ready />)
+    fake.pick('Open recent')
+    expect(got).toHaveBeenCalledWith('garage.txt')
+  })
+
+  it('runs nothing for a choice from a menu that has changed since, not what took its place', () => {
+    const fake = fakeHost()
+    const { desk } = mount(fake.host)
+    act(() => {
+      desk.open('a')
+      desk.open('b')
+      desk.open('c')
+    })
+    const windows = () => fake.latest()[2]?.items ?? []
+    const first = windows()[0]
+    expect(first?.label).toBe('A')
+    act(() => desk.close('a'))
+    expect(windows()[0]?.label).toBe('B')
+    const focused = focusedId(desk.getState())
+    fake.send(first?.id ?? '')
+    expect(focusedId(desk.getState())).toBe(focused)
   })
 
   it('lists open windows as they open, and runs a status menu item', () => {
@@ -161,10 +220,103 @@ describe('MenuBar with a host', () => {
     expect(screen.getByText('exported 0')).toBeTruthy()
   })
 
-  it('takes its menus away and stops listening on the way out', () => {
+  it('publishes again when focus moves to what answers a command', () => {
+    function Field() {
+      const field = useRef<HTMLInputElement>(null)
+      useCommand('field.clear', () => {}, { at: field })
+      return <input aria-label="Field" ref={field} />
+    }
+    const fake = fakeHost()
+    const desk = createDesk()
+    render(
+      <DeskProvider desk={desk}>
+        <MenuBar menus={[{ id: 'edit', label: 'Edit', items: [menuCommand('Clear', 'field.clear')] }]} host={fake.host} />
+        <Desktop title={id => id} renderWindow={() => <Field />} />
+      </DeskProvider>,
+    )
+    act(() => desk.open('form'))
+    expect(fake.latest()[0]?.items[0]?.enabled).toBe(false)
+    act(() => screen.getByLabelText('Field').focus())
+    expect(fake.latest()[0]?.items[0]?.enabled).toBe(true)
+  })
+
+  it('calls a command enabled that a component after the bar answers', async () => {
+    function Saver() {
+      useCommand('app.save', () => {})
+      return null
+    }
+    const fake = fakeHost()
+    render(
+      <DeskProvider desk={createDesk()}>
+        <MenuBar menus={[{ id: 'file', label: 'File', items: [menuCommand('Save', 'app.save')] }]} host={fake.host} />
+        <Saver />
+      </DeskProvider>,
+    )
+    await act(async () => {})
+    expect(fake.latest()[0]?.items[0]?.enabled).toBe(true)
+  })
+
+  it('runs the function from the latest render, though the menus publish the same', () => {
+    const fake = fakeHost()
+    const { view, desk } = mount(fake.host)
+    const later = vi.fn()
+    const { menus, status } = menusFor(desk, later)
+    view.rerender(
+      <DeskProvider desk={desk}>
+        <MenuBar menus={menus} status={status} host={fake.host} />
+        <Desktop title={id => id} renderWindow={() => <Rides />} />
+      </DeskProvider>,
+    )
+    fake.pick('About Garage')
+    expect(later).toHaveBeenCalledOnce()
+  })
+
+  it('does nothing for an id it never published', () => {
+    let listener: ((id: string) => void) | null = null
+    const host: MenuHost = { publish: () => {}, onSelect: l => ((listener = l), () => {}) }
+    const { onAbout } = mount(host)
+    expect(() => act(() => listener?.('app:9'))).not.toThrow()
+    expect(() => act(() => listener?.('app:1'))).not.toThrow()
+    expect(onAbout).not.toHaveBeenCalled()
+  })
+
+  it('binds no shortcuts when told not to', () => {
+    const fake = fakeHost()
+    const desk = createDesk()
+    const { menus, status } = menusFor(desk, () => {})
+    render(
+      <DeskProvider desk={desk}>
+        <MenuBar menus={menus} status={status} host={fake.host} shortcuts={false} />
+        <Desktop title={id => id} renderWindow={() => <Rides />} />
+      </DeskProvider>,
+    )
+    act(() => desk.open('rides'))
+    fireEvent.keyDown(document.body, { key: ']', code: 'BracketRight', altKey: true })
+    expect(screen.getByText('exported 0')).toBeTruthy()
+  })
+
+  it('moves its menus to a new host, taking them from the old one', () => {
+    const first = fakeHost()
+    const second = fakeHost()
+    const { view, desk } = mount(first.host)
+    const { menus, status } = menusFor(desk, () => {})
+    view.rerender(
+      <DeskProvider desk={desk}>
+        <MenuBar menus={menus} status={status} host={second.host} />
+        <Desktop title={id => id} renderWindow={() => <Rides />} />
+      </DeskProvider>,
+    )
+    expect(first.latest()).toEqual([])
+    expect(first.listening()).toBe(false)
+    expect(second.latest().map(m => m.id)).toEqual(['app', 'ride', 'window', 'service'])
+    expect(second.listening()).toBe(true)
+  })
+
+  it('takes its menus away and stops listening on the way out', async () => {
     const fake = fakeHost()
     const { view } = mount(fake.host)
     view.unmount()
+    await act(async () => {}) // the microtask the last render queued publishes nothing after the empty list
     expect(fake.latest()).toEqual([])
     expect(fake.listening()).toBe(false)
   })
@@ -178,10 +330,10 @@ describe('hostMenuModel', () => {
       () => true,
     )
     expect(model[0]?.items).toEqual([
-      { type: 'item', id: 'view:0', label: 'Grid', detail: '⌘1', enabled: true, checked: true },
-      { type: 'item', id: 'view:1', label: 'Zoom', enabled: true },
+      { type: 'item', id: 'view:0:Grid', label: 'Grid', detail: '⌘1', enabled: true, checked: true },
+      { type: 'item', id: 'view:1:Zoom', label: 'Zoom', enabled: true },
     ])
-    expect([...run.keys()]).toEqual(['view:0', 'view:1'])
+    expect([...run.keys()]).toEqual(['view:0:Grid', 'view:1:Zoom'])
   })
 
   it('knows a mod shortcut', () => {

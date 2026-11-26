@@ -1,4 +1,5 @@
 import type { CommandId } from '../core/commands.js'
+import { parseShortcut } from '../core/shortcuts.js'
 import type { Menu, MenuItem } from './MenuBar.js'
 
 /*
@@ -13,7 +14,11 @@ import type { Menu, MenuItem } from './MenuBar.js'
 /** One row of a menu a host draws. Plain data, so it can cross a process boundary. */
 export interface HostMenuItem {
   readonly type: 'item' | 'separator' | 'header'
-  /** Present on 'item'; unique within one publish. */
+  /**
+   * Present on 'item'; unique within one publish. Opaque to a host, which only sends it back: it
+   * names the item's menu, place and label, so a choice from a menu that has since changed runs
+   * nothing rather than whatever took that place.
+   */
   readonly id?: string
   /** Present on 'item' and 'header'. */
   readonly label?: string
@@ -59,7 +64,7 @@ export interface HostMenuModel {
 }
 
 /** True when a native menu bar would give this shortcut a key: it has `mod` in it. */
-export const hasModKey = (shortcut: string): boolean => shortcut.toLowerCase().split('+').includes('mod')
+export const hasModKey = (shortcut: string): boolean => parseShortcut(shortcut).mod
 
 const read = (flag: boolean | (() => boolean) | undefined) => (typeof flag === 'function' ? flag() : flag)
 
@@ -88,10 +93,14 @@ function itemModel(item: MenuItem, id: string, canPerform: (command: CommandId) 
 /**
  * Turns menus into what a host can draw, as they stand now: items given as a function are read,
  * and each command asks `canPerform` whether anything would handle it. An item's id is its menu's
- * id and its place in the menu, so the same menus always give the same ids.
+ * id, its place in the menu and its label, so the same menus always give the same ids, and an id
+ * from before a menu changed (a window list that moved, a label that toggled) matches nothing.
  * @param menus the bar's menus, in order.
  * @param status the bar's status menus, marked `status` in the model.
  */
+const itemId = (menu: Menu, index: number, item: MenuItem): string =>
+  `${menu.id}:${index}:${item.type === 'command' || item.type === 'action' ? item.label : ''}`
+
 export function hostMenuModel(
   menus: readonly Menu[],
   status: readonly Menu[],
@@ -105,12 +114,12 @@ export function hostMenuModel(
     label: menu.label,
     ...(menu.emphasis === true ? { primary: true } : {}),
     ...(isStatus ? { status: true } : {}),
-    items: items.map((item, index) => itemModel(item, `${menu.id}:${index}`, canPerform)),
+    items: items.map((item, index) => itemModel(item, itemId(menu, index, item), canPerform)),
   }))
   const run = new Map(
     resolved.flatMap(({ menu, items }) =>
       items.flatMap((item, index): [string, MenuItem][] =>
-        item.type === 'command' || item.type === 'action' ? [[`${menu.id}:${index}`, item]] : [],
+        item.type === 'command' || item.type === 'action' ? [[itemId(menu, index, item), item]] : [],
       ),
     ),
   )
@@ -119,7 +128,3 @@ export function hostMenuModel(
 
 /** True when two models would draw the same menus, so a publish can be skipped. */
 export const sameHostModel = (a: readonly HostMenu[], b: readonly HostMenu[]): boolean => JSON.stringify(a) === JSON.stringify(b)
-
-/** The ids a model shows greyed out, so a choice of one that arrives anyway is ignored. */
-export const disabledIds = (model: readonly HostMenu[]): ReadonlySet<string> =>
-  new Set(model.flatMap(menu => menu.items.flatMap(item => (item.enabled === false && item.id !== undefined ? [item.id] : []))))

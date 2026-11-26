@@ -4,10 +4,11 @@ import { canPerform, perform } from '../core/commands.js'
 import type { CommandId } from '../core/commands.js'
 import { focusedId, isMinimized } from '../core/desk.js'
 import { bindShortcuts, formatShortcut, isApplePlatform } from '../core/shortcuts.js'
+import type { Keymap } from '../core/shortcuts.js'
 import type { Desk } from '../core/desk.js'
 import type { DeskState, WindowId } from '../core/types.js'
 import { useDesk, useDeskState } from './context.js'
-import { disabledIds, hasModKey, hostMenuModel, sameHostModel } from './hostMenu.js'
+import { hasModKey, hostMenuModel, sameHostModel } from './hostMenu.js'
 import type { HostMenu, MenuHost } from './hostMenu.js'
 
 /*
@@ -89,11 +90,13 @@ export interface MenuBarProps {
    * A native menu bar to put the menus in instead. The bar then draws nothing: it publishes the
    * menus and status menus to the host as data, again whenever they change or focus moves, and runs
    * the item the host says was chosen. Anything that should reach the host is a menu or a status
-   * menu, since `leading` and `trailing` cannot cross.
+   * menu, since `leading` and `trailing` cannot cross. Every item's shortcut crosses, an action's
+   * included, so a host that binds it runs the action, which the drawn bar only shows. Enablement
+   * that changes through app state alone, with no render or focus move, shows stale until the next.
    */
   readonly host?: MenuHost
   readonly label?: string
-  /** Bind the shortcuts of command items, in every menu. Default true. */
+  /** Bind the shortcuts of command items, in every menu. Default true. A `host` still gets every shortcut. */
   readonly shortcuts?: boolean
   readonly className?: string
 }
@@ -157,13 +160,22 @@ export const typeAhead = (items: readonly Resolved[], from: number, letter: stri
   return -1
 }
 
+/** The shortcut of every command item in these menus, as `bindShortcuts` takes them; `keep` leaves some out. */
+const menuKeymap = (menus: readonly Menu[], keep: (shortcut: string) => boolean = () => true): Keymap =>
+  Object.fromEntries(
+    menus
+      .flatMap(m => (typeof m.items === 'function' ? m.items() : m.items))
+      .flatMap(i => (i.type === 'command' && i.shortcut && keep(i.shortcut) ? [[i.shortcut, i.command] as const] : [])),
+  )
+
 export function MenuBar(props: MenuBarProps) {
   return props.host ? <HostedMenuBar {...props} host={props.host} /> : <DrawnMenuBar {...props} />
 }
 
 /**
  * The menus in a host's menu bar. Draws nothing. It publishes after every render, since menus are
- * rebuilt on every render and a publish that changes nothing is skipped; again when focus moves,
+ * rebuilt on every render and a publish that changes nothing is skipped; again once the commit's
+ * effects have run, since commands registered after the bar exist only then; again when focus moves,
  * because whether a command can run depends on what has focus; and an empty list on the way out,
  * so the host never shows a menu the page has taken down.
  */
@@ -176,8 +188,8 @@ function HostedMenuBar({ menus, status = [], host, shortcuts = true }: MenuBarPr
   /* What a chosen id runs, kept fresh on every render, including those that publish nothing new:
      the model can match the last one while its functions do not, and an old one would act on state
      that has since moved on. */
-  const latest = useRef({ menus, status, run: model.run, disabled: disabledIds(model.model) })
-  latest.current = { menus, status, run: model.run, disabled: disabledIds(model.model) }
+  const latest = useRef({ menus, status, run: model.run })
+  latest.current = { menus, status, run: model.run }
   const last = useRef<readonly HostMenu[] | null>(null)
 
   const publish = useCallback(
@@ -189,45 +201,52 @@ function HostedMenuBar({ menus, status = [], host, shortcuts = true }: MenuBarPr
     [host],
   )
 
-  useEffect(() => publish(model.model))
+  // Asks every command again, as things stand now, and publishes what changed.
+  const refresh = useCallback(() => {
+    const fresh = hostMenuModel(latest.current.menus, latest.current.status, command => canPerform(desk, command))
+    latest.current = { ...latest.current, run: fresh.run }
+    publish(fresh.model)
+  }, [desk, publish])
 
   useEffect(() => {
-    const onFocus = () => {
-      const fresh = hostMenuModel(latest.current.menus, latest.current.status, command => canPerform(desk, command))
-      latest.current = { ...latest.current, run: fresh.run, disabled: disabledIds(fresh.model) }
-      publish(fresh.model)
+    publish(model.model)
+    /* A component after the bar registers its commands in an effect that runs after this one, so
+       the model drawn at render calls them disabled: ask again once this commit's effects are done. */
+    let live = true
+    queueMicrotask(() => {
+      if (live) refresh()
+    })
+    return () => {
+      live = false
     }
+  })
+
+  useEffect(() => {
     const choose = (id: string) => {
-      if (latest.current.disabled.has(id)) return
       const item = latest.current.run.get(id)
+      /* Asked again as it is chosen, as an opening menu asks: what was published can be stale, and
+         a host's key equivalent fires whatever its menu last showed. An id this bar never published,
+         or one from an older model, does nothing. */
+      const [now] = item ? resolveMenuItems(desk, [item]) : []
+      if (!now || !selectable(now)) return
       if (item?.type === 'action') item.onSelect()
       else if (item?.type === 'command') perform(desk, item.command, item.args)
-      // An id this bar never published, or one from an older model, does nothing.
     }
-    document.addEventListener('focusin', onFocus)
+    document.addEventListener('focusin', refresh)
     const unsubscribe = host.onSelect(choose)
     return () => {
-      document.removeEventListener('focusin', onFocus)
+      document.removeEventListener('focusin', refresh)
       unsubscribe()
       last.current = null
       host.publish([])
     }
-  }, [desk, host, publish])
+  }, [desk, host, publish, refresh])
 
   // The host gives its own shortcuts a key; the page binds the rest, read at each key press.
   useEffect(() => {
     if (!shortcuts) return undefined
     const owns = (shortcut: string) => (host.ownsShortcut ? host.ownsShortcut(shortcut) : hasModKey(shortcut))
-    return bindShortcuts(
-      desk,
-      () =>
-        Object.fromEntries(
-          [...latest.current.menus, ...latest.current.status]
-            .flatMap(m => (typeof m.items === 'function' ? m.items() : m.items))
-            .flatMap(i => (i.type === 'command' && i.shortcut && !owns(i.shortcut) ? [[i.shortcut, i.command] as const] : [])),
-        ),
-      { apple },
-    )
+    return bindShortcuts(desk, () => menuKeymap([...latest.current.menus, ...latest.current.status], shortcut => !owns(shortcut)), { apple })
   }, [desk, host, shortcuts, apple])
 
   return null
@@ -337,12 +356,7 @@ function DrawnMenuBar({ menus, status = [], leading, trailing, label = 'Menu bar
       shortcuts
         ? bindShortcuts(
             desk,
-            () =>
-              Object.fromEntries(
-                menusNow.current
-                  .flatMap(m => (typeof m.items === 'function' ? m.items() : m.items))
-                  .flatMap(i => (i.type === 'command' && i.shortcut ? [[i.shortcut, i.command] as const] : [])),
-              ),
+            () => menuKeymap(menusNow.current),
             { apple },
           )
         : undefined,
