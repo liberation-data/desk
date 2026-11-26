@@ -93,9 +93,10 @@ import { join } from 'node:path'
  * css to 19.9 of 20, the 0.1 spare the notes above describe as red on the next commit whatever it is.
  */
 /*
- * Raised react 68 → 72 for a menu bar a native shell draws (0.9 KiB): the menus handed to a host as
- * data, and the chosen item run when the host names it. React measured 68.7 of 68 before it on a
- * fresh install, red already, so 70 would have left the 0.4 spare the notes above call red next time.
+ * Raised react 68 → 72 for a menu bar a native shell draws (2.2 KiB): the menus handed to a host as
+ * data, kept fresh as commands register and focus moves, and the chosen item asked again and run when
+ * the host names it. It took react to 69.9, so 70 would have left the 0.1 the notes above call red on
+ * the next commit.
  */
 const BUDGETS = { core: 16, react: 72, css: 22, fx: 5 }
 
