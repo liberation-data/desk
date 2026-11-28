@@ -1034,6 +1034,7 @@ same mute. When to make a sound is the hard part: see [HIG.md](HIG.md), Sound.
 - [docs/guide.md](docs/guide.md) — building an app with it, and what catches people out
 - [llms.txt](llms.txt) — the whole public surface in one file, for a coding agent
 - [HIG.md](HIG.md) — how an app built with it should look and behave
+- [liberation-data.com/desk](https://liberation-data.com/desk/) — the website, built from [website/](website/README.md)
 
 ## Develop
 

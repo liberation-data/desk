@@ -1,0 +1,431 @@
+---
+// The Desk landing page: the whole site, styles included, in one file, as Fornax's and Drivine's landing pages are.
+// The hero is a still sky (src/assets/sky.png, generated for the site) with a bird circling in it, drawn and moved by
+// the script at the end. The screenshots are the README's own, from the repository's docs/screenshots.
+import { Code } from 'astro:components';
+import { Image, getImage } from 'astro:assets';
+import '@fontsource/ubuntu/latin-400.css';
+import '@fontsource/ubuntu/latin-500.css';
+import '@fontsource/ubuntu/latin-700.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
+import sky from '../assets/sky.png';
+import arrange from '../../../docs/screenshots/arrange.png';
+import menus from '../../../docs/screenshots/menus.png';
+import search from '../../../docs/screenshots/search.png';
+import setup from '../../../docs/screenshots/setup.png';
+import chat from '../../../docs/screenshots/chat.png';
+import lookGnome from '../../../docs/screenshots/look-gnome.png';
+import light from '../../../docs/screenshots/light.png';
+
+const REPO = 'https://github.com/liberation-data/desk';
+const NPM = 'https://www.npmjs.com/package/@liberation-data/desk';
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const title = 'Desk: a desktop for the web, for React';
+const description = 'Windows, a dock, menus and commands, controls, tours and setup assistants, for React apps where people need two things side by side.';
+
+const skyLarge = await getImage({ src: sky, width: 1536, format: 'webp', quality: 80 });
+const skySmall = await getImage({ src: sky, width: 768, format: 'webp', quality: 78 });
+const ogImage = await getImage({ src: sky, width: 1200, height: 630, fit: 'cover', format: 'jpg' });
+
+const SHOTS = [
+    { src: menus, alt: 'The Window menu open over a filled window, with the dock beside it', title: 'Dock and menu bar', text: 'A dock with badges and stacks, a menu bar with real menus, and a Window menu that lists what is open.' },
+    { src: search, alt: 'A search palette over the desk, showing matching windows', title: 'Search', text: 'A keyboard-driven palette, grouped. Your app supplies the results; windows come for free.' },
+    { src: setup, alt: 'A setup assistant on its welcome step', title: 'Setup assistant', text: 'First run as one question at a time, with the steps named along the bottom.' },
+    { src: chat, alt: 'A chat window with a thread of messages and a composer', title: 'Conversation', text: 'A thread and a composer, with no opinion about who, or what, is answering.' },
+    { src: lookGnome, alt: 'Four arranged windows in the GNOME look', title: 'Looks', text: 'The same desk in the GNOME look, or the Windows look, or the Mac one, as the platform it is on suits.' },
+    { src: light, alt: 'The same four arranged windows in the light theme', title: 'Light and dark', text: 'Every value reads a --desk-* token. Redefine the tokens, not the selectors.' }
+];
+
+const MORE = [
+    ['Tours', 'Walk people through the real windows, waiting for them to try each step.'],
+    ['Commands', 'Copy, Close and Find go to whoever is responsible, as AppKit’s responder chain does.'],
+    ['Generated apps', 'A page an assistant wrote runs in a window and takes part like any other.'],
+    ['Dragging between windows', 'Drag a ride from a list onto a map, with typed payloads.'],
+    ['Services', 'Work that outlives a window: the request still running when it closes.'],
+    ['Links and Back', 'Links open windows, and Back goes back, on the desk and in the tab.'],
+    ['Touch', 'On a phone or tablet, one window at a time, every other one still alive.'],
+    ['No React in the core', 'createDesk() is a plain object: a router, a test or a tour can drive it.']
+];
+
+const SAMPLE = `import { createDesk } from '@liberation-data/desk'
+import { Desktop, DeskProvider } from '@liberation-data/desk/react'
+import '@liberation-data/desk/desk.css'
+
+const desk = createDesk()
+
+export function App() {
+  return (
+    <DeskProvider desk={desk}>
+      <button onClick={() => desk.open('notes')}>Notes</button>
+      <Desktop
+        title={id => TITLES[id]}
+        renderWindow={id => SURFACES[id]}
+        empty={<p>Nothing open</p>}
+      />
+    </DeskProvider>
+  )
+}`;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <link rel="canonical" href={new URL(base, Astro.site)} />
+        <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={new URL(base, Astro.site)} />
+        <meta property="og:image" content={new URL(ogImage.src, Astro.site)} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="preload" as="image" href={skyLarge.src} imagesrcset={`${skySmall.src} 768w, ${skyLarge.src} 1536w`} imagesizes="100vw" />
+        <style is:global define:vars={{ skyLarge: `url(${skyLarge.src})`, skySmall: `url(${skySmall.src})` }}>
+            :root {
+                --ink: #13233a;
+                --muted: #4a5d74;
+                --navy: #0c2241;
+                --abyss: #0a1729;
+                --paper: #f7fafd;
+                --mist: #eaf2f9;
+                --line: #d5e2ee;
+                --accent: #e8792e;
+                --accent-ink: #b0531a; /* the accent as text, or under white text, on light grounds: AA */
+                --air: #9fd0ff;
+                color-scheme: light;
+            }
+            * { box-sizing: border-box; }
+            html { scroll-behavior: smooth; }
+            @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+            body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 Ubuntu, system-ui, sans-serif; }
+            a { color: var(--accent-ink); }
+            a:hover, a:focus-visible { color: #9f4a10; }
+            .wrap { max-width: 1180px; margin: 0 auto; }
+            code, pre { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+            :not(pre) > code { font-size: 0.9em; background: var(--mist); padding: 1px 6px; border-radius: 5px; }
+            h1, h2, h3 { line-height: 1.15; letter-spacing: -0.01em; }
+            .eyebrow { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.18em; color: var(--accent-ink); }
+
+            /* The sky: the photo held still, but for a very slow drift, as clouds move; the bird circles over it. */
+            .hero { position: relative; overflow: hidden; color: #fff; padding: 0 32px 260px; min-height: 92vh; background: var(--navy); isolation: isolate; }
+            .hero::before { content: ''; position: absolute; inset: -2%; z-index: -2; background: var(--skyLarge) center 30% / cover no-repeat; animation: drift 140s ease-in-out infinite alternate; }
+            .hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8, 26, 54, 0.35), rgba(8, 26, 54, 0) 45%), linear-gradient(90deg, rgba(8, 26, 54, 0.62), rgba(8, 26, 54, 0.42) 50%, rgba(8, 26, 54, 0) 80%); }
+            @keyframes drift { from { transform: translate3d(0, 0, 0) scale(1.02); } to { transform: translate3d(-1.5%, 0.5%, 0) scale(1.05); } }
+            @media (max-width: 800px) { .hero::before { background-image: var(--skySmall); } }
+            @media (prefers-reduced-motion: reduce) { .hero::before { animation: none; } }
+            .bird { position: absolute; left: 0; top: 0; width: 76px; height: 30px; z-index: -1; pointer-events: none; will-change: transform; color: rgba(20, 26, 38, 0.82); }
+            .bird svg { display: block; width: 100%; height: 100%; overflow: visible; }
+            .bird .wing { transform-box: view-box; transform-origin: 50px 18px; }
+            @media (max-width: 640px) { .bird { display: none; } }
+
+            .nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; }
+            .brand { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-weight: 700; font-size: 20px; letter-spacing: 0.04em; }
+            .brand:hover, .brand:focus-visible { color: #fff; }
+            .brand .mark { width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(135deg, #ffb066, var(--accent)); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); }
+            .nav ul { display: flex; gap: 24px; margin: 0; padding: 0; list-style: none; }
+            .nav ul a { color: rgba(255, 255, 255, 0.88); text-decoration: none; font-weight: 500; }
+            .nav ul a:hover, .nav ul a:focus-visible { color: #fff; text-decoration: underline; text-underline-offset: 4px; }
+            .hero-text { max-width: 620px; padding-top: 9vh; }
+            .hero h1 { margin: 0 0 20px; font-size: clamp(40px, 6vw, 68px); font-weight: 700; text-shadow: 0 2px 24px rgba(5, 20, 45, 0.35); }
+            .hero .lede { margin: 0 0 32px; font-size: 20px; line-height: 1.55; color: rgba(255, 255, 255, 0.94); text-shadow: 0 1px 12px rgba(5, 20, 45, 0.4); }
+            .actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+            .button { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 999px; font-weight: 700; text-decoration: none; }
+            .button.primary { background: var(--accent-ink); color: #fff; }
+            .button.primary:hover, .button.primary:focus-visible { background: #9f4a10; color: #fff; }
+            .install { display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px 10px 18px; border-radius: 999px; background: rgba(8, 26, 54, 0.45); border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; font: 15px 'JetBrains Mono', ui-monospace, monospace; backdrop-filter: blur(6px); }
+            .install button { font: 600 13px Ubuntu, system-ui, sans-serif; color: var(--navy); background: #fff; border: 0; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+
+            /* The desk itself, floating in the air at the foot of the sky. */
+            .showcase { position: relative; z-index: 1; margin: -220px auto 0; padding: 0 32px; max-width: 1180px; }
+            .showcase img { display: block; width: 100%; height: auto; border-radius: 14px; box-shadow: 0 30px 80px rgba(8, 26, 54, 0.35), 0 6px 18px rgba(8, 26, 54, 0.2); }
+            .showcase p { margin: 14px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
+
+            section { padding: 96px 32px; }
+            section h2 { margin: 0 0 18px; font-size: clamp(30px, 4vw, 44px); }
+            .intro .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+            .intro p { margin: 0 0 16px; color: var(--muted); font-size: 18px; }
+            .intro ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; }
+            .intro li { position: relative; padding-left: 28px; color: var(--ink); }
+            .intro li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 14px; height: 2px; background: var(--accent); }
+            .intro kbd { font: 13px 'JetBrains Mono', ui-monospace, monospace; background: var(--mist); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+
+            .tour { background: var(--mist); }
+            .tour .head { max-width: 680px; margin-bottom: 44px; }
+            .tour .head p { margin: 0; color: var(--muted); font-size: 18px; }
+            .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+            .grid figure { margin: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+            .grid img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--line); }
+            .grid figcaption { padding: 18px 20px 22px; }
+            .grid h3 { margin: 0 0 6px; font-size: 19px; }
+            .grid figcaption p { margin: 0; font-size: 15px; color: var(--muted); }
+
+            .more ul { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px 32px; margin: 36px 0 0; padding: 0; list-style: none; }
+            .more h3 { margin: 0 0 6px; font-size: 17px; }
+            .more li p { margin: 0; font-size: 15px; color: var(--muted); }
+            .more .see { margin: 40px 0 0; color: var(--muted); }
+
+            .start { background: var(--navy); color: #e8f0f8; }
+            .start .wrap { display: grid; grid-template-columns: 5fr 7fr; gap: 56px; align-items: start; }
+            .start .eyebrow { color: var(--air); }
+            .start p { color: #c3d3e4; margin: 0 0 16px; }
+            .start :not(pre) > code { background: rgba(159, 208, 255, 0.12); color: #e8f0f8; }
+            .start a { color: var(--air); }
+            .start a:hover, .start a:focus-visible { color: #fff; }
+            .start pre { margin: 0; padding: 22px 24px; border-radius: 12px; overflow-x: auto; font-size: 14px; line-height: 1.6; border: 1px solid rgba(159, 208, 255, 0.18); }
+            .start .links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+            .start .links a { padding: 9px 16px; border-radius: 999px; border: 1px solid rgba(159, 208, 255, 0.4); text-decoration: none; font-weight: 500; }
+            .start .links a:hover, .start .links a:focus-visible { background: rgba(159, 208, 255, 0.12); }
+
+            footer { background: var(--abyss); color: #c9d6e4; padding: 56px 32px; }
+            footer .wrap { display: flex; flex-wrap: wrap; gap: 32px 56px; justify-content: space-between; align-items: flex-start; }
+            footer .about { flex: 1 1 360px; font-size: 15px; line-height: 1.6; }
+            footer .about p { margin: 0; }
+            footer nav { display: flex; flex-wrap: wrap; gap: 20px 48px; font-size: 15px; }
+            footer nav div { display: flex; flex-direction: column; gap: 8px; }
+            footer nav span { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #8ea3bb; }
+            footer a { color: #eef4fa; text-decoration: none; }
+            footer a:hover, footer a:focus-visible { color: #fff; text-decoration: underline; }
+            /* The elements strip: Liberation Data's projects as the four elements of Embabel Worlds, this site's lit. The
+               same strip is on fornax4j.org and drivine.org; keep them in step, apart from colours and which is lit. */
+            footer .elements { margin-top: 44px; padding-top: 28px; border-top: 1px solid rgba(201, 214, 228, 0.14); display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: center; justify-content: space-between; }
+            footer .elements p { margin: 0; font-size: 14px; color: #8ea3bb; }
+            footer .elements p a { color: #c9d6e4; text-decoration: underline; text-underline-offset: 3px; }
+            footer .elements p a:hover, footer .elements p a:focus-visible { color: #fff; }
+            footer .elements ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 14px 32px; }
+            footer .elements li a, footer .elements li > span { display: flex; align-items: center; gap: 10px; color: #8ea3bb; text-decoration: none; }
+            footer .elements svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+            footer .elements b { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+            footer .elements small { display: block; font-size: 14px; color: #c9d6e4; }
+            footer .elements li a:hover, footer .elements li a:hover small, footer .elements li a:focus-visible, footer .elements li a:focus-visible small { color: #fff; text-decoration: none; }
+            footer .elements li.here a { color: var(--air); }
+            footer .elements li.here small { color: #fff; }
+            footer .elements li.soon svg { opacity: 0.55; }
+            footer .elements li.soon small { color: #8ea3bb; font-style: italic; }
+
+            @media (max-width: 960px) {
+                .grid { grid-template-columns: repeat(2, 1fr); }
+                .more ul { grid-template-columns: repeat(2, 1fr); }
+                .intro .wrap, .start .wrap { grid-template-columns: 1fr; gap: 32px; }
+                /* The text runs most of the way across: darken the whole sky behind it, not only its left. */
+                .hero::after { background: linear-gradient(180deg, rgba(8, 26, 54, 0.5), rgba(8, 26, 54, 0.4)); }
+            }
+            @media (max-width: 640px) {
+                .hero, section, footer, .showcase { padding-left: 16px; padding-right: 16px; }
+                .hero { padding-bottom: 150px; min-height: 0; }
+                .hero-text { padding-top: 32px; }
+                .hero .lede { font-size: 18px; }
+                .nav ul { gap: 16px; font-size: 15px; }
+                .nav ul li.wide { display: none; }
+                .showcase { margin-top: -120px; }
+                section { padding-top: 64px; padding-bottom: 64px; }
+                .grid, .more ul { grid-template-columns: 1fr; }
+                .install { font-size: 13px; }
+            }
+        </style>
+    </head>
+    <body>
+        <header class="hero">
+            <div class="bird" aria-hidden="true">
+                <svg viewBox="0 0 100 40">
+                    <g fill="currentColor">
+                        <path class="wing" d="M48 14.5C40 10.5 28 9 17 10L9 8.5L11.5 11.2L4.5 11.2L10 13.5L3.5 14.6L10.5 16.2L5.5 18L13.5 18.4C20 19.6 26 22 33 22.6C39 23.2 44 23.6 48 23Z" />
+                        <path class="wing" d="M52 14.5 C60 10.5 72 9 83 10 L91 8.5 L88.5 11.2 L95.5 11.2 L90 13.5 L96.5 14.6 L89.5 16.2 L94.5 18 L86.5 18.4 C80 19.6 74 22 67 22.6 C61 23.2 56 23.6 52 23Z" />
+                        <path d="M50 7.6C51.4 7.6 52.1 9.2 52.1 10.8C53.7 11.9 54.1 14.9 53.9 18C53.5 21.5 52.6 24 50 25.2C47.4 24 46.5 21.5 46.1 18C45.9 14.9 46.3 11.9 47.9 10.8C47.9 9.2 48.6 7.6 50 7.6Z" />
+                        <path d="M47.8 23.6L44.8 31.2C48.1 32.5 51.9 32.5 55.2 31.2L52.2 23.6Z" />
+                    </g>
+                </svg>
+            </div>
+            <div class="wrap">
+                <nav class="nav" aria-label="Main">
+                    <a class="brand" href={base}><span class="mark" aria-hidden="true"></span>desk</a>
+                    <ul>
+                        <li class="wide"><a href="#systems">Systems</a></li>
+                        <li class="wide"><a href="#tour">Tour</a></li>
+                        <li><a href="#start">Start</a></li>
+                        <li><a href={REPO}>GitHub</a></li>
+                    </ul>
+                </nav>
+                <div class="hero-text">
+                    <h1>A desktop for the web, for React.</h1>
+                    <p class="lede">
+                        Windows that fill the desk, layer and arrange when asked. A dock, a menu bar, and commands that find
+                        whoever should handle them. Your content in every window, never owned by the desk.
+                    </p>
+                    <div class="actions">
+                        <a class="button primary" href="#start">Get started</a>
+                        <span class="install"><span id="install-cmd">npm install @liberation-data/desk</span><button type="button" data-copy="install-cmd">Copy</button></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="showcase">
+            <Image src={arrange} widths={[700, 1180, 1800]} sizes="(max-width: 1244px) calc(100vw - 64px), 1180px" alt="Four windows arranged on the desk, with a menu bar and a dock" loading="eager" />
+            <p>The <code>examples/garage</code> sample after Window → Arrange. Run it with <code>npm run example</code>.</p>
+        </div>
+
+        <main>
+            <section class="intro" id="systems">
+                <div class="wrap">
+                    <div>
+                        <p class="eyebrow">SYSTEMS</p>
+                        <h2>A place for everything, and everything in reach.</h2>
+                        <p>
+                            Modern apps are rarely one page. They are systems: records and the map they sit on, a query and
+                            its results, a document and the conversation about it, an agent at work and what it is working on.
+                        </p>
+                        <p>
+                            Desk gives them the shape people already know for working in a system: windows, a dock and a menu
+                            bar. Like a well-organised kitchen, what you are using is out on the bench, the rest is a reach
+                            away, and nothing is piled on top of anything else.
+                        </p>
+                        <p>A page with one task at a time is better as a page.</p>
+                    </div>
+                    <ul>
+                        <li>Every window opens filling the desk, and keeps filling it as the browser resizes. Nothing is laid out behind anyone’s back.</li>
+                        <li><strong>Window → Arrange</strong> (<kbd>⌥⌘A</kbd>) lays them out once: two side by side, three as one tall and two stacked, four as a grid.</li>
+                        <li>Drag a title bar to free a window. Drop it on the left or right edge and it takes that half.</li>
+                        <li>Minimize keeps a window loaded: the half-written message, the paused video, the request still running.</li>
+                        <li>Unplug a display and its windows come back onto the laptop. Plug it in and they go out again, exactly as they were.</li>
+                        <li>Each window loads and fails on its own, and keeps its DOM when focus moves, so carets, scroll and iframes survive.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="tour" id="tour">
+                <div class="wrap">
+                    <div class="head">
+                        <p class="eyebrow">A LOOK AROUND</p>
+                        <h2>Everything a desktop has.</h2>
+                        <p>Every screenshot is the same sample app, <code>examples/garage</code>, a bike garage on the desk.</p>
+                    </div>
+                    <div class="grid">
+                        {SHOTS.map((s) => (
+                            <figure>
+                                <Image src={s.src} widths={[400, 760]} sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 960px) 50vw, 380px" alt={s.alt} />
+                                <figcaption><h3>{s.title}</h3><p>{s.text}</p></figcaption>
+                            </figure>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            <section class="more">
+                <div class="wrap">
+                    <p class="eyebrow">AND</p>
+                    <h2>The parts you would otherwise write.</h2>
+                    <ul>
+                        {MORE.map(([name, text]) => (<li><h3>{name}</h3><p>{text}</p></li>))}
+                    </ul>
+                    <p class="see">Controls, panes and splits, status lamps, page dots, overlays, icon views and sounds too: see the <a href={`${REPO}#readme`}>README</a>.</p>
+                </div>
+            </section>
+
+            <section class="start" id="start">
+                <div class="wrap">
+                    <div>
+                        <p class="eyebrow">START</p>
+                        <h2>The smallest desk.</h2>
+                        <p>Install it, give it a title and a body for each window, and open one. <code>renderWindow</code> is called with a window’s id; the desk never owns what it renders.</p>
+                        <p>Two windows onto the same thing are one kind with different ids: <code>desk.openInstance('query')</code> gives <code>query</code>, then <code>query#2</code>.</p>
+                        <div class="links">
+                            <a href={`${REPO}/blob/main/docs/guide.md`}>The guide</a>
+                            <a href={`${REPO}/blob/main/HIG.md`}>Interface guidelines</a>
+                            <a href={`${REPO}/blob/main/llms.txt`}>llms.txt</a>
+                            <a href={NPM}>npm</a>
+                        </div>
+                    </div>
+                    <Code code={SAMPLE} lang="tsx" theme="github-dark" />
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="wrap">
+                <div class="about">
+                    <p>
+                        Desk is a community project by Liberation Data, the home of <a href="https://drivine.org">Drivine</a> and
+                        <a href="https://fornax4j.org">Fornax</a>. By Jasper Blues, creator of Typhoon. Apache 2.0.
+                    </p>
+                </div>
+                <nav aria-label="Footer">
+                    <div><span>Desk</span><a href={REPO}>GitHub</a><a href={NPM}>npm</a><a href={`${REPO}/blob/main/LICENSE`}>Apache 2.0</a></div>
+                    <div><span>Read</span><a href={`${REPO}/blob/main/docs/guide.md`}>Guide</a><a href={`${REPO}/blob/main/HIG.md`}>Guidelines</a><a href={`${REPO}/blob/main/llms.txt`}>llms.txt</a></div>
+                    <div><span>Liberation Data</span><a href="https://github.com/liberation-data">GitHub</a><a href="https://drivine.org">Drivine</a><a href="https://fornax4j.org">Fornax</a></div>
+                </nav>
+            </div>
+            <div class="wrap elements">
+                <p><a href="https://github.com/liberation-data">Liberation Data</a> is proud to provide four elements of <a href="https://worlds.embabel.com">Embabel Worlds</a></p>
+                <ul>
+                    <li><a href="https://fornax4j.org"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c.6 3.4 4.8 5.6 4.8 10.6a4.8 4.8 0 0 1-9.6 0c0-2.3 1-3.8 2.2-5 .2 1.6.9 2.6 1.9 3.1-.6-3.2-.1-6.2.7-8.7Z"/><path d="M12 21.5a2.4 2.4 0 0 1-2.4-2.4c0-1.6 1.4-2.4 2.4-3.9 1 1.5 2.4 2.3 2.4 3.9a2.4 2.4 0 0 1-2.4 2.4Z"/></svg><span><b>Fire</b><small>Fornax</small></span></a></li>
+                    <li><a href="https://drivine.org"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9c1.6 0 2.4-1.5 3.9-1.5S8.7 9 10.3 9s2.4-1.5 3.8-1.5S16.5 9 18 9s2.4-1.5 3.5-1.5"/><path d="M2.5 13.5c1.6 0 2.4-1.5 3.9-1.5s2.3 1.5 3.9 1.5 2.4-1.5 3.8-1.5 2.4 1.5 3.9 1.5 2.4-1.5 3.5-1.5"/><path d="M2.5 18c1.6 0 2.4-1.5 3.9-1.5S8.7 18 10.3 18s2.4-1.5 3.8-1.5S16.5 18 18 18s2.4-1.5 3.5-1.5"/></svg><span><b>Water</b><small>Drivine</small></span></a></li>
+                    <li class="here"><a href={base} aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5h11.5a2.7 2.7 0 1 0-2.7-2.7"/><path d="M3 12.5h16a2.7 2.7 0 1 1-2.7 2.7"/><path d="M3 16.5h7.5a2.2 2.2 0 1 1-2.2 2.2"/></svg><span><b>Air</b><small>Desk</small></span></a></li>
+                    <li class="soon"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 19.5 9 9l3.2 5.1L15 10l6.5 9.5Z"/><path d="m7.2 12 1.8 1.4 1.4-1.2"/></svg><span><b>Earth</b><small>Coming soon</small></span></span></li>
+                </ul>
+            </div>
+        </footer>
+
+        <script>
+            // Copy buttons: copy the text of the element named by data-copy, and say so for a moment. Where there is no
+            // clipboard, select the text instead, ready to copy by hand.
+            for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
+                button.addEventListener('click', async () => {
+                    const source = document.getElementById(button.dataset.copy!);
+                    try { await navigator.clipboard.writeText(source?.textContent ?? ''); button.textContent = 'Copied'; }
+                    catch { if (source) getSelection()?.selectAllChildren(source); button.textContent = 'Selected'; }
+                    setTimeout(() => (button.textContent = 'Copy'), 1600);
+                });
+            }
+        </script>
+        <script>
+            // The bird: a raptor soaring in wide, slow circles high in the sky, seen from below. It glides on a tilted
+            // ellipse (one lap in about 48 s), turns to face where it is going, grows a little as the near side of the
+            // circle brings it closer, and now and then gives three slow wingbeats. It holds still, mid-glide, for
+            // reduced motion, and stops while the sky is out of sight or the tab hidden. Phones, whose sky is mostly headline,
+            // don't show it, so nothing moves it there.
+            const hero = document.querySelector<HTMLElement>('.hero');
+            const bird = hero?.querySelector<HTMLElement>('.bird');
+            const wings = bird ? [...bird.querySelectorAll<SVGPathElement>('.wing')] : [];
+            if (hero && bird) {
+                const still = matchMedia('(prefers-reduced-motion: reduce)');
+                const phone = matchMedia('(max-width: 640px)'); // as the stylesheet hides it
+                const LAP = 48_000, FLAP_EVERY = 13_000, BEAT = 620, BEATS = 3;
+                let inView = true, frame = 0, elapsed = 0.31 * LAP, last = 0;
+
+                const place = (t: number) => {
+                    const w = hero.clientWidth, h = hero.clientHeight;
+                    const cx = w * 0.7, cy = h * 0.27, rx = w * 0.16, ry = rx * 0.38;
+                    const a = (t / LAP) * Math.PI * 2;
+                    const x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a);
+                    const heading = Math.atan2(ry * Math.cos(a), -rx * Math.sin(a));
+                    const near = 1 + 0.14 * Math.sin(a);
+                    bird.style.transform = `translate(${x - 38}px, ${y - 15}px) rotate(${heading + Math.PI / 2}rad) scale(${near})`;
+                    const since = t % FLAP_EVERY, beat = since < BEAT * BEATS ? Math.sin((since / BEAT) * Math.PI) ** 2 : 0;
+                    for (const wing of wings) wing.style.transform = `scaleX(${1 - 0.42 * beat})`;
+                };
+                const tick = (now: number) => {
+                    if (last) elapsed += Math.min(now - last, 100);
+                    last = now;
+                    place(elapsed);
+                    frame = requestAnimationFrame(tick);
+                };
+                const sync = () => {
+                    cancelAnimationFrame(frame);
+                    last = 0;
+                    if (phone.matches) return;
+                    if (still.matches || !inView || document.hidden) { place(elapsed); return; }
+                    frame = requestAnimationFrame(tick);
+                };
+                new IntersectionObserver((entries) => { inView = entries.some((e) => e.isIntersecting); sync(); }).observe(hero);
+                document.addEventListener('visibilitychange', sync);
+                still.addEventListener('change', sync);
+                phone.addEventListener('change', sync);
+                addEventListener('resize', () => { if (!phone.matches) place(elapsed); });
+                sync();
+            }
+        </script>
+    </body>
+</html>
